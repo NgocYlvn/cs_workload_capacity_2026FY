@@ -997,7 +997,7 @@ def chart_office_capacity_trend(df: pd.DataFrame):
     )
 
     fig.update_layout(
-        title="HC Trend & Gap",
+        title="HC Capacity Trend & Gap",
         yaxis_title="HC",
         hovermode="x unified",
     )
