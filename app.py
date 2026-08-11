@@ -243,6 +243,28 @@ st.markdown(
         font-weight: 800;
         margin-top: 3px;
     }}
+
+    .hc-variance-card {{
+        justify-content: flex-start;
+    }}
+
+    .hc-variance-formula {{
+        color: #64748B;
+        font-size: 12px;
+        font-weight: 600;
+        margin-top: 12px;
+        margin-bottom: 10px;
+        text-align: center;
+        width: 100%;
+    }}
+
+    .hc-variance-status {{
+        display: block;
+        width: 100%;
+        box-sizing: border-box;
+        text-align: center;
+        margin-top: 0 !important;
+    }}
     .kpi-label {{
         color: {COLORS['muted']};
         font-size: 12px;
@@ -508,6 +530,32 @@ def hc_detail_card(
             <div class="hc-kpi-total">{fmt_num(total_value, 2 if "REQUIRED" in label.upper() else 0)}</div>
             {status_html}
             {details_html}
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+
+def hc_variance_card(
+    label: str,
+    value: float,
+    formula_text: str,
+    status_text: str,
+    status_color: str,
+    status_bg: str,
+):
+    """Centered variance card to visually balance the HC cards."""
+    st.markdown(
+        f"""
+        <div class="hc-kpi-card hc-variance-card">
+            <div class="kpi-label">{label}</div>
+            <div class="hc-kpi-total">{fmt_num(value, 0)}</div>
+            <div class="hc-variance-formula">{formula_text}</div>
+            <span class="status-badge hc-variance-status"
+                  style="color:{status_color};background:{status_bg};">
+                {status_text}
+            </span>
         </div>
         """,
         unsafe_allow_html=True,
@@ -1274,14 +1322,14 @@ def main():
         )
 
     with hc4:
-        hc_detail_card(
+        hc_variance_card(
             "HC VARIANCE",
             hc_variance,
-            status_text=variance_status[0],
-            status_color=variance_status[1],
-            status_bg=variance_status[2],
+            "Approved HC − Actual HC",
+            variance_status[0],
+            variance_status[1],
+            variance_status[2],
         )
-        st.caption("Approved HC − Actual HC | Source: HC")
 
     # KPI cards follow Month + Office filters.
     # The line chart keeps all available months so management can see the HC trend.
