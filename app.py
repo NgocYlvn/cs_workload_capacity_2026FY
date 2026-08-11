@@ -265,6 +265,46 @@ st.markdown(
         text-align: center;
         margin-top: 0 !important;
     }}
+
+
+    /* Section 2 - Shipment KPI cards */
+    .shipment-kpi-card {{
+        background: #FFFFFF;
+        border: 1px solid #D9E2EC;
+        border-radius: 14px;
+        padding: 18px 18px;
+        min-height: 170px;
+        height: 170px;
+        box-sizing: border-box;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.035);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+    }}
+
+    .shipment-kpi-label {{
+        color: #64748B;
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        margin-bottom: 14px;
+    }}
+
+    .shipment-kpi-value {{
+        color: #003B70;
+        font-size: 36px;
+        line-height: 1.05;
+        font-weight: 850;
+    }}
+
+    .shipment-kpi-note {{
+        color: #64748B;
+        font-size: 11px;
+        margin-top: 10px;
+    }}
     .kpi-label {{
         color: {COLORS['muted']};
         font-size: 12px;
@@ -562,6 +602,21 @@ def hc_variance_card(
     )
 
 
+
+def shipment_kpi_card(label: str, value: str, note: str = ""):
+    """Equal-size centered KPI card for Shipment Volume section."""
+    st.markdown(
+        f"""
+        <div class="shipment-kpi-card">
+            <div class="shipment-kpi-label">{label}</div>
+            <div class="shipment-kpi-value">{value}</div>
+            <div class="shipment-kpi-note">{note}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
 def section_title(text: str):
     st.markdown(f'<div class="section-title">{text}</div>', unsafe_allow_html=True)
 
@@ -722,26 +777,64 @@ def prepare_fte(df: pd.DataFrame) -> pd.DataFrame:
 
 def prepare_shipment(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
     if df.empty:
-        return pd.DataFrame(columns=["Office", "MonthDate", "Total Shipment"]), pd.DataFrame(columns=["Office", "MonthDate", "Mode", "Volume"])
+        return (
+            pd.DataFrame(columns=["Office", "MonthDate", "Total Shipment", "Active Customers"]),
+            pd.DataFrame(columns=["Office", "MonthDate", "Mode", "Volume"]),
+        )
+
     df = df.copy()
     office_col = first_existing(df, ["Office", "OFFICE"])
     month_col = first_existing(df, ["Month"])
+    active_col = first_existing(df, ["Active Customers"])
+    total_col = first_existing(df, ["TOTAL", "Total"])
+
     if not office_col or not month_col:
         return pd.DataFrame(), pd.DataFrame()
+
     df["Office"] = df[office_col].map(normalize_office)
     df["MonthDate"] = df[month_col].map(parse_month)
-    total_col = first_existing(df, ["TOTAL", "Total"])
+
+    # Keep blanks as NaN first so future empty months are not treated as real zero-data months.
     if total_col:
-        df["Total Shipment"] = numeric_series(df[total_col])
+        df["Total Shipment"] = pd.to_numeric(df[total_col], errors="coerce")
     else:
-        df["Total Shipment"] = 0.0
-    df["Active Customers"] = numeric_series(df.get("Active Customers", 0))
-    mode_cols = [c for c in df.columns if c not in [office_col, month_col, "Office", "MonthDate", "Active Customers", total_col, "Total Shipment"]]
-    mode_cols = [c for c in mode_cols if not str(c).startswith("Unnamed")]
-    mode_long = df.melt(id_vars=["Office", "MonthDate"], value_vars=mode_cols, var_name="Mode", value_name="Volume")
-    mode_long["Volume"] = numeric_series(mode_long["Volume"])
-    mode_long = mode_long[mode_long["Volume"] > 0]
-    return df.dropna(subset=["MonthDate"]), mode_long.dropna(subset=["MonthDate"])
+        df["Total Shipment"] = np.nan
+
+    if active_col:
+        df["Active Customers"] = pd.to_numeric(df[active_col], errors="coerce")
+    else:
+        df["Active Customers"] = np.nan
+
+    # Exclude rows/months where both key shipment metrics are blank.
+    df = df.dropna(subset=["MonthDate"])
+    df = df.dropna(subset=["Total Shipment", "Active Customers"], how="all")
+
+    # Valid rows can safely use zero fallback afterward.
+    df["Total Shipment"] = df["Total Shipment"].fillna(0)
+    df["Active Customers"] = df["Active Customers"].fillna(0)
+
+    excluded = {
+        office_col, month_col, active_col, total_col,
+        "Office", "MonthDate", "Active Customers", "Total Shipment"
+    }
+    mode_cols = [
+        c for c in df.columns
+        if c not in excluded and not str(c).startswith("Unnamed")
+    ]
+
+    if mode_cols:
+        mode_long = df.melt(
+            id_vars=["Office", "MonthDate"],
+            value_vars=mode_cols,
+            var_name="Mode",
+            value_name="Volume",
+        )
+        mode_long["Volume"] = pd.to_numeric(mode_long["Volume"], errors="coerce").fillna(0)
+        mode_long = mode_long[mode_long["Volume"] > 0]
+    else:
+        mode_long = pd.DataFrame(columns=["Office", "MonthDate", "Mode", "Volume"])
+
+    return df, mode_long
 
 
 def prepare_customer(data: Dict[str, pd.DataFrame]) -> pd.DataFrame:
@@ -855,6 +948,38 @@ def filter_office_only(df: pd.DataFrame, office: str) -> pd.DataFrame:
 # ============================================================
 # KPI CALCULATION
 # ============================================================
+
+
+
+def calculate_active_customers(shipment_df: pd.DataFrame) -> float:
+    """
+    Active Customers source: Shipment volume.
+    For a single selected month, this returns the sum across selected offices.
+    For multi-month / All selection, it returns the average monthly active-customer total
+    because the source sheet contains monthly counts rather than customer-level IDs.
+    """
+    if shipment_df is None or shipment_df.empty or "Active Customers" not in shipment_df.columns:
+        return 0.0
+
+    d = shipment_df[["MonthDate", "Active Customers"]].copy()
+    d["Active Customers"] = pd.to_numeric(d["Active Customers"], errors="coerce")
+    d = d.dropna(subset=["MonthDate", "Active Customers"])
+
+    if d.empty:
+        return 0.0
+
+    monthly = (
+        d.groupby("MonthDate", as_index=False)["Active Customers"]
+        .sum(min_count=1)
+        .dropna(subset=["Active Customers"])
+    )
+    if monthly.empty:
+        return 0.0
+
+    if len(monthly) == 1:
+        return float(monthly["Active Customers"].iloc[0])
+
+    return float(monthly["Active Customers"].mean())
 
 
 def calculate_kpis(hc, workload, fte, shipment) -> Dict[str, float]:
@@ -1128,16 +1253,89 @@ def chart_shipment_modes(mode_df: pd.DataFrame):
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
 
+def build_customer_ranking(df: pd.DataFrame) -> pd.DataFrame:
+    """Aggregate and rank all customers by shipment volume for current filters."""
+    if df is None or df.empty:
+        return pd.DataFrame(columns=["Rank", "Customer", "Shipment Volume"])
+
+    ranking = (
+        df.groupby("Customer", as_index=False)["Volume"]
+        .sum()
+        .sort_values("Volume", ascending=False)
+        .reset_index(drop=True)
+    )
+    ranking["Rank"] = np.arange(1, len(ranking) + 1)
+    ranking = ranking.rename(columns={"Volume": "Shipment Volume"})
+    return ranking[["Rank", "Customer", "Shipment Volume"]]
+
+
 def chart_top_customers(df: pd.DataFrame):
     if df.empty:
-        st.info("No customer volume data available.")
+        st.info("No customer volume data available for selected filters.")
         return
-    top = df.groupby("Customer", as_index=False)["Volume"].sum().sort_values("Volume", ascending=False).head(20)
-    top = top.sort_values("Volume", ascending=True)
-    fig = px.bar(top, x="Volume", y="Customer", orientation="h", text="Volume", color_discrete_sequence=[COLORS["blue"]], title="Top 20 Customers by Shipment Volume")
-    fig.update_traces(texttemplate="%{text:,.0f}", textposition="outside", cliponaxis=False, hovertemplate="%{y}: %{x:,.0f}<extra></extra>")
-    fig = plotly_layout(fig, 520)
+
+    ranking = build_customer_ranking(df)
+    top = ranking.head(20).sort_values("Shipment Volume", ascending=True)
+
+    fig = px.bar(
+        top,
+        x="Shipment Volume",
+        y="Customer",
+        orientation="h",
+        text="Shipment Volume",
+        color_discrete_sequence=[COLORS["blue"]],
+        title="Top 20 Customers by Shipment Volume",
+    )
+    fig.update_traces(
+        texttemplate="%{text:,.0f}",
+        textposition="outside",
+        cliponaxis=False,
+        hovertemplate="%{y}<br>Shipment Volume: %{x:,.0f}<extra></extra>",
+    )
+    fig.update_layout(yaxis_title="", xaxis_title="Shipment Volume")
+    fig = plotly_layout(fig, 540)
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+
+
+def customer_detail_table(df: pd.DataFrame):
+    """Scrollable full customer ranking table displayed beside Top 20 chart."""
+    ranking = build_customer_ranking(df)
+
+    if ranking.empty:
+        st.info("No customer detail data available for selected filters.")
+        return
+
+    st.markdown(
+        f"""
+        <div style="
+            color:{COLORS['navy']};
+            font-size:15px;
+            font-weight:800;
+            margin:2px 0 8px 0;">
+            Customer Detail
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    styled = ranking.style.format({
+        "Rank": "{:.0f}",
+        "Shipment Volume": "{:,.0f}",
+    })
+
+    st.dataframe(
+        styled,
+        use_container_width=True,
+        hide_index=True,
+        height=540,
+        column_config={
+            "Rank": st.column_config.NumberColumn("Rank", width="small", format="%d"),
+            "Customer": st.column_config.TextColumn("Customer", width="large"),
+            "Shipment Volume": st.column_config.NumberColumn(
+                "Shipment Volume", width="medium", format="%,.0f"
+            ),
+        },
+    )
 
 
 def chart_resolution(df: pd.DataFrame):
@@ -1200,10 +1398,12 @@ def main():
         fte = prepare_fte(raw["fte"])
         shipment, shipment_mode = prepare_shipment(raw["shipment"])
         customer = prepare_customer(raw)
+        # Section 2 customer ranking/detail must use Customer Volume-N&S only.
+        customer_ns = customer_wide_to_long(raw["customer_ns"])
         resolution = prepare_resolution(raw["resolution"])
         yvf = prepare_yvf(raw["yvf"])
 
-    periods = all_periods(hc, workload, fte, shipment, customer, resolution)
+    periods = all_periods(hc, workload, fte, shipment, customer, customer_ns, resolution)
     month_options = ["All"] + [format_month(p) for p in periods]
 
     offices_from_data = sorted(set(
@@ -1212,6 +1412,7 @@ def main():
         + list(fte.get("Office", pd.Series(dtype=str)).dropna().unique())
         + list(shipment.get("Office", pd.Series(dtype=str)).dropna().unique())
         + list(customer.get("Office", pd.Series(dtype=str)).dropna().unique())
+        + list(customer_ns.get("Office", pd.Series(dtype=str)).dropna().unique())
     ))
     office_options = ["All Offices"] + sorted(set(STANDARD_OFFICES + [o for o in offices_from_data if o]))
 
@@ -1246,6 +1447,7 @@ def main():
     f_shipment = apply_filters(shipment, year, month, office)
     f_mode = apply_filters(shipment_mode, year, month, office)
     f_customer = apply_filters(customer, year, month, office)
+    f_customer_ns = apply_filters(customer_ns, year, month, office)
     f_resolution = apply_filters(resolution, year, month, office)
     f_yvf = filter_office_only(yvf, office)
 
@@ -1339,15 +1541,49 @@ def main():
     chart_office_capacity_trend(hc_trend_data)
     st.markdown('</div>', unsafe_allow_html=True)
 
-    section_title("2. Workload & Capacity Trend")
-    t1, t2 = st.columns(2)
-    with t1:
-        st.markdown('<div class="chart-box">', unsafe_allow_html=True)
-        chart_workload_trend(f_workload)
+    section_title("2. Shipment Volume")
+
+    # Source for both KPIs: Shipment volume sheet
+    shipment_total = (
+        float(f_shipment["Total Shipment"].sum())
+        if not f_shipment.empty and "Total Shipment" in f_shipment.columns
+        else 0.0
+    )
+    active_customers = calculate_active_customers(f_shipment)
+
+    # Two equal KPI cards similar to Section 1.
+    sk1, sk2, sk3, sk4 = st.columns(4, gap="medium")
+    with sk1:
+        shipment_kpi_card(
+            "TOTAL SHIPMENT VOLUME",
+            fmt_int(shipment_total),
+            "Source: Shipment volume",
+        )
+    with sk2:
+        shipment_kpi_card(
+            "ACTIVE CUSTOMERS",
+            fmt_int(active_customers),
+            "Source: Shipment volume",
+        )
+    # Keep 2 empty columns so the two KPI cards retain the same visual width as Section 1.
+    with sk3:
+        st.empty()
+    with sk4:
+        st.empty()
+
+    # Customer-level detail is not available in Shipment volume sheet.
+    # Per business requirement, Top 20 and full Customer Detail use Customer Volume-N&S only.
+    # Month / Office filters remain synchronized with the Shipment KPIs.
+    c_left, c_right = st.columns([1.25, 0.75], gap="medium")
+
+    with c_left:
+        st.markdown('<div class="chart-box" style="margin-top:14px;">', unsafe_allow_html=True)
+        chart_top_customers(f_customer_ns)
         st.markdown('</div>', unsafe_allow_html=True)
-    with t2:
-        st.markdown('<div class="chart-box">', unsafe_allow_html=True)
-        chart_capacity_trend(f_workload, f_fte)
+
+    with c_right:
+        st.markdown('<div class="chart-box" style="margin-top:14px;">', unsafe_allow_html=True)
+        customer_detail_table(f_customer_ns)
         st.markdown('</div>', unsafe_allow_html=True)
 
     section_title("3. Workload by Service Type & Composition")
