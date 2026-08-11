@@ -1,5 +1,8 @@
 # ============================================================
 # CS WORKLOAD & CAPACITY DASHBOARD
+# BUILD: V41_HC_DETAIL_ORANGE
+# BUILD: SECTION2_SAME_ROW_V6
+# Python + Streamlit + Pandas + Plotly
 # Data source: (100826)TEMPLATE_DATA FOR DASHBOARD_V1.xlsx
 # ============================================================
 
@@ -723,7 +726,7 @@ st.markdown(
     }}
 
     .hc-detail-value {{
-        color: var(--navy) !important;
+        color: var(--amber) !important;
         font-size: 19px !important;
         font-weight: 700 !important;
     }}
