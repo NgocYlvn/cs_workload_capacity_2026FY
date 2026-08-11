@@ -1,6 +1,6 @@
 # ============================================================
 # CS WORKLOAD & CAPACITY DASHBOARD
-# BUILD: V20_SECTION3_COMPACT_EXECUTIVE
+# BUILD: V22_SEGMENT_BUBBLES_AND_TABLE
 # BUILD: SECTION2_SAME_ROW_V6
 # Python + Streamlit + Pandas + Plotly
 # Data source: (100826)TEMPLATE_DATA FOR DASHBOARD_V1.xlsx
@@ -2208,25 +2208,222 @@ def chart_capacity_trend(workload: pd.DataFrame, fte: pd.DataFrame):
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
 
-def chart_service_matrix(df: pd.DataFrame):
-    if df.empty:
-        st.info("No office × service matrix data available.")
-        return
-    pivot = df.pivot_table(index="Office", columns="Segment", values="Workload Hours", aggfunc="sum", fill_value=0)
-    for seg in SERVICE_ORDER:
-        if seg not in pivot.columns:
-            pivot[seg] = 0
-    pivot = pivot[SERVICE_ORDER]
-    fig = px.imshow(
-        pivot,
-        text_auto=".1f",
-        aspect="auto",
-        color_continuous_scale=[[0, COLORS["light_blue"]], [1, COLORS["blue"]]],
-        title="Office × Service Workload Matrix (Hours)",
+def build_segment_workload(df: pd.DataFrame) -> pd.DataFrame:
+    """Aggregate workload hours by Segment for the current filters."""
+    if df is None or df.empty:
+        return pd.DataFrame(columns=["Segment", "Workload Hours", "% of Total", "Ranking"])
+
+    seg = (
+        df.groupby("Segment", as_index=False)["Workload Hours"]
+        .sum()
+        .sort_values("Workload Hours", ascending=False)
+        .reset_index(drop=True)
     )
-    fig.update_layout(coloraxis_colorbar=dict(title="Hours"))
-    fig = plotly_layout(fig, 360, show_legend=False, margin_left=70, margin_right=80, margin_top=66, margin_bottom=48)
-    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+    seg = seg[seg["Workload Hours"] > 0].copy()
+
+    if seg.empty:
+        return pd.DataFrame(columns=["Segment", "Workload Hours", "% of Total", "Ranking"])
+
+    total = float(seg["Workload Hours"].sum())
+    seg["% of Total"] = seg["Workload Hours"] / total if total > 0 else 0
+    seg["Ranking"] = np.arange(1, len(seg) + 1)
+    return seg
+
+
+def chart_service_matrix(df: pd.DataFrame):
+    """
+    Workload by Segment — packed-style bubble chart.
+    One circle = one Segment.
+    Circle size = total Workload Hours.
+    UI/visualization change only; workload aggregation logic is unchanged.
+    """
+    seg = build_segment_workload(df)
+
+    if seg.empty:
+        st.info("No segment workload data available for selected filters.")
+        return
+
+    # Stable positions for up to 10 segments.
+    # This gives a clean packed-bubble visual without introducing a new dependency.
+    positions = [
+        (0.00, 0.10),
+        (2.35, 0.10),
+        (-2.15, 0.70),
+        (-1.55, -1.55),
+        (0.45, -1.75),
+        (2.35, -1.55),
+        (1.55, 1.70),
+        (-0.75, 1.85),
+        (3.65, 1.25),
+        (-3.45, -0.75),
+    ]
+
+    plot_df = seg.head(len(positions)).copy()
+    plot_df["x"] = [positions[i][0] for i in range(len(plot_df))]
+    plot_df["y"] = [positions[i][1] for i in range(len(plot_df))]
+
+    max_hours = float(plot_df["Workload Hours"].max())
+    min_hours = float(plot_df["Workload Hours"].min())
+
+    if max_hours == min_hours:
+        bubble_sizes = np.full(len(plot_df), 105.0)
+    else:
+        normalized = (
+            (plot_df["Workload Hours"] - min_hours)
+            / (max_hours - min_hours)
+        )
+        # Diameter in pixels. Large enough to show labels, bounded for readability.
+        bubble_sizes = 62 + normalized * 105
+
+    plot_df["Bubble Size"] = bubble_sizes
+    plot_df["Label"] = plot_df.apply(
+        lambda r: (
+            f"<b>{r['Segment']}</b><br>"
+            f"{r['Workload Hours']:,.1f} h<br>"
+            f"{r['% of Total']:.1%}"
+        ),
+        axis=1,
+    )
+
+    # Use a restrained corporate blue gradient by rank.
+    bubble_colors = []
+    color_steps = [
+        COLORS["navy"],
+        COLORS["blue"],
+        "#2E7EC4",
+        "#5B9BD5",
+        "#7FB3DF",
+        "#9DC8E8",
+        "#C5DDF0",
+    ]
+    for i in range(len(plot_df)):
+        bubble_colors.append(color_steps[min(i, len(color_steps) - 1)])
+
+    fig = go.Figure()
+
+    fig.add_trace(
+        go.Scatter(
+            x=plot_df["x"],
+            y=plot_df["y"],
+            mode="markers+text",
+            text=plot_df["Label"],
+            textposition="middle center",
+            textfont=dict(
+                size=12,
+                family="Arial",
+                color=[
+                    "#FFFFFF" if i < 4 else COLORS["navy"]
+                    for i in range(len(plot_df))
+                ],
+            ),
+            marker=dict(
+                size=plot_df["Bubble Size"],
+                color=bubble_colors,
+                line=dict(color="#FFFFFF", width=2.2),
+                opacity=0.98,
+            ),
+            customdata=np.column_stack([
+                plot_df["Segment"],
+                plot_df["Workload Hours"],
+                plot_df["% of Total"],
+                plot_df["Ranking"],
+            ]),
+            hovertemplate=(
+                "<b>%{customdata[0]}</b><br>"
+                "Workload: %{customdata[1]:,.1f} hours<br>"
+                "Share: %{customdata[2]:.1%}<br>"
+                "Ranking: %{customdata[3]:.0f}"
+                "<extra></extra>"
+            ),
+            showlegend=False,
+        )
+    )
+
+    fig.update_layout(
+        title="Workload by Segment (Bubble Chart)",
+    )
+
+    fig = plotly_layout(
+        fig,
+        455,
+        show_legend=False,
+        margin_left=28,
+        margin_right=28,
+        margin_top=64,
+        margin_bottom=28,
+    )
+    fig.update_xaxes(
+        visible=False,
+        range=[-4.25, 4.75],
+        fixedrange=True,
+    )
+    fig.update_yaxes(
+        visible=False,
+        range=[-2.85, 2.85],
+        scaleanchor="x",
+        scaleratio=1,
+        fixedrange=True,
+    )
+
+    st.plotly_chart(
+        fig,
+        use_container_width=True,
+        config={"displayModeBar": False},
+    )
+
+
+def segment_workload_table(df: pd.DataFrame):
+    """Ranked workload table beside the Segment bubble chart."""
+    seg = build_segment_workload(df)
+
+    if seg.empty:
+        st.info("No segment workload data available for selected filters.")
+        return
+
+    total_hours = float(seg["Workload Hours"].sum())
+
+    display = seg.copy()
+    display["Workload Hours"] = display["Workload Hours"].round(1)
+    display["% of Total"] = display["% of Total"].map(lambda x: f"{x:.1%}")
+
+    total_row = pd.DataFrame([{
+        "Segment": "TOTAL",
+        "Workload Hours": round(total_hours, 1),
+        "% of Total": "100.0%",
+        "Ranking": "",
+    }])
+    display = pd.concat([display, total_row], ignore_index=True)
+
+    st.markdown(
+        f"""
+        <div style="
+            color:{COLORS['navy']};
+            font-size:{UI['chart_title_size']}px;
+            font-weight:700;
+            margin:2px 0 10px 2px;">
+            Workload Volume by Segment
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.dataframe(
+        display,
+        use_container_width=True,
+        hide_index=True,
+        height=455,
+        column_config={
+            "Segment": st.column_config.TextColumn("Segment", width="medium"),
+            "Workload Hours": st.column_config.NumberColumn(
+                "Actual Workload (Hours)",
+                width="medium",
+                format="%,.1f",
+            ),
+            "% of Total": st.column_config.TextColumn("% of Total", width="small"),
+            "Ranking": st.column_config.TextColumn("Ranking", width="small"),
+        },
+    )
+
 
 
 def chart_shipment_modes(mode_df: pd.DataFrame):
@@ -2770,10 +2967,73 @@ def main():
         unsafe_allow_html=True,
     )
 
-    section_title("4. Office × Service Workload Matrix")
-    st.markdown('<div class="chart-box">', unsafe_allow_html=True)
-    chart_service_matrix(f_workload)
-    st.markdown('</div>', unsafe_allow_html=True)
+    section_title("4. Workload by Segment")
+
+    segment_summary = build_segment_workload(f_workload)
+    segment_total_hours = (
+        float(segment_summary["Workload Hours"].sum())
+        if not segment_summary.empty
+        else 0.0
+    )
+
+    # Compact executive summary row.
+    seg_intro, seg_kpi = st.columns([0.78, 0.22], gap="medium")
+    with seg_intro:
+        st.markdown(
+            """
+            <div style="
+                color:#667085;
+                font-size:12px;
+                line-height:1.45;
+                padding:10px 2px 0 2px;">
+                Total workload hours by Segment. Bubble size represents each Segment's share of total workload.
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    with seg_kpi:
+        kpi_card(
+            "TOTAL WORKLOAD HOURS",
+            fmt_num(segment_total_hours, 1, " h"),
+            "Source: BU allocation",
+        )
+
+    seg_chart, seg_table = st.columns([0.52, 0.48], gap="medium")
+
+    with seg_chart:
+        st.markdown(
+            '<div class="chart-box" style="margin-top:12px;">',
+            unsafe_allow_html=True,
+        )
+        chart_service_matrix(f_workload)
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    with seg_table:
+        st.markdown(
+            '<div class="chart-box" style="margin-top:12px;">',
+            unsafe_allow_html=True,
+        )
+        segment_workload_table(f_workload)
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    st.markdown(
+        """
+        <div style="
+            margin-top:7px;
+            padding:10px 14px;
+            background:#FFFFFF;
+            border:1px solid #D8E1EA;
+            border-radius:12px;
+            color:#667085;
+            font-size:11px;
+            line-height:1.45;">
+            <b style="color:#003B70;">Note:</b>
+            Bubble size represents total Workload Hours by Segment.
+            Segments are ranked in descending order of Workload Hours.
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
     section_title("5. Shipment & Customer Analysis")
     h1, h2 = st.columns([0.9, 1.1])
