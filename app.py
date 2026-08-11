@@ -1,6 +1,6 @@
 # ============================================================
 # CS WORKLOAD & CAPACITY DASHBOARD
-# BUILD: V30_SECTION4_FIX_BLANK_CARDS
+# BUILD: V31_SECTION5_CASE_BREAKDOWN_DETAIL
 # BUILD: SECTION2_SAME_ROW_V6
 # Python + Streamlit + Pandas + Plotly
 # Data source: (100826)TEMPLATE_DATA FOR DASHBOARD_V1.xlsx
@@ -1635,6 +1635,341 @@ def customer_wide_to_long(df: pd.DataFrame) -> pd.DataFrame:
 
 
 @st.cache_data(show_spinner=False)
+
+@st.cache_data(show_spinner=False)
+def prepare_case_detail(
+    df: pd.DataFrame,
+    activity_type: str,
+) -> pd.DataFrame:
+    """
+    Normalize detail sheets C / A / S / E into long format.
+
+    C/A/S expected pattern:
+        Office | Scope/Code | Apr-26 ... Mar-27 | Total
+
+    E expected pattern:
+        Office | Code | BU | Criteria | Exception Detail | Apr-26 ... Mar-27 | Total
+
+    The parser is intentionally tolerant to header wording so the dashboard
+    remains usable when the source template adds descriptive columns.
+    """
+    base_cols = [
+        "Activity Type", "Office", "Code", "BU", "Criteria",
+        "Detail", "MonthDate", "Volume"
+    ]
+    if df is None or df.empty:
+        return pd.DataFrame(columns=base_cols)
+
+    d = df.copy()
+    d.columns = [clean_col(c) for c in d.columns]
+
+    office_col = first_existing(d, ["Office", "OFFICE"])
+    if not office_col:
+        return pd.DataFrame(columns=base_cols)
+
+    # Identify month columns strictly by parseable month headers.
+    month_cols = []
+    for c in d.columns:
+        parsed = parse_month(c)
+        if not pd.isna(parsed):
+            month_cols.append(c)
+
+    if not month_cols:
+        return pd.DataFrame(columns=base_cols)
+
+    # Descriptive columns before month columns.
+    code_col = first_existing(d, ["Scope", "CODE", "Code", "Service Code"])
+    bu_col = first_existing(d, ["BU", "Segment", "Service"])
+    criteria_col = first_existing(d, ["Criteria"])
+    detail_col = first_existing(
+        d,
+        ["EXCEPTION DETAIL", "Exception Detail", "Detail", "Description", "Activity"],
+    )
+
+    id_cols = [office_col]
+    for c in [code_col, bu_col, criteria_col, detail_col]:
+        if c and c not in id_cols:
+            id_cols.append(c)
+
+    long = d.melt(
+        id_vars=id_cols,
+        value_vars=month_cols,
+        var_name="Month",
+        value_name="Volume",
+    )
+
+    long["Office"] = long[office_col].map(normalize_office)
+    long["MonthDate"] = long["Month"].map(parse_month)
+    long["Volume"] = pd.to_numeric(long["Volume"], errors="coerce")
+
+    long["Code"] = (
+        long[code_col].astype(str).str.strip()
+        if code_col else ""
+    )
+    long["BU"] = (
+        long[bu_col].astype(str).str.strip().str.upper()
+        if bu_col else ""
+    )
+    long["Criteria"] = (
+        long[criteria_col].astype(str).str.strip()
+        if criteria_col else ""
+    )
+    long["Detail"] = (
+        long[detail_col].astype(str).str.strip()
+        if detail_col else ""
+    )
+    long["Activity Type"] = activity_type
+
+    long = long[
+        (long["Office"] != "")
+        & (~long["MonthDate"].isna())
+        & (long["Volume"].notna())
+    ].copy()
+
+    return long[base_cols].reset_index(drop=True)
+
+
+def workload_breakdown_table(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Section 5 summary:
+    Segment | Core Service (min) | Ancillary Service (min) |
+    Supporting Activity (min) | Exception Handling (min) |
+    Total Workload (min) | Ratio
+    """
+    cols = [
+        "Segment",
+        "Core Service (min)",
+        "Ancillary Service (min)",
+        "Supporting Activity (min)",
+        "Exception Handling (min)",
+        "Total Workload (min)",
+        "Ratio",
+    ]
+    if df is None or df.empty:
+        return pd.DataFrame(columns=cols)
+
+    d = df.copy()
+    for c in [
+        "Core Workload (min)",
+        "Ancillary Workload (min)",
+        "Supporting Workload (min)",
+        "Exception Workload (min)",
+        "Total Workload (min)",
+    ]:
+        if c not in d.columns:
+            d[c] = 0.0
+        d[c] = pd.to_numeric(d[c], errors="coerce").fillna(0)
+
+    agg = (
+        d.groupby("Segment", as_index=False)
+        .agg({
+            "Core Workload (min)": "sum",
+            "Ancillary Workload (min)": "sum",
+            "Supporting Workload (min)": "sum",
+            "Exception Workload (min)": "sum",
+            "Total Workload (min)": "sum",
+        })
+    )
+
+    # Ensure standard business order.
+    agg = (
+        pd.DataFrame({"Segment": SERVICE_ORDER})
+        .merge(agg, on="Segment", how="left")
+        .fillna(0)
+    )
+
+    # Recalculate Total from C+A+S+E if source Total is blank/zero.
+    component_total = (
+        agg["Core Workload (min)"]
+        + agg["Ancillary Workload (min)"]
+        + agg["Supporting Workload (min)"]
+        + agg["Exception Workload (min)"]
+    )
+    agg["Total Workload (min)"] = np.where(
+        agg["Total Workload (min)"] > 0,
+        agg["Total Workload (min)"],
+        component_total,
+    )
+
+    grand_total = float(agg["Total Workload (min)"].sum())
+    agg["Ratio"] = np.where(
+        grand_total > 0,
+        agg["Total Workload (min)"] / grand_total,
+        0.0,
+    )
+
+    agg = agg.rename(columns={
+        "Core Workload (min)": "Core Service (min)",
+        "Ancillary Workload (min)": "Ancillary Service (min)",
+        "Supporting Workload (min)": "Supporting Activity (min)",
+        "Exception Workload (min)": "Exception Handling (min)",
+    })
+
+    return agg[cols]
+
+
+def chart_case_allocation(df: pd.DataFrame):
+    """
+    C/A/S/E allocation by Segment.
+    Stacked horizontal bars show both total workload and its activity composition.
+    """
+    summary = workload_breakdown_table(df)
+
+    if summary.empty or float(summary["Total Workload (min)"].sum()) <= 0:
+        st.info("No C/A/S/E workload data available for selected filters.")
+        return
+
+    plot_df = summary.copy()
+    plot_df = plot_df[plot_df["Total Workload (min)"] > 0].copy()
+
+    # Highest-workload service at the top.
+    plot_df = plot_df.sort_values("Total Workload (min)", ascending=True)
+
+    components = [
+        ("Core Service (min)", "Core Service", COLORS["blue"]),
+        ("Ancillary Service (min)", "Ancillary Service", COLORS["green"]),
+        ("Supporting Activity (min)", "Supporting Activity", COLORS["amber"]),
+        ("Exception Handling (min)", "Exception Handling", COLORS["red"]),
+    ]
+
+    fig = go.Figure()
+    for col, label, color in components:
+        fig.add_trace(
+            go.Bar(
+                y=plot_df["Segment"],
+                x=plot_df[col],
+                name=label,
+                orientation="h",
+                marker_color=color,
+                customdata=np.column_stack([
+                    plot_df["Total Workload (min)"],
+                    plot_df["Ratio"],
+                ]),
+                hovertemplate=(
+                    f"<b>{label}</b><br>"
+                    "Segment: %{y}<br>"
+                    "Workload: %{x:,.0f} min<br>"
+                    "Segment Total: %{customdata[0]:,.0f} min<br>"
+                    "Share of Total: %{customdata[1]:.1%}"
+                    "<extra></extra>"
+                ),
+            )
+        )
+
+    fig.update_layout(
+        barmode="stack",
+        title="C / A / S / E Workload Allocation by Segment",
+        xaxis_title="Workload (min)",
+        yaxis_title="",
+    )
+    fig = plotly_layout(
+        fig,
+        390,
+        show_legend=True,
+        legend_position="top",
+        margin_left=50,
+        margin_right=35,
+        margin_top=72,
+        margin_bottom=48,
+    )
+    fig.update_xaxes(rangemode="tozero")
+    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+
+
+def render_workload_breakdown_table(df: pd.DataFrame):
+    summary = workload_breakdown_table(df)
+
+    if summary.empty:
+        st.info("No workload breakdown data available for selected filters.")
+        return
+
+    display = summary.copy()
+    grand_total = float(display["Total Workload (min)"].sum())
+
+    total_row = pd.DataFrame([{
+        "Segment": "TOTAL",
+        "Core Service (min)": float(display["Core Service (min)"].sum()),
+        "Ancillary Service (min)": float(display["Ancillary Service (min)"].sum()),
+        "Supporting Activity (min)": float(display["Supporting Activity (min)"].sum()),
+        "Exception Handling (min)": float(display["Exception Handling (min)"].sum()),
+        "Total Workload (min)": grand_total,
+        "Ratio": 1.0 if grand_total > 0 else 0.0,
+    }])
+    display = pd.concat([display, total_row], ignore_index=True)
+
+    st.dataframe(
+        display,
+        use_container_width=True,
+        hide_index=True,
+        height=390,
+        column_config={
+            "Segment": st.column_config.TextColumn("Segment", width="small"),
+            "Core Service (min)": st.column_config.NumberColumn(
+                "Core Service (min)", format="%,.0f", width="medium"
+            ),
+            "Ancillary Service (min)": st.column_config.NumberColumn(
+                "Ancillary Service (min)", format="%,.0f", width="medium"
+            ),
+            "Supporting Activity (min)": st.column_config.NumberColumn(
+                "Supporting Activity (min)", format="%,.0f", width="medium"
+            ),
+            "Exception Handling (min)": st.column_config.NumberColumn(
+                "Exception Handling (min)", format="%,.0f", width="medium"
+            ),
+            "Total Workload (min)": st.column_config.NumberColumn(
+                "Total Workload (min)", format="%,.0f", width="medium"
+            ),
+            "Ratio": st.column_config.NumberColumn(
+                "Ratio", format="percent", width="small"
+            ),
+        },
+    )
+
+
+def render_activity_detail_table(
+    df: pd.DataFrame,
+    activity_type: str,
+):
+    """Detail table for one C/A/S/E source sheet."""
+    if df is None or df.empty:
+        st.info(f"No {activity_type} detail data available for selected filters.")
+        return
+
+    d = df.copy()
+    d["Month"] = d["MonthDate"].dt.strftime("%b-%y")
+
+    # Keep only useful descriptive columns.
+    preferred = ["Office", "Code", "BU", "Criteria", "Detail", "Month", "Volume"]
+    cols = [c for c in preferred if c in d.columns]
+
+    # Drop descriptive columns that are completely blank.
+    cols = [
+        c for c in cols
+        if c in ["Office", "Month", "Volume"]
+        or d[c].astype(str).str.strip().replace("nan", "").ne("").any()
+    ]
+
+    d = d[cols].copy()
+    if "Volume" in d.columns:
+        d["Volume"] = pd.to_numeric(d["Volume"], errors="coerce").fillna(0)
+
+    d = d.sort_values(
+        [c for c in ["Office", "BU", "Code", "Month"] if c in d.columns]
+    )
+
+    st.dataframe(
+        d,
+        use_container_width=True,
+        hide_index=True,
+        height=min(420, max(160, 38 + len(d) * 34)),
+        column_config={
+            "Volume": st.column_config.NumberColumn(
+                "Volume", format="%,.0f", width="small"
+            )
+        },
+    )
+
+
 def prepare_resolution(df: pd.DataFrame) -> pd.DataFrame:
     if df.empty:
         return pd.DataFrame(columns=["Office", "MonthDate", "Total Abnormality", "Resolved", "Resolution Rate"])
@@ -2817,6 +3152,12 @@ def main():
         resolution = prepare_resolution(raw["resolution"])
         yvf = prepare_yvf(raw["yvf"])
 
+        # Section 5 detail sources (C / A / S / E)
+        core_detail = prepare_case_detail(raw["core"], "Core Service")
+        ancillary_detail = prepare_case_detail(raw["ancillary"], "Ancillary Service")
+        supporting_detail = prepare_case_detail(raw["supporting"], "Supporting Activity")
+        exception_detail = prepare_case_detail(raw["exception"], "Exception Handling")
+
     periods = all_periods(hc, workload, fte, shipment, customer, customer_ns, resolution)
     month_options = ["All"] + [format_month(p) for p in periods]
 
@@ -2870,6 +3211,11 @@ def main():
     f_customer_ns = apply_filters(customer_ns, year, month, office)
     f_resolution = apply_filters(resolution, year, month, office)
     f_yvf = filter_office_only(yvf, office)
+
+    f_core_detail = apply_filters(core_detail, year, month, office)
+    f_ancillary_detail = apply_filters(ancillary_detail, year, month, office)
+    f_supporting_detail = apply_filters(supporting_detail, year, month, office)
+    f_exception_detail = apply_filters(exception_detail, year, month, office)
 
     kpis = calculate_kpis(f_hc, f_workload, f_fte, f_shipment)
     status = status_from_util(kpis["Utilization"])
@@ -3177,7 +3523,59 @@ def main():
         unsafe_allow_html=True,
     )
 
-    section_title("5. Shipment & Customer Analysis")
+    section_title("5. Workload Breakdown by Service Type and Activity")
+
+    st.markdown(
+        """
+        <div style="
+            color:#667085;
+            font-size:12px;
+            line-height:1.5;
+            margin:0 0 10px 2px;">
+            Workload is broken down into Core Service (C), Ancillary Service (A),
+            Supporting Activity (S) and Exception Handling (E).
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    # Summary table + C/A/S/E allocation chart
+    wb_chart, wb_table = st.columns([0.43, 0.57], gap="medium")
+    with wb_chart:
+        chart_case_allocation(f_workload)
+    with wb_table:
+        render_workload_breakdown_table(f_workload)
+
+    # Four source-detail tables
+    st.markdown(
+        f"""
+        <div style="
+            color:{COLORS['navy']};
+            font-size:{UI['chart_title_size']}px;
+            font-weight:700;
+            margin:14px 0 8px 2px;">
+            C / A / S / E Detail
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    casetab_c, casetab_a, casetab_s, casetab_e = st.tabs([
+        "C · Core Service",
+        "A · Ancillary Service",
+        "S · Supporting Activity",
+        "E · Exception Handling",
+    ])
+    with casetab_c:
+        render_activity_detail_table(f_core_detail, "Core Service")
+    with casetab_a:
+        render_activity_detail_table(f_ancillary_detail, "Ancillary Service")
+    with casetab_s:
+        render_activity_detail_table(f_supporting_detail, "Supporting Activity")
+    with casetab_e:
+        render_activity_detail_table(f_exception_detail, "Exception Handling")
+
+    section_title("6. Shipment & Customer Analysis")
     h1, h2 = st.columns([0.9, 1.1])
     with h1:
         kpi_card("Total Shipment", fmt_int(kpis["Total Shipment"]), "Source: Shipment volume")
@@ -3189,7 +3587,7 @@ def main():
         chart_top_customers(f_customer)
         st.markdown('</div>', unsafe_allow_html=True)
 
-    section_title("6. Effectiveness")
+    section_title("7. Effectiveness")
     e1, e2 = st.columns(2)
     with e1:
         if not f_resolution.empty:
@@ -3210,7 +3608,7 @@ def main():
         chart_yvf(f_yvf)
         st.markdown('</div>', unsafe_allow_html=True)
 
-    section_title("7. Detail & Reconciliation")
+    section_title("8. Detail & Reconciliation")
     tab1, tab2, tab3, tab4 = st.tabs(["Reconciliation", "Workload Detail", "Customer Detail", "Data Audit"])
     with tab1:
         recon = build_reconciliation(f_hc, f_workload, f_fte, f_shipment)
