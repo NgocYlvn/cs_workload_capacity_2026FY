@@ -1,6 +1,6 @@
 # ============================================================
 # CS WORKLOAD & CAPACITY DASHBOARD
-# BUILD: V24_SEGMENT_TABLE_ORDER
+# BUILD: V25_FIX_SECTION4_NAMEERROR
 # BUILD: SECTION2_SAME_ROW_V6
 # Python + Streamlit + Pandas + Plotly
 # Data source: (100826)TEMPLATE_DATA FOR DASHBOARD_V1.xlsx
@@ -2296,7 +2296,7 @@ def chart_service_matrix(df: pd.DataFrame):
     Circle size = total Workload Hours.
     UI/visualization change only; workload aggregation logic is unchanged.
     """
-    seg = build_segment_workload(df, mode_df)
+    seg = build_segment_workload(df)
 
     if seg.empty:
         st.info("No segment workload data available for selected filters.")
