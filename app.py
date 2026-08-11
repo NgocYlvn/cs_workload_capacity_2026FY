@@ -1298,7 +1298,7 @@ def chart_shipment_modes(mode_df: pd.DataFrame):
             font=dict(size=14, color=COLORS["navy"]),
         ),
         showlegend=False,
-        height=500,
+        height=520,
         margin=dict(l=65, r=65, t=60, b=45),
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
@@ -1358,7 +1358,7 @@ def chart_top_customers(df: pd.DataFrame):
         yaxis_title="",
         xaxis_title="Shipment Volume",
         height=500,
-        margin=dict(l=135, r=55, t=60, b=55),
+        margin=dict(l=140, r=55, t=60, b=55),
         bargap=0.18,
     )
     fig.update_yaxes(
@@ -1367,7 +1367,7 @@ def chart_top_customers(df: pd.DataFrame):
     )
     fig.update_xaxes(automargin=True)
     fig = plotly_layout(fig, 500)
-    fig.update_layout(margin=dict(l=135, r=55, t=60, b=55))
+    fig.update_layout(margin=dict(l=140, r=55, t=60, b=55))
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
 
@@ -1401,7 +1401,7 @@ def customer_detail_table(df: pd.DataFrame):
         styled,
         use_container_width=True,
         hide_index=True,
-        height=540,
+        height=500,
         column_config={
             "Rank": st.column_config.NumberColumn("Rank", width="small", format="%d"),
             "Customer": st.column_config.TextColumn("Customer", width="large"),
@@ -1645,8 +1645,10 @@ def main():
     with sk4:
         st.empty()
 
-    # Two balanced charts on the same row.
-    chart_left, chart_right = st.columns(2, gap="medium")
+    # Executive layout:
+    # Row 1: Donut 40% | Top 20 Customers 60%
+    # Row 2: Customer Detail full width, scrollable
+    chart_left, chart_right = st.columns([0.4, 0.6], gap="medium")
 
     with chart_left:
         st.markdown('<div class="chart-box" style="margin-top:14px;">', unsafe_allow_html=True)
@@ -1658,7 +1660,6 @@ def main():
         chart_top_customers(f_customer_ns)
         st.markdown('</div>', unsafe_allow_html=True)
 
-    # Full customer detail table below the charts; scrollable to show all customers.
     st.markdown('<div class="chart-box" style="margin-top:14px;">', unsafe_allow_html=True)
     customer_detail_table(f_customer_ns)
     st.markdown('</div>', unsafe_allow_html=True)
