@@ -1,6 +1,6 @@
 # ============================================================
 # CS WORKLOAD & CAPACITY DASHBOARD
-# BUILD: V29_SECTION4_FLOWER_BUBBLE_TABLE_ORDER
+# BUILD: V30_SECTION4_FIX_BLANK_CARDS
 # BUILD: SECTION2_SAME_ROW_V6
 # Python + Streamlit + Pandas + Plotly
 # Data source: (100826)TEMPLATE_DATA FOR DASHBOARD_V1.xlsx
@@ -2455,7 +2455,7 @@ def chart_service_matrix(
     fig.update_layout(title="Workload by Segment")
     fig = plotly_layout(
         fig,
-        430,
+        390,
         show_legend=False,
         margin_left=20,
         margin_right=20,
@@ -2549,7 +2549,7 @@ def segment_workload_table(df: pd.DataFrame, mode_df: pd.DataFrame):
         display,
         use_container_width=True,
         hide_index=True,
-        height=430,
+        height=390,
         column_config={
             "Segment": st.column_config.TextColumn(
                 "Segment", width="small"
@@ -3126,7 +3126,7 @@ def main():
         st.markdown(
             """
             <div style="
-                min-height:110px;
+                min-height:92px;
                 display:flex;
                 align-items:center;
                 color:#667085;
@@ -3146,24 +3146,16 @@ def main():
             "Source: BU allocation",
         )
 
-    # Balanced visual row: bubble chart slightly narrower, summary table slightly wider.
+    # Balanced visual row.
+    # IMPORTANT: do not wrap Streamlit widgets with raw HTML <div> tags.
+    # Streamlit renders widgets outside the HTML element, which creates empty white boxes.
     seg_chart, seg_table = st.columns([0.44, 0.56], gap="medium")
 
     with seg_chart:
-        st.markdown(
-            '<div class="chart-box" style="margin-top:10px;min-height:470px;">',
-            unsafe_allow_html=True,
-        )
         chart_service_matrix(f_workload, f_mode)
-        st.markdown('</div>', unsafe_allow_html=True)
 
     with seg_table:
-        st.markdown(
-            '<div class="chart-box" style="margin-top:10px;min-height:470px;">',
-            unsafe_allow_html=True,
-        )
         segment_workload_table(f_workload, f_mode)
-        st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown(
         """
