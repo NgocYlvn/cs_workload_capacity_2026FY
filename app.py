@@ -47,6 +47,10 @@ HOURS_PER_FTE_PER_MONTH = 8 * 0.95 * 22  # = 167.2 gio/FTE/thang
 
 REQUIRED_SHEETS = ["HC", "BU allocation", "Shipment volume", "CS FTE"]
 
+# Các sheet bổ sung theo yêu cầu mới của quản lý - KHÔNG bắt buộc, nếu thiếu thì
+# phần Dashboard tương ứng sẽ ẩn/báo "chưa có dữ liệu" thay vì lỗi crash toàn app.
+OPTIONAL_SHEETS = ["C", "A", "S", "E", "YVF", "CS Resolutions Rate"]
+
 SEGMENT_LABELS = {
     "Core Workload (min)": "Core",
     "Ancillary Workload (min)": "Ancillary",
@@ -59,11 +63,50 @@ MONTH_ORDER = [
     "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
 ]
 
-st.set_page_config(
-    page_title="CS Capacity & Productivity Dashboard",
-    layout="wide",
-    initial_sidebar_state="expanded",
-)
+# ---- Yusen-inspired corporate color palette ----
+COLOR_NAVY = "#003B70"
+COLOR_BLUE = "#005BAC"
+COLOR_LIGHT_BLUE = "#EAF3F8"
+COLOR_RED = "#E60012"
+COLOR_GREEN = "#169B62"
+COLOR_AMBER = "#F59E0B"
+COLOR_BG = "#F5F7FA"
+COLOR_TEXT = "#1F2937"
+COLOR_TEXT_SECONDARY = "#64748B"
+COLOR_BORDER = "#D9E2EC"
+
+STATUS_COLOR = {
+    "Overload": COLOR_RED,
+    "High Load": COLOR_AMBER,
+    "Balanced": COLOR_GREEN,
+    "Less Load": COLOR_BLUE,
+    "No Data": COLOR_TEXT_SECONDARY,
+}
+
+SERVICE_TYPE_LABELS = {
+    "AE": "Air Export", "AI": "Air Import",
+    "OE": "Ocean Export", "OI": "Ocean Import",
+    "CC": "Customs Clearance", "TR": "Trucking", "WH": "Warehouse",
+}
+
+CHART_FONT = dict(family="Segoe UI, Arial, sans-serif", color=COLOR_TEXT, size=12)
+
+
+def style_fig(fig, title=None, height=350):
+    """Áp style corporate chung cho mọi biểu đồ Plotly."""
+    fig.update_layout(
+        height=height,
+        plot_bgcolor="white",
+        paper_bgcolor="white",
+        font=CHART_FONT,
+        title=dict(text=title, x=0, xanchor="left", font=dict(size=14, color=COLOR_NAVY)) if title else None,
+        margin=dict(l=10, r=10, t=45 if title else 10, b=10),
+        legend=dict(orientation="h", yanchor="bottom", y=1.0, xanchor="left", x=0),
+    )
+    fig.update_xaxes(showgrid=False, linecolor=COLOR_BORDER)
+    fig.update_yaxes(showgrid=True, gridcolor=COLOR_BORDER, zeroline=False)
+    return fig
+
 
 
 # ============================================================
@@ -118,6 +161,26 @@ def load_workbook(file_bytes: bytes) -> dict:
         df = pd.read_excel(xls, sheet_name=sheet, header=1)  # header thực tế nằm ở dòng 2
         df = df.dropna(how="all")
         data[sheet] = df
+
+    # Sheet bổ sung: đọc nếu có, bỏ qua nếu không có (không chặn app)
+    for sheet in OPTIONAL_SHEETS:
+        if sheet in available:
+            df = pd.read_excel(xls, sheet_name=sheet, header=1)
+            data[sheet] = df.dropna(how="all")
+
+    # Customer Volume theo từng Office (tên sheet dạng "Customer Volume - HAD"),
+    # bỏ qua sheet tổng hợp "Customer Volume-N&S" để tránh double-count.
+    cust_sheets = [
+        s for s in xls.sheet_names
+        if s.lower().startswith("customer volume") and "n&s" not in s.lower().replace(" ", "")
+    ]
+    cust_frames = []
+    for s in cust_sheets:
+        df = pd.read_excel(xls, sheet_name=s, header=1).dropna(how="all")
+        cust_frames.append(df)
+    if cust_frames:
+        data["_customer_volume_raw"] = cust_frames
+
     return data
 
 
@@ -188,8 +251,8 @@ def clean_cs_fte(df: pd.DataFrame) -> pd.DataFrame:
         value_name="Actual FTE",
     )
     long_df["Office"] = long_df["Office"].astype(str).str.strip()
+    long_df["CS PIC"] = long_df["CS PIC"].astype(str).str.strip()
     long_df["Month"] = long_df["Month"].apply(normalize_month)
-    long_df["Actual FTE"] = pd.to_numeric(long_df["Actual FTE"], errors="coerce")
     long_df = long_df.dropna(subset=["Office", "Month", "Actual FTE"])
     return long_df
 
@@ -197,12 +260,130 @@ def clean_cs_fte(df: pd.DataFrame) -> pd.DataFrame:
 @st.cache_data(show_spinner=False)
 def build_clean_data(file_bytes: bytes) -> dict:
     raw = load_workbook(file_bytes)
-    return {
+    result = {
         "HC": clean_hc(raw["HC"]),
         "BU allocation": clean_bu_allocation(raw["BU allocation"]),
         "Shipment volume": clean_shipment(raw["Shipment volume"]),
         "CS FTE": clean_cs_fte(raw["CS FTE"]),
     }
+    if "CS Resolutions Rate" in raw:
+        result["CS Resolutions Rate"] = clean_cs_resolution(raw["CS Resolutions Rate"])
+    if "YVF" in raw:
+        result["YVF"] = clean_yvf(raw["YVF"])
+    for code in ("C", "A", "S", "E"):
+        if code in raw:
+            result[code] = clean_detail_sheet(raw[code], code)
+    if "_customer_volume_raw" in raw:
+        result["Customer Volume"] = clean_customer_volume(raw["_customer_volume_raw"])
+    return result
+
+
+def clean_cs_resolution(df: pd.DataFrame) -> pd.DataFrame:
+    """CS Resolutions Rate: Office, Month, Total abnormality/month, No resolved, CS Resolution rate."""
+    df = df.copy()
+    if "OFFICE" in df.columns:
+        df = df.rename(columns={"OFFICE": "Office"})
+    if "Office" not in df.columns or "Month" not in df.columns:
+        return pd.DataFrame(columns=["Office", "Month", "CS Resolution rate"])
+    df["Office"] = df["Office"].astype(str).str.strip()
+    df["Month"] = df["Month"].apply(normalize_month)
+    rate_col = next((c for c in df.columns if "Resolution rate" in str(c)), None)
+    if rate_col:
+        df[rate_col] = pd.to_numeric(df[rate_col], errors="coerce")
+        df = df.rename(columns={rate_col: "CS Resolution rate"})
+    df = df.dropna(subset=["Office", "Month"])
+    return df
+
+
+def clean_yvf(df: pd.DataFrame) -> pd.DataFrame:
+    """YVF: Office, Total YVF booking/month, Total IFF shipment/month, YVF booking ratio.
+    Sheet này KHÔNG có cột Month - là snapshot theo Office."""
+    df = df.copy()
+    if "OFFICE" in df.columns:
+        df = df.rename(columns={"OFFICE": "Office"})
+    if "Office" not in df.columns:
+        return pd.DataFrame(columns=["Office", "YVF booking ratio"])
+    df["Office"] = df["Office"].astype(str).str.strip()
+    booking_col = next((c for c in df.columns if "YVF booking" in str(c) and "ratio" not in str(c).lower()), None)
+    iff_col = next((c for c in df.columns if "IFF shipment" in str(c)), None)
+    ratio_col = next((c for c in df.columns if "booking ratio" in str(c).lower()), None)
+    if booking_col:
+        df[booking_col] = pd.to_numeric(df[booking_col], errors="coerce")
+    if iff_col:
+        df[iff_col] = pd.to_numeric(df[iff_col], errors="coerce")
+    if ratio_col:
+        df[ratio_col] = pd.to_numeric(df[ratio_col], errors="coerce")
+        # Nếu ratio bị trống nhưng có đủ booking & IFF thì tính lại = booking/IFF (không suy đoán số liệu mới,
+        # chỉ tính lại đúng công thức đã có tên cột)
+        if booking_col and iff_col:
+            need_calc = df[ratio_col].isna() & df[iff_col].notna() & (df[iff_col] != 0)
+            df.loc[need_calc, ratio_col] = df.loc[need_calc, booking_col] / df.loc[need_calc, iff_col]
+        df = df.rename(columns={ratio_col: "YVF booking ratio"})
+    df = df.dropna(subset=["Office"])
+    df = df[df["Office"] != ""]
+    return df
+
+
+def clean_detail_sheet(df: pd.DataFrame, code: str) -> pd.DataFrame:
+    """Chuẩn hóa sheet chi tiết C/A/S/E (volume theo Office x Scope/Job/Exception x Month)
+    về dạng long: Office, Label, Month, Volume."""
+    df = df.copy()
+    if "Office" not in df.columns:
+        return pd.DataFrame(columns=["Office", "Label", "Month", "Volume"])
+    df["Office"] = df["Office"].astype(str).str.strip()
+
+    label_col = next(
+        (c for c in ("EXCEPTION DETAIL", "Job details", "Scope details", "Scope") if c in df.columns),
+        None,
+    )
+    if label_col is None:
+        return pd.DataFrame(columns=["Office", "Label", "Month", "Volume"])
+
+    month_cols = [c for c in df.columns if isinstance(c, str) and normalize_month(c) not in (None,) and c not in ("Office",)]
+    # Chỉ giữ cột thực sự parse được thành Month hợp lệ (loại Scope/Code/Criteria...)
+    month_cols = [c for c in month_cols if month_sort_key(normalize_month(c)) != (9999, 99)]
+    if not month_cols:
+        return pd.DataFrame(columns=["Office", "Label", "Month", "Volume"])
+
+    long_df = df.melt(
+        id_vars=["Office", label_col],
+        value_vars=month_cols,
+        var_name="Month",
+        value_name="Volume",
+    )
+    long_df = long_df.rename(columns={label_col: "Label"})
+    long_df["Month"] = long_df["Month"].apply(normalize_month)
+    long_df["Volume"] = pd.to_numeric(long_df["Volume"], errors="coerce")
+    long_df = long_df.dropna(subset=["Office", "Month", "Volume"])
+    long_df["Segment Code"] = code
+    return long_df
+
+
+def clean_customer_volume(frames: list) -> pd.DataFrame:
+    """Gộp các sheet 'Customer Volume - <Office>' về dạng long: Office, Customer, Month, Volume."""
+    all_long = []
+    for df in frames:
+        df = df.copy()
+        if "Office" not in df.columns or "Customer" not in df.columns:
+            continue
+        df["Office"] = df["Office"].astype(str).str.strip()
+        df["Customer"] = df["Customer"].astype(str).str.strip()
+        month_cols = [c for c in df.columns if isinstance(c, str) and month_sort_key(normalize_month(c)) != (9999, 99)]
+        if not month_cols:
+            continue
+        long_df = df.melt(
+            id_vars=["Office", "Customer"],
+            value_vars=month_cols,
+            var_name="Month",
+            value_name="Volume",
+        )
+        long_df["Month"] = long_df["Month"].apply(normalize_month)
+        long_df["Volume"] = pd.to_numeric(long_df["Volume"], errors="coerce")
+        long_df = long_df.dropna(subset=["Office", "Customer", "Month", "Volume"])
+        all_long.append(long_df)
+    if not all_long:
+        return pd.DataFrame(columns=["Office", "Customer", "Month", "Volume"])
+    return pd.concat(all_long, ignore_index=True)
 
 
 # ============================================================
@@ -277,6 +458,57 @@ def calc_segment_breakdown(bu_df: pd.DataFrame) -> pd.DataFrame:
     return long_df[["Office", "Month", "Segment", "Hours"]]
 
 
+def calc_office_capacity_snapshot(hc_df: pd.DataFrame) -> pd.DataFrame:
+    """Item 1: bảng Approved/Actual/Required HC + Variance theo MNG/PIC/Total, cho mỗi Office x Month."""
+    if hc_df.empty:
+        return pd.DataFrame(columns=["Office", "Month", "Level", "Approved", "Actual", "Required", "Variance"])
+
+    col_map = {
+        "MNG": {"Approved": "Approved HC – MNG", "Actual": "Actual HC – MNG", "Required": "Required HC – MNG"},
+        "PIC": {"Approved": "Approved HC – PIC", "Actual": "Actual HC – PIC", "Required": "Required HC – PIC"},
+        "Total": {"Approved": "Total Approved HC", "Actual": "Total Actual  HC", "Required": "Total Required HC"},
+    }
+    rows = []
+    for _, r in hc_df.iterrows():
+        for level, cols in col_map.items():
+            approved = pd.to_numeric(r.get(cols["Approved"]), errors="coerce")
+            actual = pd.to_numeric(r.get(cols["Actual"]), errors="coerce")
+            required = pd.to_numeric(r.get(cols["Required"]), errors="coerce")
+            variance = actual - required if pd.notna(actual) and pd.notna(required) else None
+            rows.append({
+                "Office": r["Office"], "Month": r["Month"], "Level": level,
+                "Approved": approved, "Actual": actual, "Required": required, "Variance": variance,
+            })
+    return pd.DataFrame(rows)
+
+
+def calc_segment_matrix(bu_df: pd.DataFrame, kpi_df: pd.DataFrame) -> pd.DataFrame:
+    """Item 4: Office x Segment (AE/AI/OE/OI/CC/TR/WH) Workload Matrix -> Volume | Tỷ lệ | FTE %.
+    'Segment' ở đây là cột Segment gốc trong BU allocation (loại hình dịch vụ), KHÁC với
+    Core/Ancillary/Supporting/Exception (đó là 4 nhóm activity, xem calc_segment_breakdown)."""
+    if bu_df.empty or "Segment" not in bu_df.columns:
+        return pd.DataFrame(columns=["Office", "Month", "Segment", "Volume", "Workload Hours", "% of Office Workload", "FTE %"])
+
+    vol_cols = [c for c in ("Core Volume", "Ancillary Volume", "Supporting Volume", "Exception Volume") if c in bu_df.columns]
+    g = bu_df.groupby(["Office", "Month", "Segment"], as_index=False).agg(
+        Volume=("Total Workload (min)", "size") if not vol_cols else (vol_cols[0], "sum"),
+        Workload_min=("Total Workload (min)", "sum"),
+    )
+    if vol_cols:
+        vol_sum = bu_df.groupby(["Office", "Month", "Segment"], as_index=False)[vol_cols].sum()
+        g["Volume"] = vol_sum[vol_cols].sum(axis=1)
+
+    g["Workload Hours"] = g["Workload_min"] / 60
+    office_total = g.groupby(["Office", "Month"])["Workload Hours"].transform("sum")
+    g["% of Office Workload"] = g["Workload Hours"] / office_total.replace(0, pd.NA)
+
+    cap = kpi_df[["Office", "Month", "Capacity Hours"]].drop_duplicates()
+    g = pd.merge(g, cap, on=["Office", "Month"], how="left")
+    g["FTE %"] = g["Workload Hours"] / g["Capacity Hours"].replace(0, pd.NA)
+    return g[["Office", "Month", "Segment", "Volume", "Workload Hours", "% of Office Workload", "FTE %"]]
+
+
+
 def calc_reconciliation(hc_df: pd.DataFrame, kpi_df: pd.DataFrame) -> pd.DataFrame:
     """Đối chiếu KPI tính động (từ BU allocation / CS FTE) vs giá trị tham chiếu trong sheet HC.
 
@@ -348,14 +580,50 @@ def calc_reconciliation(hc_df: pd.DataFrame, kpi_df: pd.DataFrame) -> pd.DataFra
 
 
 # ============================================================
-# PHẦN D - UI
+# PHẦN D - UI HELPERS
+# ============================================================
+def inject_css():
+    st.markdown(
+        f"""
+        <style>
+        .stApp {{ background-color: {COLOR_BG}; }}
+        div[data-testid="stMetric"] {{
+            background-color: white;
+            border: 1px solid {COLOR_BORDER};
+            border-radius: 8px;
+            padding: 12px 14px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+        }}
+        div[data-testid="stMetricLabel"] {{ color: {COLOR_TEXT_SECONDARY}; }}
+        div[data-testid="stMetricValue"] {{ color: {COLOR_NAVY}; }}
+        h2, h3 {{ color: {COLOR_NAVY}; }}
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def status_badge(status: str) -> str:
+    color = STATUS_COLOR.get(status, COLOR_TEXT_SECONDARY)
+    return (
+        f'<span style="background-color:{color}1A;color:{color};'
+        f'padding:2px 10px;border-radius:12px;font-size:12px;font-weight:600;">{status}</span>'
+    )
+
+
+def extract_year(month_label: str):
+    try:
+        return "20" + month_label.split("-")[1]
+    except (IndexError, AttributeError):
+        return None
+
+
+# ============================================================
+# PHẦN E - MAIN
 # ============================================================
 def main():
-    st.title("📊 CS Capacity & Productivity Dashboard")
-    st.caption(
-        "Nguồn: HC · BU allocation · Shipment volume · CS FTE  |  "
-        "Utilization % = Workload Hours / Capacity Hours  (Capacity Hours = Actual FTE × 167.2h)"
-    )
+    st.set_page_config(page_title="CS Workload & Capacity Dashboard", layout="wide", initial_sidebar_state="expanded")
+    inject_css()
 
     with st.sidebar:
         st.header("📁 Dữ liệu nguồn")
@@ -366,12 +634,13 @@ def main():
         )
 
     if uploaded is None:
-        st.info("⬅️ Vui lòng upload file Excel nguồn (template CS Capacity & Productivity) để bắt đầu.")
+        st.title("CS WORKLOAD & CAPACITY DASHBOARD")
+        st.caption("Operations Performance | Capacity | Workload | Productivity")
+        st.info("⬅️ Vui lòng upload file Excel nguồn để bắt đầu.")
         return
 
     file_bytes = uploaded.getvalue()
 
-    # ---- Load + clean, với xử lý lỗi rõ ràng ----
     try:
         data = build_clean_data(file_bytes)
     except ValueError as e:
@@ -393,15 +662,33 @@ def main():
     kpi_df = calc_kpi_table(bu_df, fte_df)
     seg_df = calc_segment_breakdown(bu_df)
     reconciliation_df = calc_reconciliation(hc_df, kpi_df)
+    snapshot_df = calc_office_capacity_snapshot(hc_df)
+    matrix_df = calc_segment_matrix(bu_df, kpi_df)
+    cs_res_df = data.get("CS Resolutions Rate", pd.DataFrame())
+    yvf_df = data.get("YVF", pd.DataFrame())
+    cust_df = data.get("Customer Volume", pd.DataFrame())
 
-    # ---- FILTERS ----
-    st.sidebar.header("🔎 Bộ lọc")
-    all_offices = sorted(kpi_df["Office"].dropna().unique().tolist())
-    sel_offices = st.sidebar.multiselect("Office", all_offices, default=all_offices)
+    kpi_df["Year"] = kpi_df["Month"].apply(extract_year)
 
-    months_for_offices = kpi_df[kpi_df["Office"].isin(sel_offices)]["Month"].dropna().unique().tolist()
-    months_for_offices = sorted(months_for_offices, key=month_sort_key)
-    sel_months = st.sidebar.multiselect("Month", months_for_offices, default=months_for_offices)
+    # ---- SIDEBAR: Year / Month / Office / Reset ----
+    st.sidebar.header("🔎 FILTERS")
+
+    if st.sidebar.button("↺ RESET FILTERS", use_container_width=True):
+        for key in ("f_year", "f_month", "f_office"):
+            st.session_state.pop(key, None)
+        st.rerun()
+
+    all_years = sorted(kpi_df["Year"].dropna().unique().tolist())
+    sel_year = st.sidebar.selectbox("YEAR", ["All"] + all_years, key="f_year")
+
+    year_filtered = kpi_df if sel_year == "All" else kpi_df[kpi_df["Year"] == sel_year]
+
+    all_offices = sorted(year_filtered["Office"].dropna().unique().tolist())
+    sel_offices = st.sidebar.multiselect("OFFICE", all_offices, default=all_offices, key="f_office")
+
+    months_pool = year_filtered[year_filtered["Office"].isin(sel_offices)]["Month"].dropna().unique().tolist()
+    months_pool = sorted(months_pool, key=month_sort_key)
+    sel_months = st.sidebar.multiselect("MONTH", months_pool, default=months_pool, key="f_month")
 
     pic_pool = fte_df[fte_df["Office"].isin(sel_offices)]["CS PIC"].dropna().unique().tolist()
     sel_pics = st.sidebar.multiselect("CS PIC (tùy chọn)", sorted(pic_pool), default=[])
@@ -414,138 +701,266 @@ def main():
     f_seg = seg_df[seg_df["Office"].isin(sel_offices) & seg_df["Month"].isin(sel_months)]
     f_ship = ship_df[ship_df["Office"].isin(sel_offices) & ship_df["Month"].isin(sel_months)]
     f_fte_detail = fte_df[fte_df["Office"].isin(sel_offices) & fte_df["Month"].isin(sel_months)]
+    f_snapshot = snapshot_df[snapshot_df["Office"].isin(sel_offices) & snapshot_df["Month"].isin(sel_months)] if not snapshot_df.empty else snapshot_df
+    f_matrix = matrix_df[matrix_df["Office"].isin(sel_offices) & matrix_df["Month"].isin(sel_months)] if not matrix_df.empty else matrix_df
+    f_cs_res = cs_res_df[cs_res_df["Office"].isin(sel_offices) & cs_res_df["Month"].isin(sel_months)] if not cs_res_df.empty else cs_res_df
+    f_yvf = yvf_df[yvf_df["Office"].isin(sel_offices)] if not yvf_df.empty else yvf_df
+    f_cust = cust_df[cust_df["Office"].isin(sel_offices) & cust_df["Month"].isin(sel_months)] if not cust_df.empty else cust_df
     if sel_pics:
         f_fte_detail = f_fte_detail[f_fte_detail["CS PIC"].isin(sel_pics)]
+
+    # ---- HEADER ----
+    hcol1, hcol2 = st.columns([3, 1])
+    with hcol1:
+        st.title("CS WORKLOAD & CAPACITY DASHBOARD")
+        st.caption("Operations Performance | Capacity | Workload | Productivity")
+    with hcol2:
+        period_label = f"{sel_months[0]} → {sel_months[-1]}" if len(sel_months) > 1 else (sel_months[0] if sel_months else "N/A")
+        st.markdown(
+            f"<div style='text-align:right;color:{COLOR_TEXT_SECONDARY};font-size:13px;'>"
+            f"<b>Period:</b> {period_label}<br/><b>Office:</b> {', '.join(sel_offices)}</div>",
+            unsafe_allow_html=True,
+        )
 
     if f_kpi.empty:
         st.warning("Không có dữ liệu cho lựa chọn hiện tại.")
         return
 
-    # ---- EXECUTIVE KPI ----
-    st.subheader("Executive KPI")
+    # ==============================================================
+    # 1. OFFICE CAPACITY SNAPSHOT (Executive Summary)
+    # ==============================================================
+    st.subheader("1️⃣ Office Capacity Snapshot")
+
     total_shipment = f_ship["TOTAL"].sum() if "TOTAL" in f_ship.columns else None
     total_workload_hours = f_kpi["Workload Hours"].sum()
     total_actual_fte = f_kpi["Actual FTE"].sum(skipna=True)
     total_required_fte = f_kpi["Required FTE"].sum(skipna=True)
     total_capacity_hours = f_kpi["Capacity Hours"].sum(skipna=True)
-    overall_utilization = (
-        total_workload_hours / total_capacity_hours if total_capacity_hours else None
-    )
-    gap_fte = total_actual_fte - total_required_fte if total_actual_fte else None
+    overall_utilization = (total_workload_hours / total_capacity_hours) if total_capacity_hours else None
+    gap_fte = (total_actual_fte - total_required_fte) if pd.notna(total_actual_fte) and pd.notna(total_required_fte) else None
+    approved_hc = None
+    actual_hc = None
+    if not f_snapshot.empty:
+        latest_month = max(sel_months, key=month_sort_key)
+        snap_latest = f_snapshot[(f_snapshot["Level"] == "Total") & (f_snapshot["Month"] == latest_month)]
+        approved_hc = snap_latest["Approved"].sum() if not snap_latest.empty else None
+        actual_hc = snap_latest["Actual"].sum() if not snap_latest.empty else None
 
-    c1, c2, c3, c4, c5 = st.columns(5)
-    c1.metric("Total Shipment", f"{total_shipment:,.0f}" if pd.notna(total_shipment) else "N/A")
-    c2.metric("Total Workload (h)", f"{total_workload_hours:,.0f}")
-    c3.metric("Actual FTE", f"{total_actual_fte:,.1f}" if pd.notna(total_actual_fte) else "N/A")
-    c4.metric("Required FTE", f"{total_required_fte:,.1f}" if pd.notna(total_required_fte) else "N/A")
-    c5.metric(
+    r1 = st.columns(4)
+    r1[0].metric("Approved HC", f"{approved_hc:,.0f}" if pd.notna(approved_hc) else "N/A")
+    r1[1].metric("Actual HC", f"{actual_hc:,.0f}" if pd.notna(actual_hc) else "N/A")
+    r1[2].metric("Actual FTE", f"{total_actual_fte:,.1f}" if pd.notna(total_actual_fte) else "N/A")
+    r1[3].metric("Required FTE", f"{total_required_fte:,.1f}" if pd.notna(total_required_fte) else "N/A")
+
+    r2 = st.columns(4)
+    r2[0].metric("Capacity Hours", f"{total_capacity_hours:,.1f} h" if pd.notna(total_capacity_hours) else "N/A")
+    r2[1].metric("Workload Hours", f"{total_workload_hours:,.1f} h")
+    r2[2].metric(
         "Utilization %",
-        f"{overall_utilization:.0%}" if overall_utilization is not None else "N/A",
-        delta=f"Gap {gap_fte:+.1f} FTE" if gap_fte is not None else None,
-        delta_color="inverse",
+        f"{overall_utilization:.1%}" if overall_utilization is not None else "N/A",
     )
+    r2[3].metric("FTE Gap", f"{gap_fte:+.1f}" if gap_fte is not None else "N/A",
+                 help=">0: dư năng lực | ≈0: cân bằng | <0: thiếu nguồn lực")
+
+    overall_status = "No Data"
+    if overall_utilization is not None:
+        if overall_utilization > 1.0:
+            overall_status = "Overload"
+        elif overall_utilization > 0.95:
+            overall_status = "High Load"
+        elif overall_utilization >= 0.90:
+            overall_status = "Balanced"
+        else:
+            overall_status = "Less Load"
+    st.markdown(f"Overall Workload Status: {status_badge(overall_status)}", unsafe_allow_html=True)
 
     missing_offices = [o for o in sel_offices if o not in f_fte_detail["Office"].unique()
                         and o not in f_kpi.dropna(subset=["Actual FTE"])["Office"].unique()]
     if missing_offices:
-        st.info(
-            f"ℹ️ Chưa có dữ liệu CS FTE / BU allocation đầy đủ cho: **{', '.join(missing_offices)}** "
-            "- KPI của các Office này đang hiển thị 'No Data' hoặc N/A, không phải bằng 0."
-        )
+        st.info(f"ℹ️ Chưa có dữ liệu Workload/FTE đầy đủ cho: **{', '.join(missing_offices)}** — hiển thị N/A, không phải 0.")
+    st.caption("Actual FTE (sheet `CS FTE`, workload ratio) KHÁC Actual HC (headcount, sheet `HC`) — không quy đổi qua lại. "
+               "Approved/Actual HC hiển thị theo tháng gần nhất trong lựa chọn (snapshot), các KPI Workload/Capacity/FTE là tổng theo kỳ đã chọn.")
 
-    st.caption(
-        "ℹ️ **Actual FTE** ở trên là tổng workload-ratio theo CS PIC (sheet `CS FTE`) — "
-        "KHÔNG phải số lượng nhân sự. Số lượng nhân sự thực tế (headcount) xem ở bảng "
-        "\"Headcount tham chiếu\" bên dưới."
-    )
+    st.divider()
 
-    f_hc = hc_df[hc_df["Office"].isin(sel_offices) & hc_df["Month"].isin(sel_months)]
-    hc_ref_cols = [c for c in f_hc.columns if str(c).strip() in (
-        "Total Approved HC", "Total Actual  HC", "Total Actual HC",
-    )]
-    with st.expander("👥 Headcount tham chiếu (từ sheet `HC` — đơn vị: số người)", expanded=False):
-        if f_hc.empty or not hc_ref_cols:
-            st.info("Không có dữ liệu headcount cho lựa chọn hiện tại.")
+    # ==============================================================
+    # 2. WORKLOAD & CAPACITY TREND
+    # ==============================================================
+    st.subheader("2️⃣ Workload & Capacity Trend")
+    trend = f_kpi.copy()
+    trend["_sort"] = trend["Month"].apply(month_sort_key)
+    trend = trend.sort_values("_sort")
+
+    tcol1, tcol2 = st.columns(2)
+    with tcol1:
+        fig_t1 = go.Figure()
+        for office, sub in trend.groupby("Office"):
+            fig_t1.add_trace(go.Scatter(x=sub["Month"], y=sub["Workload Hours"], mode="lines+markers", name=office, line=dict(color=COLOR_BLUE)))
+        style_fig(fig_t1, "Monthly Workload Trend (Hours)")
+        st.plotly_chart(fig_t1, use_container_width=True)
+    with tcol2:
+        fig_t2 = go.Figure()
+        for office, sub in trend.groupby("Office"):
+            fig_t2.add_trace(go.Scatter(x=sub["Month"], y=sub["Utilization %"], mode="lines+markers", name=office))
+        fig_t2.add_hline(y=1.0, line_dash="dash", line_color=COLOR_RED, annotation_text="100%")
+        fig_t2.update_yaxes(tickformat=".0%")
+        style_fig(fig_t2, "Utilization % Trend")
+        st.plotly_chart(fig_t2, use_container_width=True)
+
+    st.divider()
+
+    # ==============================================================
+    # 3. WORKLOAD BY SERVICE TYPE  &  4. WORKLOAD COMPOSITION (C/A/S/E)
+    # ==============================================================
+    scol1, scol2 = st.columns(2)
+    with scol1:
+        st.subheader("3️⃣ Workload by Service Type")
+        if not f_matrix.empty:
+            svc_total = f_matrix.groupby("Segment", as_index=False)["Workload Hours"].sum()
+            svc_total["Label"] = svc_total["Segment"].map(SERVICE_TYPE_LABELS).fillna(svc_total["Segment"])
+            svc_total["Pct"] = svc_total["Workload Hours"] / svc_total["Workload Hours"].sum()
+            svc_total = svc_total.sort_values("Workload Hours", ascending=True)
+            fig_svc = px.bar(
+                svc_total, x="Workload Hours", y="Label", orientation="h",
+                text=svc_total["Pct"].apply(lambda v: f"{v:.0%}"),
+                color_discrete_sequence=[COLOR_BLUE],
+            )
+            style_fig(fig_svc, "Workload Breakdown by Service Type")
+            st.plotly_chart(fig_svc, use_container_width=True)
         else:
+            st.info("Không có dữ liệu.")
+
+    with scol2:
+        st.subheader("4️⃣ Workload Composition (C/A/S/E)")
+        if not f_seg.empty:
+            comp = f_seg.groupby(["Office", "Segment"], as_index=False)["Hours"].sum()
+            fig_comp = px.bar(
+                comp, x="Office", y="Hours", color="Segment", barmode="stack",
+                color_discrete_sequence=[COLOR_NAVY, COLOR_BLUE, COLOR_AMBER, COLOR_RED],
+            )
+            style_fig(fig_comp, "Total Workload = Core + Ancillary + Supporting + Exception")
+            st.plotly_chart(fig_comp, use_container_width=True)
+        else:
+            st.info("Không có dữ liệu.")
+
+    st.divider()
+
+    # ==============================================================
+    # 5. OFFICE × SERVICE WORKLOAD MATRIX
+    # ==============================================================
+    st.subheader("5️⃣ Office × Service Workload Matrix")
+    if f_matrix.empty:
+        st.info("Không có dữ liệu để hiển thị Matrix.")
+    else:
+        heat = f_matrix.groupby(["Office", "Segment"], as_index=False)["Workload Hours"].sum()
+        heat_pivot = heat.pivot(index="Office", columns="Segment", values="Workload Hours").fillna(0)
+        fig_heat = go.Figure(data=go.Heatmap(
+            z=heat_pivot.values, x=heat_pivot.columns, y=heat_pivot.index,
+            colorscale=[[0, COLOR_LIGHT_BLUE], [1, COLOR_NAVY]],
+            text=heat_pivot.values.round(0), texttemplate="%{text}",
+        ))
+        style_fig(fig_heat, "Workload Hours: Office × Service Type", height=320)
+        st.plotly_chart(fig_heat, use_container_width=True)
+        with st.expander("Chi tiết bảng Matrix (Volume / % / FTE%)", expanded=False):
+            detail = f_matrix.groupby(["Office", "Segment"], as_index=False).agg(
+                Volume=("Volume", "sum"), **{"Workload Hours": ("Workload Hours", "sum")},
+            )
+            tot = detail.groupby("Office")["Workload Hours"].transform("sum")
+            detail["% of Office Workload"] = detail["Workload Hours"] / tot.replace(0, pd.NA)
             st.dataframe(
-                f_hc[["Office", "Month"] + hc_ref_cols],
+                detail.style.format({"Volume": "{:,.0f}", "Workload Hours": "{:,.1f}", "% of Office Workload": "{:.1%}"}),
                 use_container_width=True, hide_index=True,
             )
 
     st.divider()
 
-    # ---- WORKLOAD & CAPACITY ----
-    st.subheader("Workload & Capacity theo Office")
-    colA, colB = st.columns(2)
-    with colA:
-        fig = px.bar(
-            f_kpi, x="Office", y=["Workload Hours", "Capacity Hours"],
-            barmode="group", title="Workload Hours vs Capacity Hours",
-        )
-        st.plotly_chart(fig, use_container_width=True)
-    with colB:
-        gap_by_office = f_kpi.groupby("Office", as_index=False)[["Actual FTE", "Required FTE"]].sum()
-        gap_by_office["Gap FTE"] = gap_by_office["Actual FTE"] - gap_by_office["Required FTE"]
-        fig2 = px.bar(
-            gap_by_office, x="Office", y="Gap FTE",
-            color=gap_by_office["Gap FTE"] > 0,
-            color_discrete_map={True: "#2e7d32", False: "#c62828"},
-            title="FTE Gap / Surplus theo Office (Actual − Required)",
-        )
-        fig2.update_layout(showlegend=False)
-        st.plotly_chart(fig2, use_container_width=True)
+    # ==============================================================
+    # 6. SHIPMENT VOLUME BY TRANSPORTATION MODE
+    # ==============================================================
+    st.subheader("6️⃣ Shipment Volume by Transportation Mode")
+    kcol, ccol = st.columns([1, 2])
+    with kcol:
+        st.metric("Total Shipment", f"{total_shipment:,.0f}" if pd.notna(total_shipment) else "N/A")
+        if "Active Customers" in f_ship.columns:
+            latest_month_ship = max(sel_months, key=month_sort_key)
+            active_latest = f_ship[f_ship["Month"] == latest_month_ship]["Active Customers"].sum()
+            st.metric("Active Customers", f"{active_latest:,.0f}", help=f"Snapshot tháng {latest_month_ship}")
+    with ccol:
+        mode_cols = [c for c in f_ship.columns if c not in ("Office", "Month", "Active Customers", "TOTAL")]
+        if mode_cols:
+            mode_sum = f_ship[mode_cols].sum().sort_values(ascending=True)
+            fig_mode = px.bar(
+                x=mode_sum.values, y=mode_sum.index, orientation="h",
+                labels={"x": "Volume", "y": "Mode"}, color_discrete_sequence=[COLOR_BLUE],
+            )
+            style_fig(fig_mode, "Volume theo Transportation Mode")
+            st.plotly_chart(fig_mode, use_container_width=True)
 
     st.divider()
 
-    # ---- SERVICE PERFORMANCE (segment breakdown) ----
-    st.subheader("Workload theo Service Segment (Core / Ancillary / Supporting / Exception)")
-    if not f_seg.empty:
-        fig3 = px.bar(
-            f_seg, x="Office", y="Hours", color="Segment",
-            barmode="stack", title="Tỷ trọng Workload theo Segment",
-        )
-        st.plotly_chart(fig3, use_container_width=True)
+    # ==============================================================
+    # 7. TOP 20 CUSTOMERS
+    # ==============================================================
+    st.subheader("7️⃣ Top 20 Customers by Shipment Volume")
+    if not f_cust.empty:
+        top20 = f_cust.groupby("Customer", as_index=False)["Volume"].sum().sort_values("Volume", ascending=False).head(20)
+        top20 = top20.sort_values("Volume", ascending=True)
+        fig_top20 = px.bar(top20, x="Volume", y="Customer", orientation="h", color_discrete_sequence=[COLOR_NAVY])
+        style_fig(fig_top20, "Top 20 Customers", height=450)
+        st.plotly_chart(fig_top20, use_container_width=True)
     else:
-        st.info("Không có dữ liệu breakdown theo segment cho lựa chọn hiện tại.")
+        st.info("Không có dữ liệu Customer Volume cho lựa chọn hiện tại.")
 
     st.divider()
 
-    # ---- TREND ----
-    st.subheader("Xu hướng Workload & Utilization theo tháng")
-    trend = f_kpi.copy()
-    trend["_sort"] = trend["Month"].apply(month_sort_key)
-    trend = trend.sort_values("_sort")
-    fig4 = go.Figure()
-    for office, sub in trend.groupby("Office"):
-        fig4.add_trace(go.Scatter(x=sub["Month"], y=sub["Workload Hours"], mode="lines+markers", name=f"{office} - Workload (h)"))
-    fig4.update_layout(title="Workload Hours theo tháng", xaxis_title="Month", yaxis_title="Hours")
-    st.plotly_chart(fig4, use_container_width=True)
-
-    fig5 = go.Figure()
-    for office, sub in trend.groupby("Office"):
-        fig5.add_trace(go.Scatter(x=sub["Month"], y=sub["Utilization %"], mode="lines+markers", name=office))
-    fig5.add_hline(y=1.0, line_dash="dash", line_color="red", annotation_text="100% (Overload threshold)")
-    fig5.update_layout(title="Utilization % theo tháng", xaxis_title="Month", yaxis_tickformat=".0%")
-    st.plotly_chart(fig5, use_container_width=True)
-
-    st.divider()
-
-    # ---- OFFICE / CS PIC BREAKDOWN ----
-    st.subheader("Chi tiết theo CS PIC")
-    if not f_fte_detail.empty:
-        fig6 = px.bar(
-            f_fte_detail, x="CS PIC", y="Actual FTE", color="Office",
-            facet_col="Month" if len(sel_months) <= 4 else None,
-            title="Actual FTE theo CS PIC",
-        )
-        st.plotly_chart(fig6, use_container_width=True)
+    # ==============================================================
+    # 8. CONTROL TOWER EFFECTIVENESS (CS Resolution Rate)
+    # ==============================================================
+    st.subheader("8️⃣ Control Tower Effectiveness — CS Resolution Rate")
+    if f_cs_res.empty or "CS Resolution rate" not in f_cs_res.columns:
+        st.info("Không có dữ liệu CS Resolution Rate cho lựa chọn hiện tại.")
     else:
-        st.info("Không có dữ liệu CS FTE cho lựa chọn hiện tại.")
+        res_valid = f_cs_res.dropna(subset=["CS Resolution rate"])
+        avg_rate = res_valid["CS Resolution rate"].mean() if not res_valid.empty else None
+        rcol1, rcol2 = st.columns([1, 2])
+        with rcol1:
+            st.metric("Avg CS Resolution Rate", f"{avg_rate:.1%}" if avg_rate is not None else "N/A")
+        with rcol2:
+            res_trend = res_valid.copy()
+            res_trend["_sort"] = res_trend["Month"].apply(month_sort_key)
+            res_trend = res_trend.sort_values("_sort")
+            fig_res = go.Figure()
+            for office, sub in res_trend.groupby("Office"):
+                fig_res.add_trace(go.Scatter(x=sub["Month"], y=sub["CS Resolution rate"], mode="lines+markers", name=office))
+            fig_res.update_yaxes(tickformat=".0%")
+            style_fig(fig_res, "CS Resolution Rate theo tháng")
+            st.plotly_chart(fig_res, use_container_width=True)
 
     st.divider()
 
-    # ---- EXCEPTIONS ----
-    st.subheader("⚠️ Exceptions - Office/Month cần chú ý")
+    # ==============================================================
+    # 9. YVF PROMOTER EFFECTIVENESS
+    # ==============================================================
+    st.subheader("9️⃣ YVF Promoter Effectiveness")
+    if f_yvf.empty or "YVF booking ratio" not in f_yvf.columns:
+        st.info("Không có dữ liệu YVF cho lựa chọn hiện tại.")
+    else:
+        yvf_plot = f_yvf.dropna(subset=["YVF booking ratio"])
+        if yvf_plot.empty:
+            st.info("Chưa có Office nào có đủ dữ liệu YVF booking ratio.")
+        else:
+            fig_yvf = px.bar(yvf_plot, x="Office", y="YVF booking ratio", color_discrete_sequence=[COLOR_GREEN])
+            fig_yvf.update_yaxes(tickformat=".0%")
+            style_fig(fig_yvf, "YVF Booking Ratio theo Office")
+            st.plotly_chart(fig_yvf, use_container_width=True)
+        st.caption("Sheet `YVF` không có cột Month — đây là snapshot tổng, không lọc theo Month.")
+
+    st.divider()
+
+    # ==============================================================
+    # EXCEPTIONS
+    # ==============================================================
+    st.subheader("⚠️ Exceptions — Office/Month cần chú ý")
     exceptions = f_kpi[f_kpi["Status"].isin(["Overload", "No Data"])]
     if exceptions.empty:
         st.success("Không phát hiện Office/Month nào ở trạng thái Overload hoặc thiếu dữ liệu.")
@@ -557,13 +972,15 @@ def main():
 
     st.divider()
 
-    # ---- RECONCILIATION ----
-    with st.expander("🔍 Reconciliation - Đối chiếu với sheet HC (cột J / O)", expanded=False):
+    # ==============================================================
+    # 10. DETAIL / RECONCILIATION
+    # ==============================================================
+    st.subheader("🔟 Detail / Reconciliation")
+    with st.expander("🔍 Reconciliation - Đối chiếu với sheet HC", expanded=False):
         st.caption(
             "**Required FTE** được chấm PASS/WARNING/ERROR vì cùng khái niệm với cột J của `HC`, kỳ vọng khớp. "
-            "**Utilization %** và **Actual FTE** chỉ mang tính THAM KHẢO (INFO): Utilization % dùng công thức "
-            "Workload Hours/Capacity Hours (khác cột O của `HC` = Required/Actual HC); Actual FTE (CS FTE, "
-            "workload ratio) khác đơn vị với Actual HC (headcount) — cả hai KHÔNG được kỳ vọng bằng nhau."
+            "**Utilization %** và **Actual FTE** chỉ mang tính THAM KHẢO (INFO): khác công thức/đơn vị với `HC`, "
+            "KHÔNG được kỳ vọng bằng nhau."
         )
         if reconciliation_df.empty:
             st.info("Không đủ dữ liệu để đối chiếu.")
@@ -575,13 +992,28 @@ def main():
             n_error = (f_recon["Status"] == "ERROR").sum()
             n_warning = (f_recon["Status"] == "WARNING").sum()
             if n_error:
-                st.error(f"{n_error} dòng lệch vượt ngưỡng (ERROR) trên Required FTE/Utilization — cần kiểm tra lại nguồn dữ liệu.")
+                st.error(f"{n_error} dòng lệch vượt ngưỡng (ERROR) trên Required FTE — cần kiểm tra lại nguồn dữ liệu.")
             if n_warning:
                 st.warning(f"{n_warning} dòng chưa đủ giá trị tham chiếu để đối chiếu (WARNING).")
 
-    # ---- DETAIL TABLE ----
-    with st.expander("📄 Detail Table - KPI theo Office x Month", expanded=False):
+    with st.expander("👥 Headcount tham chiếu (từ sheet `HC`)", expanded=False):
+        f_hc = hc_df[hc_df["Office"].isin(sel_offices) & hc_df["Month"].isin(sel_months)]
+        hc_ref_cols = [c for c in f_hc.columns if str(c).strip() in ("Total Approved HC", "Total Actual  HC", "Total Actual HC")]
+        if f_hc.empty or not hc_ref_cols:
+            st.info("Không có dữ liệu headcount cho lựa chọn hiện tại.")
+        else:
+            st.dataframe(f_hc[["Office", "Month"] + hc_ref_cols], use_container_width=True, hide_index=True)
+
+    with st.expander("📄 Detail Table — KPI theo Office x Month", expanded=False):
         st.dataframe(f_kpi, use_container_width=True, hide_index=True)
+
+    with st.expander("👤 Actual FTE theo CS PIC", expanded=False):
+        if not f_fte_detail.empty:
+            fig6 = px.bar(f_fte_detail, x="CS PIC", y="Actual FTE", color="Office", color_discrete_sequence=[COLOR_BLUE, COLOR_NAVY, COLOR_AMBER, COLOR_GREEN])
+            style_fig(fig6, "Actual FTE theo CS PIC")
+            st.plotly_chart(fig6, use_container_width=True)
+        else:
+            st.info("Không có dữ liệu CS FTE cho lựa chọn hiện tại.")
 
 
 if __name__ == "__main__":
