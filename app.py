@@ -1,6 +1,6 @@
 # ============================================================
 # CS WORKLOAD & CAPACITY DASHBOARD
-# BUILD: V26_SECTION4_SEGMENT_SUMMARY_BUBBLE
+# BUILD: V27_FIX_SECTION4_ALLOCATION_TIME_KEY
 # BUILD: SECTION2_SAME_ROW_V6
 # Python + Streamlit + Pandas + Plotly
 # Data source: (100826)TEMPLATE_DATA FOR DASHBOARD_V1.xlsx
@@ -3067,7 +3067,7 @@ def main():
 
     segment_summary = build_segment_workload(f_workload, f_mode)
     segment_total_hours = (
-        float(segment_summary["Workload Hours"].sum())
+        float(segment_summary["Allocation Time (h)"].sum())
         if not segment_summary.empty
         else 0.0
     )
