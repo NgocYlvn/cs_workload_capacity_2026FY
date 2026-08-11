@@ -1,8 +1,5 @@
 # ============================================================
 # CS WORKLOAD & CAPACITY DASHBOARD
-# BUILD: V40_UIUX_STANDARDIZED_REVIEW
-# BUILD: SECTION2_SAME_ROW_V6
-# Python + Streamlit + Pandas + Plotly
 # Data source: (100826)TEMPLATE_DATA FOR DASHBOARD_V1.xlsx
 # ============================================================
 
