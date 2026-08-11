@@ -1,6 +1,6 @@
 # ============================================================
 # CS WORKLOAD & CAPACITY DASHBOARD
-# BUILD: V41_HC_DETAIL_ORANGE
+# BUILD: V43_HC_COLOR_HIERARCHY
 # BUILD: SECTION2_SAME_ROW_V6
 # Python + Streamlit + Pandas + Plotly
 # Data source: (100826)TEMPLATE_DATA FOR DASHBOARD_V1.xlsx
@@ -726,9 +726,20 @@ st.markdown(
     }}
 
     .hc-detail-value {{
-        color: var(--amber) !important;
+        color: var(--navy) !important;
         font-size: 19px !important;
         font-weight: 700 !important;
+    }}
+
+    /* Office Capacity Snapshot — semantic color hierarchy */
+    .hc-total-approved {{
+        color: var(--navy) !important;
+    }}
+    .hc-total-actual {{
+        color: var(--blue) !important;
+    }}
+    .hc-total-required {{
+        color: var(--orange) !important;
     }}
 
     /* Shipment KPI cards */
@@ -1148,11 +1159,21 @@ def hc_detail_card(
             f'{status_text}</span>'
         )
 
+    # UI-only semantic color hierarchy for Office Capacity Snapshot:
+    # Approved = Navy, Actual = Corporate Blue, Required = Orange.
+    label_upper = label.upper()
+    if "REQUIRED" in label_upper:
+        total_color_class = "hc-total-required"
+    elif "ACTUAL" in label_upper:
+        total_color_class = "hc-total-actual"
+    else:
+        total_color_class = "hc-total-approved"
+
     st.markdown(
         f"""
         <div class="hc-kpi-card">
             <div class="kpi-label">{label}</div>
-            <div class="hc-kpi-total">{fmt_num(total_value, 2 if "REQUIRED" in label.upper() else 0)}</div>
+            <div class="hc-kpi-total {total_color_class}">{fmt_num(total_value, 2 if "REQUIRED" in label.upper() else 0)}</div>
             {status_html}
             {details_html}
         </div>
@@ -1175,7 +1196,7 @@ def hc_variance_card(
         f"""
         <div class="hc-kpi-card hc-variance-card">
             <div class="kpi-label">{label}</div>
-            <div class="hc-kpi-total">{fmt_num(value, 0)}</div>
+            <div class="hc-kpi-total" style="color:{status_color} !important;">{fmt_num(value, 0)}</div>
             <div class="hc-variance-formula">{formula_text}</div>
             <span class="status-badge hc-variance-status"
                   style="color:{status_color};background:{status_bg};">
