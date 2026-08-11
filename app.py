@@ -1403,10 +1403,10 @@ def customer_detail_table(df: pd.DataFrame):
         hide_index=True,
         height=500,
         column_config={
-            "Rank": st.column_config.NumberColumn("Rank", width="small", format="%d"),
+            "Rank": st.column_config.NumberColumn("Rank", width=70, format="%d"),
             "Customer": st.column_config.TextColumn("Customer", width="large"),
             "Shipment Volume": st.column_config.NumberColumn(
-                "Shipment Volume", width="medium", format="%,.0f"
+                "Shipment Volume", width=130, format="%,.0f"
             ),
         },
     )
