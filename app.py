@@ -89,7 +89,8 @@ st.markdown(
 
     /* Reduce top whitespace and move dashboard content upward */
     .block-container {{
-        padding-top: 1.4rem !important;    }}
+        padding-top: 1.4rem !important;
+    }}
 
     .main-header {{
         margin-top: 0 !important;
@@ -177,6 +178,63 @@ st.markdown(
         min-height: 110px;
         box-shadow: 0 2px 10px rgba(0,0,0,0.035);
     }}
+
+    .hc-kpi-card {
+        background: #FFFFFF;
+        border: 1px solid #D9E2EC;
+        border-radius: 14px;
+        padding: 16px 16px 14px 16px;
+        min-height: 190px;
+        height: 190px;
+        box-sizing: border-box;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.035);
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+    }
+
+    .hc-kpi-total {
+        color: #003B70;
+        font-size: 32px;
+        line-height: 1.05;
+        font-weight: 850;
+        margin-top: 8px;
+        margin-bottom: 8px;
+    }
+
+    .hc-detail-row {
+        display: grid;
+        grid-template-columns: 1fr 1px 1fr;
+        align-items: stretch;
+        gap: 12px;
+        margin-top: auto;
+        padding-top: 12px;
+        border-top: 1px solid #E5E7EB;
+    }
+
+    .hc-detail-divider {
+        background: #E5E7EB;
+        width: 1px;
+    }
+
+    .hc-detail-item {
+        text-align: center;
+    }
+
+    .hc-detail-label {
+        color: #64748B;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+    }
+
+    .hc-detail-value {
+        color: #003B70;
+        font-size: 20px;
+        line-height: 1.2;
+        font-weight: 800;
+        margin-top: 3px;
+    }
     .kpi-label {{
         color: {COLORS['muted']};
         font-size: 12px;
@@ -381,6 +439,58 @@ def kpi_card(label: str, value: str, note: str = "", status: Optional[Tuple[str,
     )
 
 
+
+def hc_detail_card(
+    label: str,
+    total_value: float,
+    mng_value: Optional[float] = None,
+    pic_value: Optional[float] = None,
+    note_left: str = "MNG",
+    note_right: str = "PIC",
+    status_text: Optional[str] = None,
+    status_color: Optional[str] = None,
+    status_bg: Optional[str] = None,
+):
+    """Executive HC card with equal height and two aligned detail blocks at the bottom."""
+    details_html = ""
+    if mng_value is not None or pic_value is not None:
+        left_val = fmt_num(mng_value or 0, 1)
+        right_val = fmt_num(pic_value or 0, 1)
+        details_html = f"""
+        <div class="hc-detail-row">
+            <div class="hc-detail-item">
+                <div class="hc-detail-label">{note_left}</div>
+                <div class="hc-detail-value">{left_val}</div>
+            </div>
+            <div class="hc-detail-divider"></div>
+            <div class="hc-detail-item">
+                <div class="hc-detail-label">{note_right}</div>
+                <div class="hc-detail-value">{right_val}</div>
+            </div>
+        </div>
+        """
+
+    status_html = ""
+    if status_text:
+        status_html = (
+            f'<span class="status-badge" '
+            f'style="color:{status_color};background:{status_bg};margin-top:10px;">'
+            f'{status_text}</span>'
+        )
+
+    st.markdown(
+        f"""
+        <div class="hc-kpi-card">
+            <div class="kpi-label">{label}</div>
+            <div class="hc-kpi-total">{fmt_num(total_value, 1)}</div>
+            {status_html}
+            {details_html}
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
 def section_title(text: str):
     st.markdown(f'<div class="section-title">{text}</div>', unsafe_allow_html=True)
 
@@ -446,7 +556,12 @@ def prepare_hc(df: pd.DataFrame) -> pd.DataFrame:
         df["Total Approved HC"] = numeric_series(df.get("Approved HC MNG", 0)) + numeric_series(df.get("Approved HC PIC", 0))
     if "Total Actual HC" not in df.columns:
         df["Total Actual HC"] = numeric_series(df.get("Actual HC MNG", 0)) + numeric_series(df.get("Actual HC PIC", 0))
-    for col in ["Total Approved HC", "Total Actual HC", "Total Required HC", "HC Available Hours", "HC Actual Working Hours", "HC Utilization"]:
+    for col in [
+        "Approved HC MNG", "Approved HC PIC", "Total Approved HC",
+        "Actual HC MNG", "Actual HC PIC", "Total Actual HC",
+        "Required HC MNG", "Required HC PIC", "Total Required HC",
+        "HC Available Hours", "HC Actual Working Hours", "HC Utilization"
+    ]:
         if col in df.columns:
             df[col] = numeric_series(df[col])
     return df.dropna(subset=["MonthDate"])
@@ -707,6 +822,81 @@ def build_reconciliation(hc, workload, fte, shipment) -> pd.DataFrame:
 # ============================================================
 # CHARTS
 # ============================================================
+
+
+
+def chart_office_capacity_trend(df: pd.DataFrame):
+    """3-line HC trend from sheet HC with shaded gap between Approved HC and Actual HC."""
+    if df.empty:
+        st.info("No HC trend data available for selected filters.")
+        return
+
+    required_cols = ["MonthDate", "Total Approved HC", "Total Actual HC", "Total Required HC"]
+    missing = [c for c in required_cols if c not in df.columns]
+    if missing:
+        st.info("HC trend cannot be displayed because required HC columns are missing.")
+        return
+
+    trend = (
+        df.groupby("MonthDate", as_index=False)[
+            ["Total Approved HC", "Total Actual HC", "Total Required HC"]
+        ]
+        .sum()
+        .sort_values("MonthDate")
+    )
+    trend["Month"] = trend["MonthDate"].dt.strftime("%b-%y")
+
+    fig = go.Figure()
+
+    # Approved HC line
+    fig.add_trace(
+        go.Scatter(
+            x=trend["Month"],
+            y=trend["Total Approved HC"],
+            mode="lines+markers",
+            name="Approved HC",
+            line=dict(color=COLORS["navy"], width=3),
+            marker=dict(size=7),
+            hovertemplate="%{x}<br>Approved HC: %{y:,.1f}<extra></extra>",
+        )
+    )
+
+    # Actual HC line + shaded gap to Approved HC
+    fig.add_trace(
+        go.Scatter(
+            x=trend["Month"],
+            y=trend["Total Actual HC"],
+            mode="lines+markers",
+            name="Actual HC",
+            line=dict(color=COLORS["blue"], width=3),
+            marker=dict(size=7),
+            fill="tonexty",
+            fillcolor="rgba(245, 158, 11, 0.16)",
+            hovertemplate="%{x}<br>Actual HC: %{y:,.1f}<extra></extra>",
+        )
+    )
+
+    # Required HC line
+    fig.add_trace(
+        go.Scatter(
+            x=trend["Month"],
+            y=trend["Total Required HC"],
+            mode="lines+markers",
+            name="Required HC",
+            line=dict(color=COLORS["red"], width=3, dash="dot"),
+            marker=dict(size=7),
+            hovertemplate="%{x}<br>Required HC: %{y:,.1f}<extra></extra>",
+        )
+    )
+
+    fig.update_layout(
+        title="HC Trend & Gap",
+        yaxis_title="HC",
+        hovermode="x unified",
+    )
+    fig = plotly_layout(fig, 360)
+    fig.update_xaxes(type="category")
+    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
 
 def chart_workload_by_service(df: pd.DataFrame):
@@ -977,32 +1167,67 @@ def main():
         )
 
     section_title("1. Office Capacity Snapshot")
-    c1, c2, c3, c4 = st.columns(4)
-    with c1:
-        kpi_card("Approved HC", fmt_num(kpis["Approved HC"], 1), "Avg monthly headcount | Source: HC")
-    with c2:
-        kpi_card("Actual HC", fmt_num(kpis["Actual HC"], 1), "Avg monthly headcount | Source: HC")
-    with c3:
-        kpi_card("Actual FTE", fmt_num(kpis["Actual FTE"], 2), "Avg monthly FTE | Source: CS FTE")
-    with c4:
-        kpi_card("Required FTE", fmt_num(kpis["Required FTE"], 2), "Workload Hours / 167.2")
 
-    c5, c6, c7, c8 = st.columns(4)
-    with c5:
-        kpi_card("Capacity Hours", fmt_num(kpis["Capacity Hours"], 1), "Actual FTE × 167.2")
-    with c6:
-        kpi_card("Workload Hours", fmt_num(kpis["Workload Hours"], 1), "BU allocation workload min / 60")
-    with c7:
-        kpi_card("Utilization", fmt_pct(kpis["Utilization"]), "Workload Hours / Capacity Hours", status=status)
-    with c8:
-        gap_color_status = None
-        if kpis["FTE Gap"] < -0.05:
-            gap_color_status = ("SHORTAGE", COLORS["red"], "#FEE2E2")
-        elif kpis["FTE Gap"] > 0.05:
-            gap_color_status = ("SURPLUS", COLORS["green"], "#DCFCE7")
-        else:
-            gap_color_status = ("BALANCED", COLORS["green"], "#DCFCE7")
-        kpi_card("FTE Gap", fmt_num(kpis["FTE Gap"], 2), "Actual FTE - Required FTE", status=gap_color_status)
+    # Section 1 uses the HC sheet as the single source of truth.
+    approved_hc = weighted_period_avg(f_hc, "Total Approved HC") if not f_hc.empty else 0.0
+    approved_mng = weighted_period_avg(f_hc, "Approved HC MNG") if not f_hc.empty else 0.0
+    approved_pic = weighted_period_avg(f_hc, "Approved HC PIC") if not f_hc.empty else 0.0
+
+    actual_hc = weighted_period_avg(f_hc, "Total Actual HC") if not f_hc.empty else 0.0
+    actual_mng = weighted_period_avg(f_hc, "Actual HC MNG") if not f_hc.empty else 0.0
+    actual_pic = weighted_period_avg(f_hc, "Actual HC PIC") if not f_hc.empty else 0.0
+
+    required_hc = weighted_period_avg(f_hc, "Total Required HC") if not f_hc.empty else 0.0
+    required_mng = weighted_period_avg(f_hc, "Required HC MNG") if not f_hc.empty else 0.0
+    required_pic = weighted_period_avg(f_hc, "Required HC PIC") if not f_hc.empty else 0.0
+
+    hc_variance = approved_hc - actual_hc
+    if hc_variance > 0.05:
+        variance_status = ("VACANCY GAP", COLORS["amber"], "#FEF3C7")
+    elif hc_variance < -0.05:
+        variance_status = ("ABOVE APPROVED", COLORS["red"], "#FEE2E2")
+    else:
+        variance_status = ("ON PLAN", COLORS["green"], "#DCFCE7")
+
+    hc1, hc2, hc3, hc4 = st.columns(4, gap="medium")
+
+    with hc1:
+        hc_detail_card(
+            "APPROVED HC",
+            approved_hc,
+            approved_mng,
+            approved_pic,
+        )
+
+    with hc2:
+        hc_detail_card(
+            "ACTUAL HC",
+            actual_hc,
+            actual_mng,
+            actual_pic,
+        )
+
+    with hc3:
+        hc_detail_card(
+            "REQUIRED HC",
+            required_hc,
+            required_mng,
+            required_pic,
+        )
+
+    with hc4:
+        hc_detail_card(
+            "HC VARIANCE",
+            hc_variance,
+            status_text=variance_status[0],
+            status_color=variance_status[1],
+            status_bg=variance_status[2],
+        )
+        st.caption("Approved HC − Actual HC | Source: HC")
+
+    st.markdown('<div class="chart-box" style="margin-top:14px;">', unsafe_allow_html=True)
+    chart_office_capacity_trend(f_hc)
+    st.markdown('</div>', unsafe_allow_html=True)
 
     section_title("2. Workload & Capacity Trend")
     t1, t2 = st.columns(2)
