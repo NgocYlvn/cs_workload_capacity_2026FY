@@ -4118,13 +4118,13 @@ def main():
         shipment_kpi_card(
             "TOTAL SHIPMENT VOLUME",
             fmt_int(shipment_total),
-            "",
+            "Source: Shipment volume",
         )
     with sk2:
         shipment_kpi_card(
             "ACTIVE CUSTOMERS",
             fmt_int(active_customers),
-            "",
+            "Source: Shipment volume",
         )
     # Keep 2 empty columns so the two KPI cards retain the same visual width as Section 1.
     with sk3:
