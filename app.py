@@ -28,7 +28,7 @@ st.set_page_config(
 )
 
 APP_TITLE = "CS CAPACITY & PRODUCTIVITY"
-APP_SUBTITLE = ""
+APP_SUBTITLE = "Operations Performance | Capacity | Workload | Productivity"
 DEFAULT_FILE = "(100826)TEMPLATE_DATA FOR DASHBOARD_V1.xlsx"
 CAPACITY_HOURS_PER_FTE = 8 * 0.95 * 22  # 167.2 hours/FTE/month
 STANDARD_OFFICES = ["HAN", "HAD", "HLC", "HCM"]
@@ -78,14 +78,7 @@ SHEET_NAMES = {
 # ============================================================
 # STYLE
 # ============================================================
-/* Reduce top whitespace */
-.block-container {
-    padding-top: 0.7rem !important;
-}
 
-.main-header {
-    margin-top: 0 !important;
-}
 st.markdown(
     f"""
     <style>
