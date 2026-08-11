@@ -1636,8 +1636,6 @@ def customer_wide_to_long(df: pd.DataFrame) -> pd.DataFrame:
 
 
 @st.cache_data(show_spinner=False)
-
-@st.cache_data(show_spinner=False)
 def prepare_case_detail(
     df: pd.DataFrame,
     activity_type: str,
@@ -3796,9 +3794,6 @@ def main():
     f_ancillary_detail = apply_filters(ancillary_detail, year, month, office)
     f_supporting_detail = apply_filters(supporting_detail, year, month, office)
     f_exception_detail = apply_filters(exception_detail, year, month, office)
-
-    kpis = calculate_kpis(f_hc, f_workload, f_fte, f_shipment)
-    status = status_from_util(kpis["Utilization"])
 
     st.markdown(
         f"""
