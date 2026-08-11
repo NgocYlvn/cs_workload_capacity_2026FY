@@ -1,6 +1,6 @@
 # ============================================================
 # CS WORKLOAD & CAPACITY DASHBOARD
-# BUILD: V39_SECTION7_YVF_PIE
+# BUILD: V40_UIUX_STANDARDIZED_REVIEW
 # BUILD: SECTION2_SAME_ROW_V6
 # Python + Streamlit + Pandas + Plotly
 # Data source: (100826)TEMPLATE_DATA FOR DASHBOARD_V1.xlsx
@@ -47,52 +47,33 @@ SERVICE_LABELS = {
     "WH": "Warehouse",
 }
 
-# ============================================================
-# YUSEN CORPORATE COLOR SYSTEM
-# UI only — color values only, no business logic / calculation changes.
-# Same Business Meaning = Same Color Everywhere.
-# ============================================================
-
-COLOR_YUSEN_RED = "#E60012"   # Brand accent / Critical / Negative Variance / Exception
-COLOR_NAVY = "#1F2A44"        # Structure: Title, Section Title, Approved HC
-COLOR_BLUE = "#2F6DB0"        # Actual / Primary Data
-COLOR_LIGHT_BLUE = "#8FB7DF"  # Secondary / comparison data series
-COLOR_ORANGE = "#F29F3D"      # Required / Target / Attention
-COLOR_GREEN = "#2E8B57"       # Positive / On Track / Sufficient
-COLOR_GRAY_DARK = "#5F6B7A"   # Secondary text / axis / notes
-COLOR_GRAY = "#9AA3AD"        # Supporting / benchmark
-COLOR_GRAY_LIGHT = "#E8EBEF"  # Borders / gridlines
-COLOR_BG = "#F7F8FA"          # Dashboard background
-COLOR_WHITE = "#FFFFFF"       # Card / chart background
-
-# Kept as the single source of truth referenced across the whole file
-# (existing key names preserved so every COLORS[...] call site below is unaffected).
 COLORS = {
-    "navy": COLOR_NAVY,
-    "blue": COLOR_BLUE,
-    "light_blue": COLOR_LIGHT_BLUE,
-    "red": COLOR_YUSEN_RED,
-    "green": COLOR_GREEN,
-    "amber": COLOR_ORANGE,
-    "bg": COLOR_BG,
-    "white": COLOR_WHITE,
-    "text": COLOR_NAVY,
-    "muted": COLOR_GRAY_DARK,
-    "border": COLOR_GRAY_LIGHT,
+    "navy": "#003B70",
+    "blue": "#005BAC",
+    "light_blue": "#EAF3F8",
+    "red": "#E60012",
+    "green": "#169B62",
+    "amber": "#F59E0B",
+    "gray": "#9AA3AD",
+    "gray_dark": "#5F6B7A",
+    "grid": "#E8EBEF",
+    "bg": "#F7F8FA",
+    "white": "#FFFFFF",
+    "text": "#1F2937",
+    "muted": "#64748B",
+    "border": "#D9E2EC",
 }
 
-# Business-meaning → color dictionary (Section 6.5 of Yusen standard).
-# Actual HC -> Blue | Approved HC -> Navy | Required HC -> Orange
-# HC Shortage/Critical -> Yusen Red | HC Surplus/Positive -> Green
-YUSEN_COLORS = {
-    "actual": COLOR_BLUE,
-    "approved": COLOR_NAVY,
-    "required": COLOR_ORANGE,
-    "target": COLOR_ORANGE,
-    "positive": COLOR_GREEN,
-    "negative": COLOR_YUSEN_RED,
-    "critical": COLOR_YUSEN_RED,
-    "supporting": COLOR_GRAY,
+# Business-meaning color map.
+# UI only: Same Business Meaning = Same Color Everywhere.
+BUSINESS_COLORS = {
+    "actual": COLORS["blue"],
+    "approved": COLORS["navy"],
+    "required": COLORS["amber"],
+    "positive": COLORS["green"],
+    "negative": COLORS["red"],
+    "critical": COLORS["red"],
+    "supporting": COLORS["gray"],
 }
 
 
@@ -114,24 +95,19 @@ UI = {
     "radius": 12,
     "card_padding": 16,
     "section_gap": 18,
-    "chart_height": 360,
-    "chart_height_tall": 500,
+    "chart_height": 380,
+    "chart_height_tall": 520,
 }
 
-# Category palette for multi-category charts where categories do not carry
-# Actual/Target/Status meaning (Section 6.6). Yusen Red is reserved for
-# exceptions and intentionally excluded from this general-purpose palette.
-CATEGORY_COLORS = [
-    COLOR_NAVY,
-    COLOR_BLUE,
-    "#5B8FC9",
-    COLOR_LIGHT_BLUE,
-    COLOR_ORANGE,
-    COLOR_GREEN,
-    "#7A8491",
+CORPORATE_PALETTE = [
+    COLORS["blue"],
+    COLORS["navy"],
+    COLORS["amber"],
+    COLORS["green"],
+    "#6B8EAD",
+    "#A7B9C9",
+    COLORS["red"],
 ]
-
-CORPORATE_PALETTE = CATEGORY_COLORS
 
 SHEET_NAMES = {
     "hc": "HC",
@@ -191,7 +167,7 @@ st.markdown(
     }}
     section[data-testid="stSidebar"] div[data-baseweb="select"] > div {{
         background: #FFFFFF !important;
-        border-color: #E8EBEF !important;
+        border-color: #D9E2EC !important;
     }}
     section[data-testid="stSidebar"] div[data-baseweb="select"] span,
     section[data-testid="stSidebar"] div[data-baseweb="select"] input,
@@ -202,7 +178,7 @@ st.markdown(
     }}
     section[data-testid="stSidebar"] [data-testid="stFileUploader"] section {{
         background: #FFFFFF !important;
-        border-color: #E8EBEF !important;
+        border-color: #D9E2EC !important;
     }}
     section[data-testid="stSidebar"] [data-testid="stFileUploader"] section * {{
         color: {COLORS['navy']} !important;
@@ -258,7 +234,7 @@ st.markdown(
 
     .hc-kpi-card {{
         background: #FFFFFF;
-        border: 1px solid #E8EBEF;
+        border: 1px solid #D9E2EC;
         border-radius: 14px;
         padding: 16px 16px 14px 16px;
         min-height: 190px;
@@ -277,7 +253,7 @@ st.markdown(
     }}
 
     .hc-kpi-total {{
-        color: #1F2A44;
+        color: #003B70;
         font-size: 32px;
         line-height: 1.05;
         font-weight: 850;
@@ -294,11 +270,11 @@ st.markdown(
         gap: 12px;
         margin-top: auto;
         padding-top: 12px;
-        border-top: 1px solid #E8EBEF;
+        border-top: 1px solid #E5E7EB;
     }}
 
     .hc-detail-divider {{
-        background: #E8EBEF;
+        background: #E5E7EB;
         width: 1px;
     }}
 
@@ -307,14 +283,14 @@ st.markdown(
     }}
 
     .hc-detail-label {{
-        color: #5F6B7A;
+        color: #64748B;
         font-size: 11px;
         font-weight: 700;
         letter-spacing: 0.04em;
     }}
 
     .hc-detail-value {{
-        color: #1F2A44;
+        color: #003B70;
         font-size: 20px;
         line-height: 1.2;
         font-weight: 800;
@@ -326,7 +302,7 @@ st.markdown(
     }}
 
     .hc-variance-formula {{
-        color: #5F6B7A;
+        color: #64748B;
         font-size: 12px;
         font-weight: 600;
         margin-top: 12px;
@@ -347,7 +323,7 @@ st.markdown(
     /* Section 2 - Shipment KPI cards */
     .shipment-kpi-card {{
         background: #FFFFFF;
-        border: 1px solid #E8EBEF;
+        border: 1px solid #D9E2EC;
         border-radius: 14px;
         padding: 18px 18px;
         min-height: 170px;
@@ -362,7 +338,7 @@ st.markdown(
     }}
 
     .shipment-kpi-label {{
-        color: #5F6B7A;
+        color: #64748B;
         font-size: 12px;
         font-weight: 700;
         text-transform: uppercase;
@@ -371,14 +347,14 @@ st.markdown(
     }}
 
     .shipment-kpi-value {{
-        color: #1F2A44;
+        color: #003B70;
         font-size: 36px;
         line-height: 1.05;
         font-weight: 850;
     }}
 
     .shipment-kpi-note {{
-        color: #5F6B7A;
+        color: #64748B;
         font-size: 11px;
         margin-top: 10px;
     }}
@@ -387,7 +363,7 @@ st.markdown(
     /* Section 3 - Workload by PIC */
     .pic-kpi-card {{
         background: #FFFFFF;
-        border: 1px solid #E8EBEF;
+        border: 1px solid #D9E2EC;
         border-radius: 14px;
         padding: 14px 14px;
         min-height: 142px;
@@ -401,7 +377,7 @@ st.markdown(
     }}
 
     .pic-kpi-label {{
-        color: #5F6B7A;
+        color: #64748B;
         font-size: 11px;
         font-weight: 700;
         text-transform: uppercase;
@@ -411,7 +387,7 @@ st.markdown(
     }}
 
     .pic-kpi-value {{
-        color: #1F2A44;
+        color: #003B70;
         font-size: 27px;
         line-height: 1.05;
         font-weight: 850;
@@ -419,7 +395,7 @@ st.markdown(
     }}
 
     .pic-kpi-note {{
-        color: #5F6B7A;
+        color: #64748B;
         font-size: 10.5px;
         margin-top: 7px;
         line-height: 1.25;
@@ -427,7 +403,7 @@ st.markdown(
 
     .pic-status-card {{
         background: #FFFFFF;
-        border: 1px solid #E8EBEF;
+        border: 1px solid #D9E2EC;
         border-radius: 14px;
         padding: 14px 16px;
         min-height: 110px;
@@ -445,7 +421,7 @@ st.markdown(
     }}
 
     .pic-status-title {{
-        color: #5F6B7A;
+        color: #64748B;
         font-size: 11px;
         font-weight: 700;
         text-transform: uppercase;
@@ -453,7 +429,7 @@ st.markdown(
     }}
 
     .pic-status-value {{
-        color: #1F2A44;
+        color: #003B70;
         font-size: 30px;
         font-weight: 850;
         margin-top: 4px;
@@ -474,7 +450,7 @@ st.markdown(
 
     .workload-status-panel {{
         background: #FFFFFF;
-        border: 1px solid #E8EBEF;
+        border: 1px solid #D9E2EC;
         border-radius: 14px;
         padding: 14px 16px;
         min-height: 110px;
@@ -608,10 +584,10 @@ st.markdown(
         --green: {COLORS['green']};
         --red: {COLORS['red']};
         --text: {COLORS['text']};
-        --muted: #5F6B7A;
-        --border: #E8EBEF;
+        --muted: #667085;
+        --border: #D8E1EA;
         --surface: #FFFFFF;
-        --background: #F7F8FA;
+        --background: #F6F8FA;
         --radius: {UI['radius']}px;
     }}
 
@@ -740,7 +716,7 @@ st.markdown(
         margin-top: auto !important;
         padding-top: 11px !important;
         gap: 10px !important;
-        border-top: 1px solid #E8EBEF !important;
+        border-top: 1px solid #E7ECF1 !important;
     }}
 
     .hc-detail-label {{
@@ -870,6 +846,104 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
+
+
+# ============================================================
+# FINAL UI/UX QUALITY OVERRIDES
+# UI only — no business logic / calculation changes
+# ============================================================
+
+st.markdown(
+    f"""
+    <style>
+    /* Management-first density and consistent vertical rhythm */
+    .block-container {{
+        max-width: 1680px !important;
+        padding-top: 1.10rem !important;
+        padding-bottom: 1.75rem !important;
+    }}
+
+    .section-title {{
+        margin-top: 22px !important;
+        margin-bottom: 12px !important;
+    }}
+
+    /* Standard Streamlit charts as real cards.
+       Avoid raw HTML wrappers around Streamlit widgets. */
+    [data-testid="stPlotlyChart"] {{
+        background: #FFFFFF;
+        border: 1px solid {COLORS['border']};
+        border-radius: {UI['radius']}px;
+        box-shadow: 0 1px 4px rgba(16, 24, 40, 0.045);
+        padding: 8px 10px 4px 10px;
+        box-sizing: border-box;
+    }}
+
+    [data-testid="stDataFrame"] {{
+        background: #FFFFFF;
+        border: 1px solid {COLORS['border']} !important;
+        border-radius: {UI['radius']}px !important;
+        box-shadow: 0 1px 4px rgba(16, 24, 40, 0.035);
+    }}
+
+    /* Equal KPI-card language */
+    .kpi-card {{
+        min-height: 124px !important;
+        height: 124px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: center !important;
+    }}
+
+    .kpi-label {{
+        min-height: 18px;
+    }}
+
+    /* Make notes subordinate to management metrics */
+    .kpi-note {{
+        margin-top: 5px !important;
+        line-height: 1.35 !important;
+    }}
+
+    /* Compact tabs and avoid visual competition */
+    .stTabs [data-baseweb="tab-list"] {{
+        gap: 4px !important;
+        border-bottom: 1px solid {COLORS['grid']} !important;
+    }}
+
+    .stTabs [data-baseweb="tab"] {{
+        border: 0 !important;
+        border-radius: 0 !important;
+        background: transparent !important;
+        padding: 7px 10px !important;
+        font-size: 12px !important;
+    }}
+
+    /* Responsive laptop refinements */
+    @media (max-width: 1366px) {{
+        .block-container {{
+            padding-left: 0.85rem !important;
+            padding-right: 0.85rem !important;
+        }}
+        .main-title {{
+            font-size: 28px !important;
+        }}
+        .section-title {{
+            font-size: 18px !important;
+        }}
+        .kpi-value,
+        .hc-kpi-total,
+        .shipment-kpi-value,
+        .pic-kpi-value,
+        .pic-status-value {{
+            font-size: 28px !important;
+        }}
+    }}
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 
 # ============================================================
 # HELPER FUNCTIONS
@@ -1366,22 +1440,22 @@ def plotly_layout(
     )
 
     fig.update_xaxes(
-        gridcolor="#E8EBEF",
+        gridcolor=COLORS["grid"],
         gridwidth=0.7,
         zeroline=False,
         showline=False,
         tickfont=dict(size=UI["axis_size"]),
-        title_font=dict(size=UI["axis_size"], color="#5F6B7A"),
+        title_font=dict(size=UI["axis_size"], color=COLORS["gray_dark"]),
         automargin=True,
         ticks="",
     )
     fig.update_yaxes(
-        gridcolor="#E8EBEF",
+        gridcolor=COLORS["grid"],
         gridwidth=0.7,
         zeroline=False,
         showline=False,
         tickfont=dict(size=UI["axis_size"]),
-        title_font=dict(size=UI["axis_size"], color="#5F6B7A"),
+        title_font=dict(size=UI["axis_size"], color=COLORS["gray_dark"]),
         automargin=True,
         ticks="",
     )
@@ -2095,13 +2169,14 @@ def render_activity_detail_table(
         .dt.strftime("%b-%y").tolist()
     )
 
-    d = d[cols].copy()
+    sort_source = d.copy()
+    sort_cols = [c for c in ["Office", "Code", "MonthDate"] if c in sort_source.columns]
+    if sort_cols:
+        sort_source = sort_source.sort_values(sort_cols)
+
+    d = sort_source[cols].copy()
     if "Volume" in d.columns:
         d["Volume"] = pd.to_numeric(d["Volume"], errors="coerce").fillna(0)
-
-    d = d.sort_values(
-        [c for c in ["Office", "BU", "Code", "Month"] if c in d.columns]
-    )
 
     if months_with_data:
         st.caption("Months with data: " + ", ".join(months_with_data))
@@ -2434,7 +2509,7 @@ def chart_office_capacity_trend(df: pd.DataFrame):
             y=trend["Total Approved HC"],
             mode="lines+markers",
             name="Approved HC",
-            line=dict(color=COLORS["navy"], width=3),
+            line=dict(color=BUSINESS_COLORS["approved"], width=3),
             marker=dict(size=7),
             hovertemplate="%{x}<br>Approved HC: %{y:,.1f}<extra></extra>",
         )
@@ -2447,7 +2522,7 @@ def chart_office_capacity_trend(df: pd.DataFrame):
             y=trend["Total Actual HC"],
             mode="lines+markers",
             name="Actual HC",
-            line=dict(color=COLORS["blue"], width=3),
+            line=dict(color=BUSINESS_COLORS["actual"], width=3),
             marker=dict(size=7),
             hovertemplate="%{x}<br>Actual HC: %{y:,.1f}<extra></extra>",
         )
@@ -2461,7 +2536,7 @@ def chart_office_capacity_trend(df: pd.DataFrame):
             y=trend["Total Required HC"],
             mode="lines+markers",
             name="Required HC",
-            line=dict(color=COLORS["amber"], width=3, dash="dot"),
+            line=dict(color=BUSINESS_COLORS["required"], width=3, dash="dot"),
             marker=dict(size=7),
             fill="tonexty",
             fillcolor="rgba(245, 158, 11, 0.14)",
@@ -2568,7 +2643,7 @@ def chart_workload_by_pic(fte_df: pd.DataFrame, selected_office: str):
     )
 
     display["Label"] = display.apply(
-        lambda r: f"{r['Actual Workload Hours']:,.1f} h | {r['Utilization']*100:.0f}%",
+        lambda r: f"{r['Actual Workload Hours']:,.1f} hrs | {r['Utilization']*100:.0f}%",
         axis=1,
     )
 
@@ -2595,7 +2670,7 @@ def chart_workload_by_pic(fte_df: pd.DataFrame, selected_office: str):
             hovertemplate=(
                 "<b>%{y}</b><br>"
                 "Office: %{customdata[0]}<br>"
-                "PIC Workload: %{x:,.1f} h<br>"
+                "PIC Workload: %{x:,.1f} hrs<br>"
                 "CS FTE Factor: %{customdata[1]:.2f}<br>"
                 "Utilization: %{customdata[2]:.1%}<br>"
                 "Status: %{customdata[3]}"
@@ -2621,7 +2696,7 @@ def chart_workload_by_pic(fte_df: pd.DataFrame, selected_office: str):
         title=dict(
             text=(
                 "PIC Workload & Capacity Utilization"
-                f"<br><span style='font-size:11px;color:#5F6B7A;font-weight:400'>{subtitle}</span>"
+                f"<br><span style='font-size:11px;color:#667085;font-weight:400'>{subtitle}</span>"
             ),
             x=0.0,
             xanchor="left",
@@ -2632,7 +2707,7 @@ def chart_workload_by_pic(fte_df: pd.DataFrame, selected_office: str):
         height=chart_height,
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
-        font=dict(family=UI["font_family"], color=COLORS["text"]),
+        font=dict(family="Arial", color=COLORS["text"]),
         margin=dict(l=125, r=80, t=76, b=48),
         bargap=0.24,
         showlegend=False,
@@ -2658,11 +2733,11 @@ def chart_workload_by_pic(fte_df: pd.DataFrame, selected_office: str):
     fig.update_xaxes(
         title_text="Workload Hours",
         range=[0, x_max],
-        gridcolor="#E8EBEF",
+        gridcolor=COLORS["grid"],
         zeroline=False,
         automargin=True,
         tickfont=dict(size=UI["axis_size"]),
-        title_font=dict(size=UI["axis_size"], color="#5F6B7A"),
+        title_font=dict(size=UI["axis_size"], color=COLORS["gray_dark"]),
     )
     fig.update_yaxes(
         title_text="",
@@ -2686,7 +2761,7 @@ def chart_workload_by_pic(fte_df: pd.DataFrame, selected_office: str):
             gap:18px;
             margin-top:4px;
             margin-bottom:2px;
-            color:#5F6B7A;
+            color:#667085;
             font-size:11px;
             line-height:1.2;
             white-space:nowrap;">
@@ -3008,7 +3083,7 @@ def chart_service_matrix(
                 text=[f"<b>{svc}</b><br>{r['Workload Share']:.1%}"],
                 textposition="middle center",
                 textfont=dict(
-                    family=UI["font_family"],
+                    family="Arial",
                     size=11,
                     color="#FFFFFF" if r["Workload Share"] >= 0.06 else COLORS["navy"],
                 ),
@@ -3027,7 +3102,7 @@ def chart_service_matrix(
                 hovertemplate=(
                     f"<b>{svc}</b><br>"
                     "Shipment Volume: %{customdata[0]:,.0f}<br>"
-                    "Allocation Time: %{customdata[1]:,.1f} h<br>"
+                    "Allocation Time: %{customdata[1]:,.1f} hrs<br>"
                     "Required FTE: %{customdata[2]:,.2f}<br>"
                     "Workload Share: %{customdata[3]:.1%}"
                     "<extra></extra>"
@@ -3142,7 +3217,7 @@ def segment_workload_table(df: pd.DataFrame, mode_df: pd.DataFrame):
                 "Shipment Volume", width="medium", format="%,.0f"
             ),
             "Allocation Time (h)": st.column_config.NumberColumn(
-                "Allocation Time (h)", width="medium", format="%,.1f"
+                "Allocation Time (hrs)", width="medium", format="%,.1f"
             ),
             "Required FTE": st.column_config.NumberColumn(
                 "Required FTE", width="small", format="%.2f"
@@ -3216,7 +3291,7 @@ def chart_shipment_modes(mode_df: pd.DataFrame):
         margin=dict(l=65, r=65, t=60, b=45),
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
-        font=dict(family=UI["font_family"], color=COLORS["text"]),
+        font=dict(family="Arial", color=COLORS["text"]),
         uniformtext_minsize=9,
         uniformtext_mode="show",
     )
@@ -3363,7 +3438,7 @@ def chart_resolution(df: pd.DataFrame):
             x=agg["Month"],
             y=agg["Total Abnormality"],
             name="Total Abnormalities",
-            marker_color="#9AA3AD",
+            marker_color=BUSINESS_COLORS["supporting"],
             text=agg["Total Abnormality"],
             texttemplate="%{text:,.0f}",
             textposition="outside",
@@ -3381,7 +3456,7 @@ def chart_resolution(df: pd.DataFrame):
             x=agg["Month"],
             y=agg["Resolved"],
             name="Resolved by CS",
-            marker_color=COLORS["blue"],
+            marker_color=BUSINESS_COLORS["actual"],
             text=agg["Resolved"],
             texttemplate="%{text:,.0f}",
             textposition="outside",
@@ -3464,13 +3539,12 @@ def render_cs_solution_table(df: pd.DataFrame):
         return
 
     d = df.copy()
+    d = d.sort_values(["Office", "MonthDate"]).copy()
     d["Month"] = d["MonthDate"].dt.strftime("%b-%y")
 
     display = d[
         ["Office", "Month", "Total Abnormality", "Resolved", "Resolution Rate"]
     ].copy()
-
-    display = display.sort_values(["Office", "Month"])
 
     total_abn = float(display["Total Abnormality"].sum())
     total_resolved = float(display["Resolved"].sum())
@@ -3502,7 +3576,7 @@ def render_cs_solution_table(df: pd.DataFrame):
         display,
         use_container_width=True,
         hide_index=True,
-        height=390,
+        height=360,
         column_config={
             "Office": st.column_config.TextColumn(
                 "Office", width="small"
@@ -3562,7 +3636,7 @@ def chart_yvf(df: pd.DataFrame):
                 sort=False,
                 direction="clockwise",
                 marker=dict(
-                    colors=[COLORS["blue"], "#E8EBEF"],
+                    colors=[BUSINESS_COLORS["actual"], COLORS["grid"]],
                     line=dict(color="white", width=2),
                 ),
                 textinfo="label+percent",
@@ -3589,21 +3663,25 @@ def chart_yvf(df: pd.DataFrame):
                 ),
                 x=0.5,
                 y=0.5,
-                font=dict(size=22, color=COLORS["navy"]),
+                font=dict(
+                    size=22,
+                    color=COLORS["navy"],
+                    family=UI["font_family"],
+                ),
                 showarrow=False,
                 align="center",
             )
         ],
-        showlegend=True,
-        legend=dict(
-            orientation="h",
-            yanchor="bottom",
-            y=1.02,
-            xanchor="center",
-            x=0.5,
-        ),
-        margin=dict(l=55, r=55, t=95, b=35),
-        height=390,
+    )
+    fig = plotly_layout(
+        fig,
+        390,
+        show_legend=True,
+        legend_position="top",
+        margin_left=44,
+        margin_right=44,
+        margin_top=78,
+        margin_bottom=30,
     )
 
     st.plotly_chart(
@@ -3639,18 +3717,16 @@ def render_yvf_table(df: pd.DataFrame):
     )
 
     if has_month:
+        d = d.sort_values(["MonthDate", "Office"]).copy()
         d["Month"] = d["MonthDate"].dt.strftime("%b-%y")
         display = d[
             ["Office", "Month", "YVF Booking", "IFF Shipment", "YVF Booking Ratio"]
         ].copy()
-        sort_cols = ["Month", "Office"]
     else:
         display = d[
             ["Office", "YVF Booking", "IFF Shipment", "YVF Booking Ratio"]
         ].copy()
-        sort_cols = ["Office"]
-
-    display = display.sort_values(sort_cols)
+        display = display.sort_values(["Office"])
 
     total_yvf = float(display["YVF Booking"].sum())
     total_iff = float(display["IFF Shipment"].sum())
@@ -3919,7 +3995,6 @@ def main():
     hc_trend_data = filter_office_only(hc, office)
     st.markdown('<div class="chart-box" style="margin-top:12px;">', unsafe_allow_html=True)
     chart_office_capacity_trend(hc_trend_data)
-    st.markdown('</div>', unsafe_allow_html=True)
 
     section_title("2. Shipment Volume")
 
@@ -3959,16 +4034,13 @@ def main():
     with chart_left:
         st.markdown('<div class="chart-box" style="margin-top:12px;">', unsafe_allow_html=True)
         chart_shipment_modes(f_mode)
-        st.markdown('</div>', unsafe_allow_html=True)
 
     with chart_right:
         st.markdown('<div class="chart-box" style="margin-top:12px;">', unsafe_allow_html=True)
         chart_top_customers(f_customer_ns)
-        st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown('<div class="chart-box" style="margin-top:12px;">', unsafe_allow_html=True)
     customer_detail_table(f_customer_ns)
-    st.markdown('</div>', unsafe_allow_html=True)
 
     section_title("3. Workload by PIC")
 
@@ -4013,21 +4085,21 @@ def main():
     with p1:
         pic_kpi_card(
             "TOTAL AVAILABLE STANDARD TIME",
-            fmt_num(total_available, 1, " h") if not pd.isna(total_available) else "N/A",
+            fmt_num(total_available, 1, " hrs") if not pd.isna(total_available) else "N/A",
             "95% × 8 × 22 × Actual HC",
         )
 
     with p2:
         pic_kpi_card(
             "AVAILABLE STANDARD TIME / PIC",
-            fmt_num(standard_per_pic, 1, " h"),
+            fmt_num(standard_per_pic, 1, " hrs"),
             "95% × 8 × 22",
         )
 
     with p3:
         pic_kpi_card(
             "TOTAL ACTUAL WORKING TIME",
-            fmt_num(total_actual_working, 1, " h")
+            fmt_num(total_actual_working, 1, " hrs")
             if not pd.isna(total_actual_working) else "N/A",
             "HC source: C + A + S + E",
         )
@@ -4035,7 +4107,7 @@ def main():
     with p4:
         pic_kpi_card(
             "ACTUAL WORKLOAD / PIC",
-            fmt_num(actual_workload_per_pic, 1, " h")
+            fmt_num(actual_workload_per_pic, 1, " hrs")
             if not pd.isna(actual_workload_per_pic) else "N/A",
             "HC source",
         )
@@ -4054,16 +4126,15 @@ def main():
     # When All Offices is selected, only overloaded PICs/offices are displayed.
     st.markdown('<div class="chart-box" style="margin-top:8px;">', unsafe_allow_html=True)
     chart_workload_by_pic(f_fte, office)
-    st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown(
         """
         <div style="
             margin-top:6px;
-            color:#5F6B7A;
+            color:#667085;
             font-size:11px;
             line-height:1.45;
-            font-family:Arial, 'Segoe UI', Inter, sans-serif;">
+            font-family:Inter, 'Segoe UI', Arial, sans-serif;">
             <b>PIC Workload (hrs)</b> = CS FTE Factor × Available Standard Time / PIC<br>
             <b>Available Standard Time / PIC</b> = 8 hrs/day × 22 days/month × 95% efficiency = 167.2 hrs/month
         </div>
@@ -4089,7 +4160,7 @@ def main():
                 min-height:92px;
                 display:flex;
                 align-items:center;
-                color:#5F6B7A;
+                color:#667085;
                 font-size:12px;
                 line-height:1.55;
                 padding:0 8px 0 2px;">
@@ -4102,7 +4173,7 @@ def main():
     with seg_kpi:
         kpi_card(
             "TOTAL WORKLOAD HOURS",
-            fmt_num(segment_total_hours, 1, " h"),
+            fmt_num(segment_total_hours, 1, " hrs"),
             "Source: BU allocation",
         )
 
@@ -4123,14 +4194,14 @@ def main():
             margin-top:7px;
             padding:10px 14px;
             background:#FFFFFF;
-            border:1px solid #E8EBEF;
+            border:1px solid #D8E1EA;
             border-radius:12px;
-            color:#5F6B7A;
+            color:#667085;
             font-size:11px;
             line-height:1.45;">
-            <b style="color:#1F2A44;">Note:</b>
+            <b style="color:#003B70;">Note:</b>
             Bubbles are clustered for easy comparison; bubble size = Workload Share (%).
-            Required FTE uses the HC/FTE allocation source when available and falls back to Workload ÷ 167.2 h/FTE.
+            Required FTE uses the HC/FTE allocation source when available and falls back to Workload ÷ 167.2 hrs/FTE.
             Shipment Volume is sourced from the Shipment volume sheet and mapped to the corresponding Service.
         </div>
         """,
@@ -4142,7 +4213,7 @@ def main():
     st.markdown(
         """
         <div style="
-            color:#5F6B7A;
+            color:#667085;
             font-size:12px;
             line-height:1.5;
             margin:0 0 10px 2px;">
@@ -4168,7 +4239,7 @@ def main():
             font-size:{UI['chart_title_size']}px;
             font-weight:700;
             margin:14px 0 8px 2px;">
-            C / A / S / E Detail
+            C / A / S / E Details
         </div>
         """,
         unsafe_allow_html=True,
@@ -4217,7 +4288,7 @@ def main():
                 f"{fmt_int(resolved)} / {fmt_int(total_abn)} cases",
             )
 
-    cs_chart, cs_table = st.columns([0.56, 0.44], gap="medium")
+    cs_chart, cs_table = st.columns([0.55, 0.45], gap="medium")
     with cs_chart:
         chart_resolution(f_resolution)
     with cs_table:
@@ -4250,7 +4321,7 @@ def main():
                 f"{fmt_int(yvf_booking)} / {fmt_int(iff)}",
             )
 
-    yvf_chart_col, yvf_table_col = st.columns([0.56, 0.44], gap="medium")
+    yvf_chart_col, yvf_table_col = st.columns([0.52, 0.48], gap="medium")
     with yvf_chart_col:
         chart_yvf(f_yvf)
     with yvf_table_col:
