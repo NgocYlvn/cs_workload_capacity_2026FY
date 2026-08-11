@@ -1,6 +1,6 @@
 # ============================================================
 # CS WORKLOAD & CAPACITY DASHBOARD
-# BUILD: V46_FIX_SHIPMENT_VOLUME_SOURCE_COLUMNS
+# BUILD: V47_RESTORE_CUSTOMER_DETAIL_TABLE
 # BUILD: SECTION2_SAME_ROW_V6
 # Python + Streamlit + Pandas + Plotly
 # Data source: (100826)TEMPLATE_DATA FOR DASHBOARD_V1.xlsx
@@ -3507,6 +3507,47 @@ def chart_top_customers(df: pd.DataFrame):
         config={"displayModeBar": False},
     )
 
+
+
+
+def customer_detail_table(df: pd.DataFrame):
+    """Scrollable full customer ranking table displayed below the Top 10 chart."""
+    ranking = build_customer_ranking(df)
+
+    if ranking.empty:
+        st.info("No customer detail data available for selected filters.")
+        return
+
+    st.markdown(
+        f"""
+        <div style="
+            color:{COLORS['navy']};
+            font-size:{UI['chart_title_size']}px;
+            font-weight:700;
+            margin:2px 0 8px 0;">
+            Customer Detail
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.dataframe(
+        ranking,
+        use_container_width=True,
+        hide_index=True,
+        height=UI["chart_height_tall"],
+        column_config={
+            "Rank": st.column_config.NumberColumn(
+                "Rank", width="small", format="%d"
+            ),
+            "Customer": st.column_config.TextColumn(
+                "Customer", width="large"
+            ),
+            "Shipment Volume": st.column_config.NumberColumn(
+                "Shipment Volume", width="medium", format="%,.0f"
+            ),
+        },
+    )
 
 
 def chart_resolution(df: pd.DataFrame):
