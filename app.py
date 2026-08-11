@@ -967,7 +967,7 @@ def chart_office_capacity_trend(df: pd.DataFrame):
         )
     )
 
-    # Actual HC line + shaded gap to Approved HC
+    # Actual HC line — baseline for the shaded Actual vs Required gap.
     fig.add_trace(
         go.Scatter(
             x=trend["Month"],
@@ -976,13 +976,12 @@ def chart_office_capacity_trend(df: pd.DataFrame):
             name="Actual HC",
             line=dict(color=COLORS["blue"], width=3),
             marker=dict(size=7),
-            fill="tonexty",
-            fillcolor="rgba(245, 158, 11, 0.16)",
             hovertemplate="%{x}<br>Actual HC: %{y:,.1f}<extra></extra>",
         )
     )
 
-    # Required HC line
+    # Required HC line + shaded gap to Actual HC.
+    # The fill is intentionally between Actual HC and Required HC.
     fig.add_trace(
         go.Scatter(
             x=trend["Month"],
@@ -991,7 +990,9 @@ def chart_office_capacity_trend(df: pd.DataFrame):
             name="Required HC",
             line=dict(color=COLORS["red"], width=3, dash="dot"),
             marker=dict(size=7),
-            hovertemplate="%{x}<br>Required HC: %{y:,.1f}<extra></extra>",
+            fill="tonexty",
+            fillcolor="rgba(230, 0, 18, 0.12)",
+            hovertemplate="%{x}<br>Required HC: %{y:,.2f}<extra></extra>",
         )
     )
 
