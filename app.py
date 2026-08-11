@@ -89,8 +89,7 @@ st.markdown(
 
     /* Reduce top whitespace and move dashboard content upward */
     .block-container {{
-        padding-top: 0.7rem !important;
-    }}
+        padding-top: 1.4rem !important;    }}
 
     .main-header {{
         margin-top: 0 !important;
