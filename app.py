@@ -78,7 +78,14 @@ SHEET_NAMES = {
 # ============================================================
 # STYLE
 # ============================================================
+/* Reduce top whitespace */
+.block-container {
+    padding-top: 0.7rem !important;
+}
 
+.main-header {
+    margin-top: 0 !important;
+}
 st.markdown(
     f"""
     <style>
