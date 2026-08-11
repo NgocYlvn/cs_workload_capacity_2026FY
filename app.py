@@ -1,6 +1,6 @@
 # ============================================================
 # CS WORKLOAD & CAPACITY DASHBOARD
-# BUILD: V32_SECTION5_DETAIL_MONTHS_WITH_DATA_ONLY
+# BUILD: V33_FIX_SECTION5_DETAIL_MONTH_KEYERROR
 # BUILD: SECTION2_SAME_ROW_V6
 # Python + Streamlit + Pandas + Plotly
 # Data source: (100826)TEMPLATE_DATA FOR DASHBOARD_V1.xlsx
@@ -1962,6 +1962,12 @@ def render_activity_detail_table(
         or d[c].astype(str).str.strip().replace("nan", "").ne("").any()
     ]
 
+    # Capture months before removing MonthDate from the visible table.
+    months_with_data = (
+        d["MonthDate"].dropna().drop_duplicates().sort_values()
+        .dt.strftime("%b-%y").tolist()
+    )
+
     d = d[cols].copy()
     if "Volume" in d.columns:
         d["Volume"] = pd.to_numeric(d["Volume"], errors="coerce").fillna(0)
@@ -1970,10 +1976,6 @@ def render_activity_detail_table(
         [c for c in ["Office", "BU", "Code", "Month"] if c in d.columns]
     )
 
-    months_with_data = (
-        d["MonthDate"].dropna().drop_duplicates().sort_values()
-        .dt.strftime("%b-%y").tolist()
-    )
     if months_with_data:
         st.caption("Months with data: " + ", ".join(months_with_data))
 
