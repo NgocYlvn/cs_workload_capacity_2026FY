@@ -1,6 +1,6 @@
 # ============================================================
 # CS WORKLOAD & CAPACITY DASHBOARD
-# BUILD: V22_SEGMENT_BUBBLES_AND_TABLE
+# BUILD: V24_SEGMENT_TABLE_ORDER
 # BUILD: SECTION2_SAME_ROW_V6
 # Python + Streamlit + Pandas + Plotly
 # Data source: (100826)TEMPLATE_DATA FOR DASHBOARD_V1.xlsx
@@ -2208,10 +2208,21 @@ def chart_capacity_trend(workload: pd.DataFrame, fte: pd.DataFrame):
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
 
-def build_segment_workload(df: pd.DataFrame) -> pd.DataFrame:
-    """Aggregate workload hours by Segment for the current filters."""
+def build_segment_workload(
+    df: pd.DataFrame,
+    mode_df: Optional[pd.DataFrame] = None,
+) -> pd.DataFrame:
+    """
+    Aggregate Workload Hours by Segment and optionally attach Shipment Volume by Segment.
+
+    Workload source: BU allocation / workload dataframe.
+    Volume source: Shipment volume long dataframe.
+    Segment mapping follows the existing transportation/service codes where available.
+    """
     if df is None or df.empty:
-        return pd.DataFrame(columns=["Segment", "Workload Hours", "% of Total", "Ranking"])
+        return pd.DataFrame(
+            columns=["Segment", "Workload Hours", "Shipment Volume", "% of Total", "Ranking"]
+        )
 
     seg = (
         df.groupby("Segment", as_index=False)["Workload Hours"]
@@ -2222,12 +2233,60 @@ def build_segment_workload(df: pd.DataFrame) -> pd.DataFrame:
     seg = seg[seg["Workload Hours"] > 0].copy()
 
     if seg.empty:
-        return pd.DataFrame(columns=["Segment", "Workload Hours", "% of Total", "Ranking"])
+        return pd.DataFrame(
+            columns=["Segment", "Workload Hours", "Shipment Volume", "% of Total", "Ranking"]
+        )
 
     total = float(seg["Workload Hours"].sum())
     seg["% of Total"] = seg["Workload Hours"] / total if total > 0 else 0
     seg["Ranking"] = np.arange(1, len(seg) + 1)
+
+    # Shipment Volume by Segment.
+    # Existing shipment source uses Mode codes, so normalize/group them into the same Segment labels.
+    seg["Shipment Volume"] = 0.0
+    if mode_df is not None and not mode_df.empty and {"Mode", "Volume"}.issubset(mode_df.columns):
+        vol = mode_df.copy()
+        vol["Mode"] = vol["Mode"].astype(str).str.strip().str.upper()
+
+        # Map detailed transportation modes to the dashboard Segment groups.
+        volume_segment_map = {
+            "AE": "AE",
+            "AI": "AI",
+            "OE": "OE",
+            "OI": "OI",
+            "OEFCL": "OE",
+            "OELCL": "OE",
+            "OIFCL": "OI",
+            "OILCL": "OI",
+            "CC": "CC",
+            "CE": "CC",
+            "CI": "CC",
+            "TR": "TR",
+            "DM": "TR",
+            "DE": "TR",
+            "DI": "TR",
+            "WH": "WH",
+            "HE": "WH",
+            "HI": "WH",
+        }
+        vol["Segment"] = vol["Mode"].map(volume_segment_map)
+
+        volume_by_segment = (
+            vol.dropna(subset=["Segment"])
+            .groupby("Segment", as_index=False)["Volume"]
+            .sum()
+            .rename(columns={"Volume": "Shipment Volume Source"})
+        )
+
+        seg = seg.merge(volume_by_segment, on="Segment", how="left")
+        seg["Shipment Volume"] = (
+            pd.to_numeric(seg["Shipment Volume Source"], errors="coerce")
+            .fillna(0)
+        )
+        seg = seg.drop(columns=["Shipment Volume Source"])
+
     return seg
+
 
 
 def chart_service_matrix(df: pd.DataFrame):
@@ -2237,7 +2296,7 @@ def chart_service_matrix(df: pd.DataFrame):
     Circle size = total Workload Hours.
     UI/visualization change only; workload aggregation logic is unchanged.
     """
-    seg = build_segment_workload(df)
+    seg = build_segment_workload(df, mode_df)
 
     if seg.empty:
         st.info("No segment workload data available for selected filters.")
@@ -2372,7 +2431,7 @@ def chart_service_matrix(df: pd.DataFrame):
     )
 
 
-def segment_workload_table(df: pd.DataFrame):
+def segment_workload_table(df: pd.DataFrame, mode_df: pd.DataFrame):
     """Ranked workload table beside the Segment bubble chart."""
     seg = build_segment_workload(df)
 
@@ -2381,18 +2440,27 @@ def segment_workload_table(df: pd.DataFrame):
         return
 
     total_hours = float(seg["Workload Hours"].sum())
+    total_volume = float(seg["Shipment Volume"].sum())
 
     display = seg.copy()
     display["Workload Hours"] = display["Workload Hours"].round(1)
+    display["Shipment Volume"] = display["Shipment Volume"].round(0)
     display["% of Total"] = display["% of Total"].map(lambda x: f"{x:.1%}")
 
     total_row = pd.DataFrame([{
         "Segment": "TOTAL",
         "Workload Hours": round(total_hours, 1),
+        "Shipment Volume": round(total_volume, 0),
         "% of Total": "100.0%",
         "Ranking": "",
     }])
     display = pd.concat([display, total_row], ignore_index=True)
+
+    # Executive table order requested:
+    # Segment → Shipment Volume → Actual Workload (Hours) → % of Total → Ranking
+    display = display[
+        ["Segment", "Shipment Volume", "Workload Hours", "% of Total", "Ranking"]
+    ]
 
     st.markdown(
         f"""
@@ -2418,6 +2486,11 @@ def segment_workload_table(df: pd.DataFrame):
                 "Actual Workload (Hours)",
                 width="medium",
                 format="%,.1f",
+            ),
+            "Shipment Volume": st.column_config.NumberColumn(
+                "Shipment Volume",
+                width="medium",
+                format="%,.0f",
             ),
             "% of Total": st.column_config.TextColumn("% of Total", width="small"),
             "Ranking": st.column_config.TextColumn("Ranking", width="small"),
@@ -2969,7 +3042,7 @@ def main():
 
     section_title("4. Workload by Segment")
 
-    segment_summary = build_segment_workload(f_workload)
+    segment_summary = build_segment_workload(f_workload, f_mode)
     segment_total_hours = (
         float(segment_summary["Workload Hours"].sum())
         if not segment_summary.empty
@@ -3013,7 +3086,7 @@ def main():
             '<div class="chart-box" style="margin-top:12px;">',
             unsafe_allow_html=True,
         )
-        segment_workload_table(f_workload)
+        segment_workload_table(f_workload, f_mode)
         st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown(
@@ -3029,6 +3102,7 @@ def main():
             line-height:1.45;">
             <b style="color:#003B70;">Note:</b>
             Bubble size represents total Workload Hours by Segment.
+            Shipment Volume is sourced from the Shipment volume sheet and grouped to the corresponding Segment.
             Segments are ranked in descending order of Workload Hours.
         </div>
         """,
