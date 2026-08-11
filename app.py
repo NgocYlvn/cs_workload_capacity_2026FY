@@ -1,6 +1,6 @@
 # ============================================================
 # CS WORKLOAD & CAPACITY DASHBOARD
-# BUILD: V16_EXECUTIVE_UI_STANDARDIZED
+# BUILD: V17_TOP10_PIC_EXCEPTION_VIEW
 # BUILD: SECTION2_SAME_ROW_V6
 # Python + Streamlit + Pandas + Plotly
 # Data source: (100826)TEMPLATE_DATA FOR DASHBOARD_V1.xlsx
@@ -1802,17 +1802,18 @@ def chart_workload_by_pic(fte_df: pd.DataFrame, selected_office: str):
     PIC Workload & Capacity Utilization.
 
     Business display rule:
-    - Standard capacity = 167.2 hours/PIC/month.
-    - PIC Workload = coefficient in sheet "CS FTE" × Available Standard Time / PIC.
-    - Available Standard Time / PIC = 167.2 hours.
-    - Utilization = PIC Workload / Available Standard Time / PIC = CS FTE coefficient.
-    - When All Offices is selected, display ONLY offices that have at least one
-      PIC with utilization > 100% (Actual FTE > 1.0).
-    - Blank future months are excluded in prepare_fte(), so Month=All does not
-      dilute PIC FTE averages.
-    - When a specific Office is selected, display all PICs with data in that office.
-    """
+    - PIC Workload (hrs) = CS FTE Factor × Available Standard Time / PIC.
+    - Available Standard Time / PIC = 167.2 hrs/month.
+    - Utilization = PIC Workload / 167.2 = CS FTE Factor.
 
+    Display logic:
+    - Specific Office: show all PICs with data in that office.
+    - All Offices: show Top 10 PICs by Utilization across all offices.
+    - Colors:
+        >100%   = Red (Overload)
+        90–100% = Orange (Attention)
+        <90%    = Blue (Available Capacity)
+    """
     if fte_df is None or fte_df.empty:
         st.info("No CS FTE data available for selected filters.")
         return
@@ -1826,50 +1827,61 @@ def chart_workload_by_pic(fte_df: pd.DataFrame, selected_office: str):
         st.info("No CS FTE data available for selected filters.")
         return
 
-    # If multiple months are selected, use average monthly FTE for each PIC.
     pic_data = (
         d.groupby(["Office", "CS PIC"], as_index=False)["Actual FTE"]
         .mean()
     )
     pic_data["Standard Hours"] = CAPACITY_HOURS_PER_FTE
-    pic_data["Actual Workload Hours"] = (
-        pic_data["Actual FTE"] * CAPACITY_HOURS_PER_FTE
-    )
-    pic_data["Utilization"] = safe_div(1, 1) * pic_data["Actual FTE"]
+    pic_data["Actual Workload Hours"] = pic_data["Actual FTE"] * CAPACITY_HOURS_PER_FTE
+    pic_data["Utilization"] = pic_data["Actual FTE"]
+
+    def _status(util):
+        if util > 1.0:
+            return "Overload", COLORS["red"]
+        if util >= 0.90:
+            return "Attention", COLORS["amber"]
+        return "Available", COLORS["blue"]
+
+    mapped = pic_data["Utilization"].apply(_status)
+    pic_data["Status"] = mapped.map(lambda x: x[0])
+    pic_data["Bar Color"] = mapped.map(lambda x: x[1])
+
+    total_pic = int(len(pic_data))
+    overloaded_pic = int((pic_data["Utilization"] > 1.0).sum())
 
     if selected_office == "All Offices":
-        overload_offices = (
-            pic_data.loc[pic_data["Utilization"] > 1.0, "Office"]
-            .dropna()
-            .unique()
-            .tolist()
+        display = (
+            pic_data.sort_values(
+                ["Utilization", "Actual Workload Hours"],
+                ascending=[False, False],
+            )
+            .head(10)
+            .copy()
         )
-
-        if not overload_offices:
-            st.info("No office currently has overloaded PICs (>100% utilization).")
-            return
-
-        display = pic_data[pic_data["Office"].isin(overload_offices)].copy()
-
-        # For All Offices, focus the chart only on overloaded PICs.
-        display = display[display["Utilization"] > 1.0].copy()
+        display["PIC Label"] = display.apply(
+            lambda r: f"{r['Office']} | {r['CS PIC']}",
+            axis=1,
+        )
+        subtitle = "Top 10 PICs by Capacity Utilization – All Offices"
     else:
-        display = pic_data[pic_data["Office"] == selected_office].copy()
+        display = (
+            pic_data[pic_data["Office"] == selected_office]
+            .sort_values(
+                ["Utilization", "Actual Workload Hours"],
+                ascending=[False, False],
+            )
+            .copy()
+        )
+        display["PIC Label"] = display["CS PIC"].astype(str)
+        subtitle = f"All PICs – {selected_office}"
 
     if display.empty:
         st.info("No PIC workload data available for selected filters.")
         return
 
     display = display.sort_values(
-        ["Office", "Utilization", "Actual Workload Hours"],
-        ascending=[True, True, True],
-    )
-
-    display["PIC Label"] = display.apply(
-        lambda r: f"{r['Office']} | {r['CS PIC']}"
-        if selected_office == "All Offices"
-        else str(r["CS PIC"]),
-        axis=1,
+        ["Utilization", "Actual Workload Hours"],
+        ascending=[True, True],
     )
 
     display["Label"] = display.apply(
@@ -1877,8 +1889,7 @@ def chart_workload_by_pic(fte_df: pd.DataFrame, selected_office: str):
         axis=1,
     )
 
-    # Dynamic height so names remain readable without excessive whitespace.
-    chart_height = max(330, min(720, 46 * len(display) + 130))
+    chart_height = max(360, min(650, 43 * len(display) + 150))
 
     fig = go.Figure()
 
@@ -1887,8 +1898,8 @@ def chart_workload_by_pic(fte_df: pd.DataFrame, selected_office: str):
             x=display["Actual Workload Hours"],
             y=display["PIC Label"],
             orientation="h",
-            name="Actual Workload",
-            marker_color=COLORS["blue"],
+            name="PIC Workload",
+            marker_color=display["Bar Color"],
             text=display["Label"],
             textposition="outside",
             cliponaxis=False,
@@ -1896,18 +1907,20 @@ def chart_workload_by_pic(fte_df: pd.DataFrame, selected_office: str):
                 display["Office"],
                 display["Actual FTE"],
                 display["Utilization"],
+                display["Status"],
             ]),
             hovertemplate=(
                 "<b>%{y}</b><br>"
-                "Actual workload: %{x:,.1f} h<br>"
-                "Actual FTE: %{customdata[1]:.2f}<br>"
-                "Utilization: %{customdata[2]:.1%}"
+                "Office: %{customdata[0]}<br>"
+                "PIC Workload: %{x:,.1f} h<br>"
+                "CS FTE Factor: %{customdata[1]:.2f}<br>"
+                "Utilization: %{customdata[2]:.1%}<br>"
+                "Status: %{customdata[3]}"
                 "<extra></extra>"
             ),
         )
     )
 
-    # One capacity reference line at 167.2 hours.
     fig.add_vline(
         x=CAPACITY_HOURS_PER_FTE,
         line_width=2.5,
@@ -1918,27 +1931,84 @@ def chart_workload_by_pic(fte_df: pd.DataFrame, selected_office: str):
         annotation_font_color=COLORS["navy"],
     )
 
+    for label, color in [
+        ("Overload >100%", COLORS["red"]),
+        ("Attention 90–100%", COLORS["amber"]),
+        ("Available <90%", COLORS["blue"]),
+    ]:
+        fig.add_trace(
+            go.Bar(
+                x=[None],
+                y=[None],
+                orientation="h",
+                name=label,
+                marker_color=color,
+                hoverinfo="skip",
+                showlegend=True,
+            )
+        )
+
+    max_actual = float(display["Actual Workload Hours"].max())
+    x_max = max(max_actual * 1.15, CAPACITY_HOURS_PER_FTE * 1.25)
+
     fig.update_layout(
         title=dict(
             text="PIC Workload & Capacity Utilization",
             x=0.0,
             xanchor="left",
-            font=dict(size=15, color=COLORS["navy"]),
+            font=dict(size=UI["chart_title_size"], color=COLORS["navy"]),
         ),
         height=chart_height,
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
         font=dict(family="Arial", color=COLORS["text"]),
-        margin=dict(l=115, r=95, t=70, b=45),
-        showlegend=False,
-        bargap=0.26,
+        margin=dict(l=125, r=80, t=90, b=45),
+        bargap=0.24,
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.04,
+            xanchor="right",
+            x=1,
+            font=dict(size=UI["axis_size"]),
+            bgcolor="rgba(0,0,0,0)",
+        ),
     )
+
+    # Preserve the vline annotation and add executive summary annotations.
+    existing_annotations = list(fig.layout.annotations) if fig.layout.annotations else []
+    existing_annotations.extend([
+        dict(
+            text=subtitle,
+            x=0,
+            y=1.11,
+            xref="paper",
+            yref="paper",
+            showarrow=False,
+            xanchor="left",
+            font=dict(size=UI["note_size"], color=COLORS["muted"]),
+        ),
+        dict(
+            text=f"Overloaded PICs: <b>{overloaded_pic}</b> / Total PICs: <b>{total_pic}</b>",
+            x=1,
+            y=1.11,
+            xref="paper",
+            yref="paper",
+            showarrow=False,
+            xanchor="right",
+            font=dict(size=UI["note_size"], color=COLORS["muted"]),
+        ),
+    ])
+    fig.update_layout(annotations=existing_annotations)
 
     fig.update_xaxes(
         title_text="Workload Hours",
-        gridcolor="#EDF2F7",
+        range=[0, x_max],
+        gridcolor="#E9EEF3",
         zeroline=False,
         automargin=True,
+        tickfont=dict(size=UI["axis_size"]),
+        title_font=dict(size=UI["axis_size"], color="#5F6B7A"),
     )
     fig.update_yaxes(
         title_text="",
