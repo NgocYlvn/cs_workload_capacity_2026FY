@@ -1419,8 +1419,8 @@ def chart_workload_by_pic(fte_df: pd.DataFrame, selected_office: str):
 
     Business display rule:
     - Standard capacity = 167.2 hours/PIC/month.
-    - PIC Workload = coefficient in sheet "CS FTE" × Available Standard Time / PIC.
-    - Available Standard Time / PIC = 167.2 hours.
+    - PIC Workload (hrs) = CS FTE Factor × Available Standard Time / PIC.
+    - Available Standard Time / PIC = 8 hrs/day × 22 days/month × 95% efficiency = 167.2 hrs/month
     - Utilization = PIC Workload / Available Standard Time / PIC = CS FTE coefficient.
     - When All Offices is selected, display ONLY offices that have at least one
       PIC with utilization > 100% (Actual FTE > 1.0).
