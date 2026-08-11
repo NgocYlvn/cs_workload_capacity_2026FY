@@ -1,6 +1,6 @@
 # ============================================================
 # CS WORKLOAD & CAPACITY DASHBOARD
-# BUILD: V17_TOP10_PIC_EXCEPTION_VIEW
+# BUILD: V19_ALL_CHARTS_LAYOUT_STANDARDIZED
 # BUILD: SECTION2_SAME_ROW_V6
 # Python + Streamlit + Pandas + Plotly
 # Data source: (100826)TEMPLATE_DATA FOR DASHBOARD_V1.xlsx
@@ -698,8 +698,19 @@ st.markdown(
 
     /* Chart wrappers */
     .chart-box {{
-        padding: 10px 12px !important;
+        padding: 12px 14px 10px 14px !important;
         overflow: visible !important;
+        min-width: 0 !important;
+    }}
+
+    .chart-box [data-testid="stPlotlyChart"] {{
+        margin: 0 !important;
+    }}
+
+    .chart-box .js-plotly-plot,
+    .chart-box .plot-container,
+    .chart-box .svg-container {{
+        width: 100% !important;
     }}
 
     /* Status */
@@ -1189,8 +1200,49 @@ def section_title(text: str):
     st.markdown(f'<div class="section-title">{text}</div>', unsafe_allow_html=True)
 
 
-def plotly_layout(fig: go.Figure, height: int = UI["chart_height"]) -> go.Figure:
-    """Shared Executive/Corporate Plotly theme — UI only."""
+def plotly_layout(
+    fig: go.Figure,
+    height: int = UI["chart_height"],
+    *,
+    show_legend: bool = True,
+    legend_position: str = "top",
+    margin_left: int = 52,
+    margin_right: int = 36,
+    margin_top: int = 62,
+    margin_bottom: int = 44,
+) -> go.Figure:
+    """Shared Executive/Corporate Plotly layout — UI only."""
+    legend_cfg = dict(
+        font=dict(size=UI["axis_size"]),
+        bgcolor="rgba(0,0,0,0)",
+        borderwidth=0,
+    )
+
+    if legend_position == "top":
+        legend_cfg.update(
+            orientation="h",
+            yanchor="bottom",
+            y=1.015,
+            xanchor="right",
+            x=1,
+        )
+    elif legend_position == "bottom":
+        legend_cfg.update(
+            orientation="h",
+            yanchor="top",
+            y=-0.16,
+            xanchor="left",
+            x=0,
+        )
+    else:
+        legend_cfg.update(
+            orientation="v",
+            yanchor="top",
+            y=1,
+            xanchor="left",
+            x=1.02,
+        )
+
     fig.update_layout(
         height=height,
         paper_bgcolor="rgba(0,0,0,0)",
@@ -1208,26 +1260,26 @@ def plotly_layout(fig: go.Figure, height: int = UI["chart_height"]) -> go.Figure
             ),
             x=0.0,
             xanchor="left",
-            y=0.98,
+            y=0.985,
             yanchor="top",
             pad=dict(t=0, b=8),
         ),
-        margin=dict(l=48, r=30, t=58, b=42),
-        legend=dict(
-            orientation="h",
-            yanchor="bottom",
-            y=1.02,
-            xanchor="right",
-            x=1,
-            font=dict(size=UI["axis_size"]),
-            bgcolor="rgba(0,0,0,0)",
+        margin=dict(
+            l=margin_left,
+            r=margin_right,
+            t=margin_top,
+            b=margin_bottom,
         ),
+        legend=legend_cfg,
+        showlegend=show_legend,
         hoverlabel=dict(
             font=dict(family="Arial", size=UI["axis_size"]),
             bgcolor="#FFFFFF",
             bordercolor=COLORS["border"],
         ),
+        hovermode="closest",
     )
+
     fig.update_xaxes(
         gridcolor="#E9EEF3",
         gridwidth=0.7,
@@ -1236,6 +1288,7 @@ def plotly_layout(fig: go.Figure, height: int = UI["chart_height"]) -> go.Figure
         tickfont=dict(size=UI["axis_size"]),
         title_font=dict(size=UI["axis_size"], color="#5F6B7A"),
         automargin=True,
+        ticks="",
     )
     fig.update_yaxes(
         gridcolor="#E9EEF3",
@@ -1245,6 +1298,7 @@ def plotly_layout(fig: go.Figure, height: int = UI["chart_height"]) -> go.Figure
         tickfont=dict(size=UI["axis_size"]),
         title_font=dict(size=UI["axis_size"], color="#5F6B7A"),
         automargin=True,
+        ticks="",
     )
     return fig
 
@@ -1791,8 +1845,8 @@ def chart_office_capacity_trend(df: pd.DataFrame):
         yaxis_title="HC",
         hovermode="x unified",
     )
-    fig = plotly_layout(fig, UI["chart_height"])
-    fig.update_xaxes(type="category")
+    fig = plotly_layout(fig, UI["chart_height"], show_legend=True, legend_position="top", margin_left=56, margin_right=42, margin_top=66, margin_bottom=46)
+    fig.update_xaxes(type="category", categoryorder="array", categoryarray=trend["Month"].tolist())
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
 
@@ -1931,74 +1985,45 @@ def chart_workload_by_pic(fte_df: pd.DataFrame, selected_office: str):
         annotation_font_color=COLORS["navy"],
     )
 
-    for label, color in [
-        ("Overload >100%", COLORS["red"]),
-        ("Attention 90–100%", COLORS["amber"]),
-        ("Available <90%", COLORS["blue"]),
-    ]:
-        fig.add_trace(
-            go.Bar(
-                x=[None],
-                y=[None],
-                orientation="h",
-                name=label,
-                marker_color=color,
-                hoverinfo="skip",
-                showlegend=True,
-            )
-        )
-
     max_actual = float(display["Actual Workload Hours"].max())
     x_max = max(max_actual * 1.15, CAPACITY_HOURS_PER_FTE * 1.25)
 
     fig.update_layout(
         title=dict(
-            text="PIC Workload & Capacity Utilization",
+            text=(
+                "PIC Workload & Capacity Utilization"
+                f"<br><span style='font-size:11px;color:#667085;font-weight:400'>{subtitle}</span>"
+            ),
             x=0.0,
             xanchor="left",
+            y=0.98,
+            yanchor="top",
             font=dict(size=UI["chart_title_size"], color=COLORS["navy"]),
         ),
         height=chart_height,
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
         font=dict(family="Arial", color=COLORS["text"]),
-        margin=dict(l=125, r=80, t=90, b=45),
+        margin=dict(l=125, r=80, t=76, b=48),
         bargap=0.24,
-        legend=dict(
-            orientation="h",
-            yanchor="bottom",
-            y=1.04,
-            xanchor="right",
-            x=1,
-            font=dict(size=UI["axis_size"]),
-            bgcolor="rgba(0,0,0,0)",
-        ),
+        showlegend=False,
     )
 
-    # Preserve the vline annotation and add executive summary annotations.
+    # Keep only one compact management summary in the upper-right.
     existing_annotations = list(fig.layout.annotations) if fig.layout.annotations else []
-    existing_annotations.extend([
-        dict(
-            text=subtitle,
-            x=0,
-            y=1.11,
-            xref="paper",
-            yref="paper",
-            showarrow=False,
-            xanchor="left",
-            font=dict(size=UI["note_size"], color=COLORS["muted"]),
-        ),
+    existing_annotations.append(
         dict(
             text=f"Overloaded PICs: <b>{overloaded_pic}</b> / Total PICs: <b>{total_pic}</b>",
             x=1,
-            y=1.11,
+            y=1.075,
             xref="paper",
             yref="paper",
             showarrow=False,
             xanchor="right",
+            yanchor="bottom",
             font=dict(size=UI["note_size"], color=COLORS["muted"]),
-        ),
-    ])
+        )
+    )
     fig.update_layout(annotations=existing_annotations)
 
     fig.update_xaxes(
@@ -2023,6 +2048,27 @@ def chart_workload_by_pic(fte_df: pd.DataFrame, selected_office: str):
         config={"displayModeBar": False},
     )
 
+    st.markdown(
+        f"""
+        <div style="
+            display:flex;
+            justify-content:flex-end;
+            align-items:center;
+            gap:18px;
+            margin-top:4px;
+            margin-bottom:2px;
+            color:#667085;
+            font-size:11px;
+            line-height:1.2;
+            white-space:nowrap;">
+            <span><span style="display:inline-block;width:9px;height:9px;background:{COLORS['red']};margin-right:5px;border-radius:2px;"></span>Overload &gt;100%</span>
+            <span><span style="display:inline-block;width:9px;height:9px;background:{COLORS['amber']};margin-right:5px;border-radius:2px;"></span>Attention 90–100%</span>
+            <span><span style="display:inline-block;width:9px;height:9px;background:{COLORS['blue']};margin-right:5px;border-radius:2px;"></span>Available &lt;90%</span>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
 
 
 def chart_workload_by_service(df: pd.DataFrame):
@@ -2045,7 +2091,7 @@ def chart_workload_by_service(df: pd.DataFrame):
         title="Workload Breakdown by Service Type",
     )
     fig.update_traces(textposition="outside", cliponaxis=False, hovertemplate="%{y}<br>%{x:,.1f} hours<extra></extra>")
-    fig = plotly_layout(fig, UI["chart_height"])
+    fig = plotly_layout(fig, UI["chart_height"], show_legend=False, margin_left=110, margin_right=70, margin_top=64, margin_bottom=44)
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
 
@@ -2073,7 +2119,7 @@ def chart_workload_composition(df: pd.DataFrame):
             hovertemplate=f"{row['Activity']}: {row['Hours']:,.1f} hrs ({row['Share']*100:.1f}%)<extra></extra>",
         ))
     fig.update_layout(barmode="stack", xaxis_tickformat=".0%", title="Workload Composition – C/A/S/E")
-    fig = plotly_layout(fig, 300)
+    fig = plotly_layout(fig, 320, show_legend=True, legend_position="top", margin_left=52, margin_right=40, margin_top=66, margin_bottom=44)
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
 
@@ -2093,7 +2139,8 @@ def chart_workload_trend(df: pd.DataFrame):
         title="Monthly Workload Trend",
     )
     fig.update_traces(hovertemplate="%{fullData.name}<br>%{x}: %{y:,.1f} hrs<extra></extra>")
-    fig = plotly_layout(fig, UI["chart_height"])
+    fig.update_xaxes(categoryorder="array", categoryarray=agg["Month"].drop_duplicates().tolist())
+    fig = plotly_layout(fig, UI["chart_height"], show_legend=True, legend_position="top", margin_left=56, margin_right=40, margin_top=66, margin_bottom=48)
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
 
@@ -2111,7 +2158,8 @@ def chart_capacity_trend(workload: pd.DataFrame, fte: pd.DataFrame):
     fig.add_trace(go.Bar(x=cap["Month"], y=cap["Capacity Hours"], name="Capacity Hours", marker_color=COLORS["light_blue"]))
     fig.add_trace(go.Scatter(x=cap["Month"], y=cap["Workload Hours"], name="Workload Hours", mode="lines+markers", line=dict(color=COLORS["red"], width=3)))
     fig.update_layout(title="Workload vs Capacity Trend", yaxis_title="Hours")
-    fig = plotly_layout(fig, UI["chart_height"])
+    fig.update_xaxes(categoryorder="array", categoryarray=cap["Month"].tolist())
+    fig = plotly_layout(fig, UI["chart_height"], show_legend=True, legend_position="top", margin_left=58, margin_right=40, margin_top=66, margin_bottom=48)
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
 
@@ -2132,7 +2180,7 @@ def chart_service_matrix(df: pd.DataFrame):
         title="Office × Service Workload Matrix (Hours)",
     )
     fig.update_layout(coloraxis_colorbar=dict(title="Hours"))
-    fig = plotly_layout(fig, 330)
+    fig = plotly_layout(fig, 360, show_legend=False, margin_left=70, margin_right=80, margin_top=66, margin_bottom=48)
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
 
@@ -2262,8 +2310,15 @@ def chart_top_customers(df: pd.DataFrame):
         tickfont=dict(size=UI["axis_size"]),
     )
     fig.update_xaxes(automargin=True)
-    fig = plotly_layout(fig, UI["chart_height_tall"])
-    fig.update_layout(margin=dict(l=140, r=55, t=60, b=55))
+    fig = plotly_layout(
+        fig,
+        UI["chart_height_tall"],
+        show_legend=False,
+        margin_left=155,
+        margin_right=60,
+        margin_top=66,
+        margin_bottom=50,
+    )
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
 
@@ -2319,7 +2374,7 @@ def chart_resolution(df: pd.DataFrame):
         yaxis=dict(title="Abnormalities"),
         yaxis2=dict(title="Resolution Rate", overlaying="y", side="right", tickformat=".0%", range=[0, max(1, agg["Resolution Rate"].max() * 1.1)]),
     )
-    fig = plotly_layout(fig, UI["chart_height"])
+    fig = plotly_layout(fig, UI["chart_height"], show_legend=False, margin_left=100, margin_right=70, margin_top=64, margin_bottom=44)
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
 
@@ -2332,7 +2387,8 @@ def chart_yvf(df: pd.DataFrame):
     fig = px.bar(d, x="Office", y="YVF Booking Ratio", text="YVF Booking Ratio", color_discrete_sequence=[COLORS["blue"]], title="YVF Promoter Effectiveness – Booking Ratio")
     fig.update_traces(texttemplate="%{text:.1%}", textposition="outside", cliponaxis=False, hovertemplate="%{x}: %{y:.1%}<extra></extra>")
     fig.update_yaxes(tickformat=".0%")
-    fig = plotly_layout(fig, UI["chart_height"])
+    fig.update_xaxes(categoryorder="array", categoryarray=agg["Month"].tolist())
+    fig = plotly_layout(fig, UI["chart_height"], show_legend=True, legend_position="top", margin_left=58, margin_right=60, margin_top=66, margin_bottom=48)
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
 # ============================================================
@@ -2515,7 +2571,7 @@ def main():
     # KPI cards follow Month + Office filters.
     # The line chart keeps all available months so management can see the HC trend.
     hc_trend_data = filter_office_only(hc, office)
-    st.markdown('<div class="chart-box" style="margin-top:14px;">', unsafe_allow_html=True)
+    st.markdown('<div class="chart-box" style="margin-top:12px;">', unsafe_allow_html=True)
     chart_office_capacity_trend(hc_trend_data)
     st.markdown('</div>', unsafe_allow_html=True)
 
@@ -2552,19 +2608,19 @@ def main():
     # Executive layout:
     # Row 1: Donut 40% | Top 20 Customers 60%
     # Row 2: Customer Detail full width, scrollable
-    chart_left, chart_right = st.columns([0.4, 0.6], gap="medium")
+    chart_left, chart_right = st.columns([0.42, 0.58], gap="medium")
 
     with chart_left:
-        st.markdown('<div class="chart-box" style="margin-top:14px;">', unsafe_allow_html=True)
+        st.markdown('<div class="chart-box" style="margin-top:12px;">', unsafe_allow_html=True)
         chart_shipment_modes(f_mode)
         st.markdown('</div>', unsafe_allow_html=True)
 
     with chart_right:
-        st.markdown('<div class="chart-box" style="margin-top:14px;">', unsafe_allow_html=True)
+        st.markdown('<div class="chart-box" style="margin-top:12px;">', unsafe_allow_html=True)
         chart_top_customers(f_customer_ns)
         st.markdown('</div>', unsafe_allow_html=True)
 
-    st.markdown('<div class="chart-box" style="margin-top:14px;">', unsafe_allow_html=True)
+    st.markdown('<div class="chart-box" style="margin-top:12px;">', unsafe_allow_html=True)
     customer_detail_table(f_customer_ns)
     st.markdown('</div>', unsafe_allow_html=True)
 
@@ -2650,7 +2706,7 @@ def main():
     # Available Standard Time / PIC = 95% × 8 × 22 = 167.2 hours.
     # Therefore: PIC Workload = CS FTE coefficient × 167.2 hours.
     # When All Offices is selected, only overloaded PICs/offices are displayed.
-    st.markdown('<div class="chart-box" style="margin-top:14px;">', unsafe_allow_html=True)
+    st.markdown('<div class="chart-box" style="margin-top:12px;">', unsafe_allow_html=True)
     chart_workload_by_pic(f_fte, office)
     st.markdown('</div>', unsafe_allow_html=True)
 
@@ -2678,7 +2734,7 @@ def main():
     h1, h2 = st.columns([0.9, 1.1])
     with h1:
         kpi_card("Total Shipment", fmt_int(kpis["Total Shipment"]), "Source: Shipment volume")
-        st.markdown('<div class="chart-box" style="margin-top:10px;">', unsafe_allow_html=True)
+        st.markdown('<div class="chart-box" style="margin-top:12px;">', unsafe_allow_html=True)
         chart_shipment_modes(f_mode)
         st.markdown('</div>', unsafe_allow_html=True)
     with h2:
@@ -2694,7 +2750,7 @@ def main():
             resolved = f_resolution["Resolved"].sum()
             rate = safe_div(resolved, total_abn)
             kpi_card("CS Resolution Rate", fmt_pct(rate), f"Resolved {fmt_int(resolved)} / {fmt_int(total_abn)} cases")
-        st.markdown('<div class="chart-box" style="margin-top:10px;">', unsafe_allow_html=True)
+        st.markdown('<div class="chart-box" style="margin-top:12px;">', unsafe_allow_html=True)
         chart_resolution(f_resolution)
         st.markdown('</div>', unsafe_allow_html=True)
     with e2:
@@ -2703,7 +2759,7 @@ def main():
             iff = f_yvf["IFF Shipment"].sum()
             yvf_rate = safe_div(yvf_booking, iff)
             kpi_card("YVF Booking Ratio", fmt_pct(yvf_rate), f"YVF {fmt_int(yvf_booking)} / IFF {fmt_int(iff)}")
-        st.markdown('<div class="chart-box" style="margin-top:10px;">', unsafe_allow_html=True)
+        st.markdown('<div class="chart-box" style="margin-top:12px;">', unsafe_allow_html=True)
         chart_yvf(f_yvf)
         st.markdown('</div>', unsafe_allow_html=True)
 
