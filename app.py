@@ -3254,11 +3254,12 @@ def customer_detail_volume_table(df: pd.DataFrame):
         ranking,
         use_container_width=True,
         hide_index=True,
-        height=SHIPMENT_PAIR_HEIGHT,  # same height as paired Top 10 chart; vertical scroll keeps the full list accessible
+        height=SHIPMENT_PAIR_HEIGHT,  # vertical scroll keeps the full customer list accessible
         column_config={
+            # Compact widths prevent unnecessary horizontal scrolling in the right-side detail panel.
             "Rank": st.column_config.NumberColumn("Rank", width="small", format="%d"),
-            "Customer": st.column_config.TextColumn("Customer", width="large"),
-            "Shipment Volume": st.column_config.NumberColumn("Shipment Volume", width="medium", format="%,.0f"),
+            "Customer": st.column_config.TextColumn("Customer", width="medium"),
+            "Shipment Volume": st.column_config.NumberColumn("Shipment Volume", width="small", format="%,.0f"),
         },
     )
 
