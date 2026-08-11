@@ -15,6 +15,7 @@ import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 import streamlit as st
 
 # ============================================================
@@ -305,6 +306,116 @@ st.markdown(
         color: #64748B;
         font-size: 11px;
         margin-top: 10px;
+    }}
+
+
+    /* Section 3 - Workload by PIC */
+    .pic-kpi-card {{
+        background: #FFFFFF;
+        border: 1px solid #D9E2EC;
+        border-radius: 14px;
+        padding: 14px 14px;
+        min-height: 142px;
+        height: 142px;
+        box-sizing: border-box;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.035);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        text-align: center;
+    }}
+
+    .pic-kpi-label {{
+        color: #64748B;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.035em;
+        line-height: 1.25;
+        min-height: 30px;
+    }}
+
+    .pic-kpi-value {{
+        color: #003B70;
+        font-size: 27px;
+        line-height: 1.05;
+        font-weight: 850;
+        margin-top: 8px;
+    }}
+
+    .pic-kpi-note {{
+        color: #64748B;
+        font-size: 10.5px;
+        margin-top: 7px;
+        line-height: 1.25;
+    }}
+
+    .pic-status-card {{
+        background: #FFFFFF;
+        border: 1px solid #D9E2EC;
+        border-radius: 14px;
+        padding: 14px 16px;
+        min-height: 110px;
+        height: 110px;
+        box-sizing: border-box;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.035);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+    }}
+
+    .pic-status-left {{
+        min-width: 180px;
+    }}
+
+    .pic-status-title {{
+        color: #64748B;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.035em;
+    }}
+
+    .pic-status-value {{
+        color: #003B70;
+        font-size: 30px;
+        font-weight: 850;
+        margin-top: 4px;
+    }}
+
+    .pic-progress-track {{
+        flex: 1;
+        height: 13px;
+        background: #EAF3F8;
+        border-radius: 999px;
+        overflow: hidden;
+    }}
+
+    .pic-progress-fill {{
+        height: 100%;
+        border-radius: 999px;
+    }}
+
+    .workload-status-panel {{
+        background: #FFFFFF;
+        border: 1px solid #D9E2EC;
+        border-radius: 14px;
+        padding: 14px 16px;
+        min-height: 110px;
+        height: 110px;
+        box-sizing: border-box;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.035);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        text-align: center;
+    }}
+
+    .workload-status-text {{
+        font-size: 20px;
+        font-weight: 850;
+        margin-top: 8px;
     }}
     .kpi-label {{
         color: {COLORS['muted']};
@@ -618,6 +729,128 @@ def shipment_kpi_card(label: str, value: str, note: str = ""):
     )
 
 
+
+def pic_kpi_card(label: str, value: str, note: str = ""):
+    """Compact numeric KPI card for Workload by PIC."""
+    st.markdown(
+        f"""
+        <div class="pic-kpi-card">
+            <div class="pic-kpi-label">{label}</div>
+            <div class="pic-kpi-value">{value}</div>
+            <div class="pic-kpi-note">{note}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def filtered_monthly_metric(
+    df: pd.DataFrame,
+    value_col: str,
+    agg: str = "sum",
+) -> float:
+    """
+    KPI helper:
+    - Single month => exact selected-month aggregate.
+    - All months => average of monthly aggregates.
+    """
+    if df is None or df.empty or value_col not in df.columns:
+        return float("nan")
+
+    d = df[["MonthDate", value_col]].copy()
+    d[value_col] = pd.to_numeric(d[value_col], errors="coerce")
+    d = d.dropna(subset=["MonthDate", value_col])
+    if d.empty:
+        return float("nan")
+
+    if agg == "sum":
+        monthly = d.groupby("MonthDate")[value_col].sum(min_count=1)
+    elif agg == "mean":
+        monthly = d.groupby("MonthDate")[value_col].mean()
+    else:
+        raise ValueError("agg must be 'sum' or 'mean'")
+
+    monthly = monthly.dropna()
+    if monthly.empty:
+        return float("nan")
+    return float(monthly.mean())
+
+
+def hc_weighted_utilization(df: pd.DataFrame) -> float:
+    """Weighted utilization from HC, weighted by Total Actual HC."""
+    if df is None or df.empty or "HC Utilization" not in df.columns:
+        return float("nan")
+
+    d = df[["MonthDate", "HC Utilization", "Total Actual HC"]].copy()
+    d["HC Utilization"] = pd.to_numeric(d["HC Utilization"], errors="coerce")
+    d["Total Actual HC"] = pd.to_numeric(d["Total Actual HC"], errors="coerce")
+    d = d.dropna(subset=["MonthDate", "HC Utilization"])
+    if d.empty:
+        return float("nan")
+
+    monthly_values = []
+    for _, g in d.groupby("MonthDate"):
+        valid_weight = g["Total Actual HC"].notna() & (g["Total Actual HC"] > 0)
+        if valid_weight.any():
+            num = (g.loc[valid_weight, "HC Utilization"] * g.loc[valid_weight, "Total Actual HC"]).sum()
+            den = g.loc[valid_weight, "Total Actual HC"].sum()
+            monthly_values.append(float(num / den) if den else float("nan"))
+        else:
+            monthly_values.append(float(g["HC Utilization"].mean()))
+
+    monthly_values = [x for x in monthly_values if not pd.isna(x)]
+    return float(np.mean(monthly_values)) if monthly_values else float("nan")
+
+
+def pic_utilization_card(util: float):
+    if pd.isna(util):
+        value = "N/A"
+        pct = 0
+        color = COLORS["muted"]
+    else:
+        value = fmt_pct(util)
+        pct = max(0, min(util * 100, 125))
+        _, color, _ = status_from_util(util)
+
+    width_pct = min(pct / 125 * 100, 100)
+    st.markdown(
+        f"""
+        <div class="pic-status-card">
+            <div class="pic-status-left">
+                <div class="pic-status-title">CAPACITY UTILIZATION</div>
+                <div class="pic-status-value">{value}</div>
+            </div>
+            <div class="pic-progress-track">
+                <div class="pic-progress-fill"
+                     style="width:{width_pct:.1f}%;background:{color};"></div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def overall_workload_status_card(util: float):
+    if pd.isna(util):
+        status_text, color, bg = "NO DATA", COLORS["muted"], COLORS["light_blue"]
+    else:
+        status_text, color, bg = status_from_util(util)
+
+    st.markdown(
+        f"""
+        <div class="workload-status-panel">
+            <div class="pic-status-title">OVERALL WORKLOAD STATUS</div>
+            <div class="workload-status-text"
+                 style="color:{color};background:{bg};
+                        border-radius:999px;padding:8px 14px;">
+                {status_text}
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
 def section_title(text: str):
     st.markdown(f'<div class="section-title">{text}</div>', unsafe_allow_html=True)
 
@@ -671,6 +904,7 @@ def prepare_hc(df: pd.DataFrame) -> pd.DataFrame:
         "Total Required HC": "Total Required HC",
         "Total Available Standard Time (95%x8x22xPIC)": "HC Available Hours",
         "Total actual Working Time (=C+A+S+E)": "HC Actual Working Hours",
+        "Actual workload/PIC (hour)": "HC Actual Workload per PIC",
         "HC Utilization (%)": "HC Utilization",
         "HC Status": "HC Status",
     }
@@ -687,7 +921,8 @@ def prepare_hc(df: pd.DataFrame) -> pd.DataFrame:
         "Approved HC MNG", "Approved HC PIC", "Total Approved HC",
         "Actual HC MNG", "Actual HC PIC", "Total Actual HC",
         "Required HC MNG", "Required HC PIC", "Total Required HC",
-        "HC Available Hours", "HC Actual Working Hours", "HC Utilization"
+        "HC Available Hours", "HC Actual Working Hours",
+        "HC Actual Workload per PIC", "HC Utilization"
     ]
     for col in hc_numeric_cols:
         if col in df.columns:
@@ -1129,6 +1364,121 @@ def chart_office_capacity_trend(df: pd.DataFrame):
     )
     fig = plotly_layout(fig, 360)
     fig.update_xaxes(type="category")
+    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+
+
+
+def chart_workload_by_pic(fte_df: pd.DataFrame, selected_office: str):
+    """
+    Actual Workload vs Standard by CS PIC.
+    Actual workload per PIC = CS FTE ratio × 167.2 hours.
+    Standard = 167.2 hours/PIC/month.
+    If All Offices: show 4 office panels (2x2).
+    If one Office: show one larger panel.
+    """
+    offices = STANDARD_OFFICES if selected_office == "All Offices" else [selected_office]
+
+    if selected_office == "All Offices":
+        fig = make_subplots(
+            rows=2,
+            cols=2,
+            subplot_titles=offices,
+            horizontal_spacing=0.10,
+            vertical_spacing=0.20,
+        )
+        positions = [(1, 1), (1, 2), (2, 1), (2, 2)]
+        chart_height = 650
+    else:
+        fig = make_subplots(rows=1, cols=1, subplot_titles=offices)
+        positions = [(1, 1)]
+        chart_height = 390
+
+    for office_name, (r, c) in zip(offices, positions):
+        d = fte_df[fte_df["Office"] == office_name].copy() if not fte_df.empty else pd.DataFrame()
+
+        if not d.empty:
+            # If multiple months are selected, use average FTE by PIC.
+            by_pic = (
+                d.groupby("CS PIC", as_index=False)["Actual FTE"]
+                .mean()
+                .sort_values("CS PIC")
+            )
+            by_pic["Actual Workload Hours"] = by_pic["Actual FTE"] * CAPACITY_HOURS_PER_FTE
+            by_pic["Standard Hours"] = CAPACITY_HOURS_PER_FTE
+
+            fig.add_trace(
+                go.Scatter(
+                    x=by_pic["CS PIC"],
+                    y=by_pic["Standard Hours"],
+                    mode="lines+markers",
+                    name="Standard",
+                    legendgroup="Standard",
+                    showlegend=(r == 1 and c == 1),
+                    line=dict(color=COLORS["navy"], width=2.5, dash="dash"),
+                    marker=dict(size=6),
+                    hovertemplate="%{x}<br>Standard: %{y:,.1f} hrs<extra></extra>",
+                ),
+                row=r, col=c,
+            )
+
+            fig.add_trace(
+                go.Scatter(
+                    x=by_pic["CS PIC"],
+                    y=by_pic["Actual Workload Hours"],
+                    mode="lines+markers",
+                    name="Actual",
+                    legendgroup="Actual",
+                    showlegend=(r == 1 and c == 1),
+                    line=dict(color=COLORS["red"], width=2.8),
+                    marker=dict(size=7),
+                    hovertemplate="%{x}<br>Actual: %{y:,.1f} hrs<extra></extra>",
+                ),
+                row=r, col=c,
+            )
+        else:
+            fig.add_annotation(
+                text="No data",
+                x=0.5, y=0.5,
+                xref=f"x{'' if (r, c) == (1, 1) else (r-1)*2+c} domain",
+                yref=f"y{'' if (r, c) == (1, 1) else (r-1)*2+c} domain",
+                showarrow=False,
+                font=dict(color=COLORS["muted"], size=12),
+            )
+
+    fig.update_layout(
+        title=dict(
+            text="Actual Workload vs Standard by PIC",
+            x=0.0,
+            xanchor="left",
+            font=dict(size=15, color=COLORS["navy"]),
+        ),
+        height=chart_height,
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        font=dict(family="Arial", color=COLORS["text"]),
+        margin=dict(l=55, r=30, t=70, b=50),
+        hovermode="closest",
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1,
+        ),
+    )
+    fig.update_xaxes(
+        title_text="CS PIC",
+        tickangle=-25,
+        automargin=True,
+        gridcolor="#EDF2F7",
+    )
+    fig.update_yaxes(
+        title_text="Hours",
+        automargin=True,
+        gridcolor="#EDF2F7",
+        rangemode="tozero",
+    )
+
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
 
@@ -1664,16 +2014,86 @@ def main():
     customer_detail_table(f_customer_ns)
     st.markdown('</div>', unsafe_allow_html=True)
 
-    section_title("3. Workload by Service Type & Composition")
-    s1, s2 = st.columns([1.1, 0.9])
-    with s1:
-        st.markdown('<div class="chart-box">', unsafe_allow_html=True)
-        chart_workload_by_service(f_workload)
-        st.markdown('</div>', unsafe_allow_html=True)
-    with s2:
-        st.markdown('<div class="chart-box">', unsafe_allow_html=True)
-        chart_workload_composition(f_workload)
-        st.markdown('</div>', unsafe_allow_html=True)
+    section_title("3. Workload by PIC")
+
+    # KPI source: HC
+    # Total Available Standard Time:
+    # prefer HC source column; if blank, calculate Total Actual HC × 167.2.
+    hc_for_pic = f_hc.copy()
+
+    if not hc_for_pic.empty:
+        hc_for_pic["Calculated Available Hours"] = pd.to_numeric(
+            hc_for_pic.get("HC Available Hours"), errors="coerce"
+        )
+        fallback_capacity = (
+            pd.to_numeric(hc_for_pic.get("Total Actual HC"), errors="coerce")
+            * CAPACITY_HOURS_PER_FTE
+        )
+        hc_for_pic["Calculated Available Hours"] = (
+            hc_for_pic["Calculated Available Hours"].fillna(fallback_capacity)
+        )
+
+    total_available = filtered_monthly_metric(
+        hc_for_pic, "Calculated Available Hours", "sum"
+    ) if not hc_for_pic.empty else float("nan")
+
+    standard_per_pic = CAPACITY_HOURS_PER_FTE
+
+    total_actual_working = filtered_monthly_metric(
+        hc_for_pic, "HC Actual Working Hours", "sum"
+    ) if not hc_for_pic.empty else float("nan")
+
+    actual_workload_per_pic = filtered_monthly_metric(
+        hc_for_pic, "HC Actual Workload per PIC", "mean"
+    ) if not hc_for_pic.empty else float("nan")
+
+    capacity_util = hc_weighted_utilization(hc_for_pic)
+
+    # Row 1: 4 compact numeric cards to avoid an overly dense 6-card row.
+    p1, p2, p3, p4 = st.columns(4, gap="medium")
+
+    with p1:
+        pic_kpi_card(
+            "TOTAL AVAILABLE STANDARD TIME",
+            fmt_num(total_available, 1, " h") if not pd.isna(total_available) else "N/A",
+            "95% × 8 × 22 × Actual HC",
+        )
+
+    with p2:
+        pic_kpi_card(
+            "AVAILABLE STANDARD TIME / PIC",
+            fmt_num(standard_per_pic, 1, " h"),
+            "95% × 8 × 22",
+        )
+
+    with p3:
+        pic_kpi_card(
+            "TOTAL ACTUAL WORKING TIME",
+            fmt_num(total_actual_working, 1, " h")
+            if not pd.isna(total_actual_working) else "N/A",
+            "HC source: C + A + S + E",
+        )
+
+    with p4:
+        pic_kpi_card(
+            "ACTUAL WORKLOAD / PIC",
+            fmt_num(actual_workload_per_pic, 1, " h")
+            if not pd.isna(actual_workload_per_pic) else "N/A",
+            "HC source",
+        )
+
+    # Row 2: Utilization + Status as wider management indicators.
+    ps1, ps2 = st.columns([1.35, 0.65], gap="medium")
+    with ps1:
+        pic_utilization_card(capacity_util)
+    with ps2:
+        overall_workload_status_card(capacity_util)
+
+    # Chart source: CS FTE
+    # Actual workload per PIC = CS FTE ratio × 167.2.
+    st.markdown('<div class="chart-box" style="margin-top:14px;">', unsafe_allow_html=True)
+    chart_workload_by_pic(f_fte, office)
+    st.markdown('</div>', unsafe_allow_html=True)
 
     section_title("4. Office × Service Workload Matrix")
     st.markdown('<div class="chart-box">', unsafe_allow_html=True)
