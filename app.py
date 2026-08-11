@@ -21,13 +21,13 @@ import streamlit as st
 # ============================================================
 
 st.set_page_config(
-    page_title="CS Workload & Capacity Dashboard",
+    page_title="CS CAPACITY & PRODUCTIVITY",
     page_icon="📊",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
-APP_TITLE = "CS WORKLOAD & CAPACITY DASHBOARD"
+APP_TITLE = "CS CAPACITY & PRODUCTIVITY"
 APP_SUBTITLE = "Operations Performance | Capacity | Workload | Productivity"
 DEFAULT_FILE = "(100826)TEMPLATE_DATA FOR DASHBOARD_V1.xlsx"
 CAPACITY_HOURS_PER_FTE = 8 * 0.95 * 22  # 167.2 hours/FTE/month
