@@ -3254,12 +3254,11 @@ def customer_detail_volume_table(df: pd.DataFrame):
         ranking,
         use_container_width=True,
         hide_index=True,
-        height=SHIPMENT_PAIR_HEIGHT,  # vertical scroll keeps the full customer list accessible
+        height=SHIPMENT_PAIR_HEIGHT,  # same height as paired Top 10 chart; vertical scroll keeps the full list accessible
         column_config={
-            # Compact widths prevent unnecessary horizontal scrolling in the right-side detail panel.
             "Rank": st.column_config.NumberColumn("Rank", width="small", format="%d"),
-            "Customer": st.column_config.TextColumn("Customer", width="medium"),
-            "Shipment Volume": st.column_config.NumberColumn("Shipment Volume", width="small", format="%,.0f"),
+            "Customer": st.column_config.TextColumn("Customer", width="large"),
+            "Shipment Volume": st.column_config.NumberColumn("Shipment Volume", width="medium", format="%,.0f"),
         },
     )
 
@@ -3823,49 +3822,115 @@ def main():
 
     section_title("3. Workload by PIC")
 
-    # KPI source: HC
-    # Total Available Standard Time:
-    # prefer HC source column; if blank, calculate Total Actual HC × 167.2.
+    # KPI source: HC — PIC-only logic.
+    # IMPORTANT: all KPIs in Section 3 use the same population: Actual HC – PIC.
+    # Available Standard Time / PIC = 8 hrs/day × 22 days/month × 95% = 167.2 hrs.
+    # Total PIC Available Standard Time = Actual HC PIC × 167.2.
+    # Total Actual PIC Workload = HC source Actual workload/PIC × Actual HC PIC.
+    # Actual Workload / PIC = Total Actual PIC Workload ÷ Actual HC PIC.
+    # Capacity Utilization = Total Actual PIC Workload ÷ Total PIC Available Standard Time.
     hc_for_pic = f_hc.copy()
-
-    if not hc_for_pic.empty:
-        hc_for_pic["Calculated Available Hours"] = pd.to_numeric(
-            hc_for_pic.get("HC Available Hours"), errors="coerce"
-        )
-        fallback_capacity = (
-            pd.to_numeric(hc_for_pic.get("Total Actual HC"), errors="coerce")
-            * CAPACITY_HOURS_PER_FTE
-        )
-        hc_for_pic["Calculated Available Hours"] = (
-            hc_for_pic["Calculated Available Hours"].fillna(fallback_capacity)
-        )
-
-    total_available = filtered_monthly_metric(
-        hc_for_pic, "Calculated Available Hours", "sum"
-    ) if not hc_for_pic.empty else float("nan")
 
     standard_per_pic = CAPACITY_HOURS_PER_FTE
 
-    total_actual_working = filtered_monthly_metric(
-        hc_for_pic, "HC Actual Working Hours", "sum"
-    ) if not hc_for_pic.empty else float("nan")
+    if not hc_for_pic.empty:
+        hc_for_pic["Actual HC PIC"] = pd.to_numeric(
+            hc_for_pic.get("Actual HC PIC"), errors="coerce"
+        )
+        hc_for_pic["HC Actual Workload per PIC"] = pd.to_numeric(
+            hc_for_pic.get("HC Actual Workload per PIC"), errors="coerce"
+        )
 
-    actual_workload_per_pic = filtered_monthly_metric(
-        hc_for_pic, "HC Actual Workload per PIC", "mean"
-    ) if not hc_for_pic.empty else float("nan")
+        # PIC capacity only — Managers are excluded from this section.
+        hc_for_pic["PIC Available Hours"] = (
+            hc_for_pic["Actual HC PIC"] * standard_per_pic
+        )
 
-    # IMPORTANT: Do not calculate Capacity Utilization from CS FTE.
-    # Source of truth is sheet HC -> "Capacity Utilization (%)".
-    capacity_util = hc_capacity_utilization(hc_for_pic)
+        # Reconstruct PIC total workload from the HC source per-PIC workload.
+        # This keeps the HC sheet as the source while ensuring all KPIs use the same PIC population.
+        hc_for_pic["PIC Actual Workload Hours"] = (
+            hc_for_pic["HC Actual Workload per PIC"] * hc_for_pic["Actual HC PIC"]
+        )
+
+        # Monthly PIC totals are the common source for all displayed Section 3 KPIs.
+        pic_monthly = (
+            hc_for_pic.groupby("MonthDate", dropna=True)
+            .agg(
+                Actual_HC_PIC=("Actual HC PIC", "sum"),
+                PIC_Available_Hours=("PIC Available Hours", "sum"),
+                PIC_Actual_Workload_Hours=("PIC Actual Workload Hours", "sum"),
+            )
+            .reset_index()
+        )
+        pic_monthly = pic_monthly[pic_monthly["Actual_HC_PIC"] > 0].copy()
+    else:
+        pic_monthly = pd.DataFrame()
+
+    if not pic_monthly.empty:
+        # Build each month's KPI first so "All" means the average of monthly KPI values,
+        # while a selected month shows that month's actual value.
+        pic_monthly["Actual_Workload_per_PIC"] = np.where(
+            pic_monthly["Actual_HC_PIC"] > 0,
+            pic_monthly["PIC_Actual_Workload_Hours"] / pic_monthly["Actual_HC_PIC"],
+            np.nan,
+        )
+        pic_monthly["Capacity_Utilization"] = np.where(
+            pic_monthly["PIC_Available_Hours"] > 0,
+            pic_monthly["PIC_Actual_Workload_Hours"] / pic_monthly["PIC_Available_Hours"],
+            np.nan,
+        )
+
+        if str(month).strip().lower() == "all":
+            # ALL MONTHS = average of each valid month's KPI.
+            total_available = float(pic_monthly["PIC_Available_Hours"].mean())
+            total_actual_working = float(pic_monthly["PIC_Actual_Workload_Hours"].mean())
+            actual_pic_hc = float(pic_monthly["Actual_HC_PIC"].mean())
+            actual_workload_per_pic = float(
+                pic_monthly["Actual_Workload_per_PIC"].dropna().mean()
+            )
+            capacity_util = float(
+                pic_monthly["Capacity_Utilization"].dropna().mean()
+            )
+        else:
+            # SELECTED MONTH = actual KPI of that month after current filters.
+            selected_month_row = pic_monthly.sort_values("MonthDate").iloc[-1]
+            total_available = float(selected_month_row["PIC_Available_Hours"])
+            total_actual_working = float(selected_month_row["PIC_Actual_Workload_Hours"])
+            actual_pic_hc = float(selected_month_row["Actual_HC_PIC"])
+            actual_workload_per_pic = float(selected_month_row["Actual_Workload_per_PIC"])
+            capacity_util = float(selected_month_row["Capacity_Utilization"])
+    else:
+        total_available = float("nan")
+        total_actual_working = float("nan")
+        actual_pic_hc = float("nan")
+        actual_workload_per_pic = float("nan")
+        capacity_util = float("nan")
+
+    # Dynamic KPI labels:
+    # Month = All -> clarify that displayed totals are average monthly values.
+    # Selected month -> keep "Total" because values represent the actual selected month.
+    is_all_months = str(month).strip().lower() == "all"
+    available_time_label = (
+        "AVG. MONTHLY AVAILABLE STANDARD TIME"
+        if is_all_months
+        else "TOTAL AVAILABLE STANDARD TIME"
+    )
+    actual_working_time_label = (
+        "AVG. MONTHLY ACTUAL WORKING TIME"
+        if is_all_months
+        else "TOTAL ACTUAL WORKING TIME"
+    )
 
     # Row 1: 4 compact numeric cards to avoid an overly dense 6-card row.
     p1, p2, p3, p4 = st.columns(4, gap="medium")
 
     with p1:
         pic_kpi_card(
-            "TOTAL AVAILABLE STANDARD TIME",
+            available_time_label,
             fmt_num(total_available, 1, " hrs") if not pd.isna(total_available) else "N/A",
-            "95% × 8 × 22 × Actual HC",
+            "Actual HC – PIC × 167.2 hrs"
+            if not is_all_months
+            else "Average monthly PIC capacity",
         )
 
     with p2:
@@ -3877,10 +3942,12 @@ def main():
 
     with p3:
         pic_kpi_card(
-            "TOTAL ACTUAL WORKING TIME",
+            actual_working_time_label,
             fmt_num(total_actual_working, 1, " hrs")
             if not pd.isna(total_actual_working) else "N/A",
-            "HC source: C + A + S + E",
+            "Actual workload/PIC × Actual HC – PIC"
+            if not is_all_months
+            else "Average monthly PIC workload",
         )
 
     with p4:
@@ -3888,7 +3955,7 @@ def main():
             "ACTUAL WORKLOAD / PIC",
             fmt_num(actual_workload_per_pic, 1, " hrs")
             if not pd.isna(actual_workload_per_pic) else "N/A",
-            "HC source",
+            "Total PIC workload ÷ Actual HC – PIC",
         )
 
     # Row 2: Utilization + Status as wider management indicators.
@@ -3914,8 +3981,11 @@ def main():
             font-size:11px;
             line-height:1.45;
             font-family:Inter, 'Segoe UI', Arial, sans-serif;">
-            <b>PIC Workload (hrs)</b> = CS FTE Factor × Available Standard Time / PIC<br>
-            <b>Available Standard Time / PIC</b> = 8 hrs/day × 22 days/month × 95% efficiency = 167.2 hrs/month
+            <b>Section KPI logic:</b> Actual HC – PIC only (Managers excluded).<br>
+            <b>Capacity Utilization</b> = Total Actual PIC Workload ÷ Total PIC Available Standard Time.<br>
+            <b>PIC chart logic:</b> PIC Workload (hrs) = CS FTE Factor × Available Standard Time / PIC;<br>
+            <b>Available Standard Time / PIC</b> = 8 hrs/day × 22 days/month × 95% efficiency = 167.2 hrs/month<br>
+            <b>Month logic:</b> Month = All → average of valid monthly KPI values; selected month → actual value of that month
         </div>
         """,
         unsafe_allow_html=True,
