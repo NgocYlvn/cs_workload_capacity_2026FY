@@ -1,6 +1,6 @@
 # ============================================================
 # CS WORKLOAD & CAPACITY DASHBOARD
-# BUILD: V36_SECTION5_CODE_DESCRIPTION_MAPPING
+# BUILD: V37_SECTION6_CS_SOLUTION
 # BUILD: SECTION2_SAME_ROW_V6
 # Python + Streamlit + Pandas + Plotly
 # Data source: (100826)TEMPLATE_DATA FOR DASHBOARD_V1.xlsx
@@ -2092,25 +2092,67 @@ def render_activity_detail_table(
 
 
 def prepare_resolution(df: pd.DataFrame) -> pd.DataFrame:
-    if df.empty:
-        return pd.DataFrame(columns=["Office", "MonthDate", "Total Abnormality", "Resolved", "Resolution Rate"])
-    df = df.copy()
-    office_col = first_existing(df, ["OFFICE", "Office"])
-    month_col = first_existing(df, ["Month"])
-    total_col = first_existing(df, ["Total abnormality/month", "Total abnormality"])
-    resolved_col = first_existing(df, ["No of abnormality resolved by CS", "Resolved"])
-    rate_col = first_existing(df, ["CS Resolution rate", "Resolution rate"])
-    if not office_col or not month_col:
-        return pd.DataFrame(columns=["Office", "MonthDate"])
-    df["Office"] = df[office_col].map(normalize_office)
-    df["MonthDate"] = df[month_col].map(parse_month)
-    df["Total Abnormality"] = numeric_series(df[total_col]) if total_col else 0
-    df["Resolved"] = numeric_series(df[resolved_col]) if resolved_col else 0
-    if rate_col:
-        df["Resolution Rate"] = numeric_series(df[rate_col])
-    else:
-        df["Resolution Rate"] = df.apply(lambda r: safe_div(r["Resolved"], r["Total Abnormality"]), axis=1)
-    return df.dropna(subset=["MonthDate"])
+    """
+    Sheet 'CS Resolutions Rate'
+    Source structure:
+        OFFICE | Month | Total abnormality/month |
+        No of abnormality resolved by CS | CS Resolution rate
+
+    Dashboard rules:
+    - Only months with actual source data are retained.
+    - Resolution Rate is recalculated from Resolved / Total Abnormality
+      so the dashboard does not depend on Excel formula cache.
+    """
+    cols = [
+        "Office", "MonthDate",
+        "Total Abnormality", "Resolved", "Resolution Rate",
+    ]
+    if df is None or df.empty:
+        return pd.DataFrame(columns=cols)
+
+    d = df.copy()
+    office_col = first_existing(d, ["OFFICE", "Office"])
+    month_col = first_existing(d, ["Month"])
+    total_col = first_existing(
+        d, ["Total abnormality/month", "Total abnormality"]
+    )
+    resolved_col = first_existing(
+        d, ["No of abnormality resolved by CS", "Resolved"]
+    )
+
+    if not office_col or not month_col or not total_col or not resolved_col:
+        return pd.DataFrame(columns=cols)
+
+    d["Office"] = d[office_col].map(normalize_office)
+    d["MonthDate"] = d[month_col].map(parse_month)
+
+    # Preserve blanks first; do not convert future empty months to zero.
+    d["Total Abnormality"] = pd.to_numeric(d[total_col], errors="coerce")
+    d["Resolved"] = pd.to_numeric(d[resolved_col], errors="coerce")
+
+    # Keep only rows/months where the source contains actual activity data.
+    d = d[
+        (d["Office"] != "")
+        & (~d["MonthDate"].isna())
+        & (
+            d["Total Abnormality"].notna()
+            | d["Resolved"].notna()
+        )
+    ].copy()
+
+    if d.empty:
+        return pd.DataFrame(columns=cols)
+
+    d["Total Abnormality"] = d["Total Abnormality"].fillna(0)
+    d["Resolved"] = d["Resolved"].fillna(0)
+
+    d["Resolution Rate"] = np.where(
+        d["Total Abnormality"] > 0,
+        d["Resolved"] / d["Total Abnormality"],
+        np.nan,
+    )
+
+    return d[cols].reset_index(drop=True)
 
 
 @st.cache_data(show_spinner=False)
@@ -3201,23 +3243,198 @@ def customer_detail_table(df: pd.DataFrame):
 
 
 def chart_resolution(df: pd.DataFrame):
-    if df.empty:
-        st.info("No CS resolution data available.")
+    """
+    CS Solution performance:
+    - Bars = Total Abnormalities vs Resolved by CS
+    - Line = CS Resolution Rate
+    - Ordered by month
+    """
+    if df is None or df.empty:
+        st.info("No CS Resolution data available for selected filters.")
         return
-    agg = df.groupby("MonthDate", as_index=False).agg({"Total Abnormality": "sum", "Resolved": "sum"})
-    agg["Resolution Rate"] = agg.apply(lambda r: safe_div(r["Resolved"], r["Total Abnormality"]), axis=1)
-    agg["Month"] = agg["MonthDate"].dt.strftime("%b-%y")
-    agg = agg.sort_values("MonthDate")
-    fig = go.Figure()
-    fig.add_trace(go.Bar(x=agg["Month"], y=agg["Total Abnormality"], name="Total Abnormality", marker_color=COLORS["light_blue"], yaxis="y"))
-    fig.add_trace(go.Scatter(x=agg["Month"], y=agg["Resolution Rate"], name="Resolution Rate", mode="lines+markers", line=dict(color=COLORS["green"], width=3), yaxis="y2"))
-    fig.update_layout(
-        title="Control Tower Effectiveness – CS Resolution Rate",
-        yaxis=dict(title="Abnormalities"),
-        yaxis2=dict(title="Resolution Rate", overlaying="y", side="right", tickformat=".0%", range=[0, max(1, agg["Resolution Rate"].max() * 1.1)]),
+
+    agg = (
+        df.groupby("MonthDate", as_index=False)
+        .agg(
+            **{
+                "Total Abnormality": ("Total Abnormality", "sum"),
+                "Resolved": ("Resolved", "sum"),
+            }
+        )
+        .sort_values("MonthDate")
     )
-    fig = plotly_layout(fig, UI["chart_height"], show_legend=False, margin_left=100, margin_right=70, margin_top=64, margin_bottom=44)
-    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+    agg["Resolution Rate"] = np.where(
+        agg["Total Abnormality"] > 0,
+        agg["Resolved"] / agg["Total Abnormality"],
+        np.nan,
+    )
+    agg["Month"] = agg["MonthDate"].dt.strftime("%b-%y")
+
+    fig = go.Figure()
+
+    fig.add_trace(
+        go.Bar(
+            x=agg["Month"],
+            y=agg["Total Abnormality"],
+            name="Total Abnormalities",
+            marker_color="#A7B9C9",
+            text=agg["Total Abnormality"],
+            texttemplate="%{text:,.0f}",
+            textposition="outside",
+            cliponaxis=False,
+            hovertemplate=(
+                "<b>%{x}</b><br>"
+                "Total Abnormalities: %{y:,.0f}"
+                "<extra></extra>"
+            ),
+        )
+    )
+
+    fig.add_trace(
+        go.Bar(
+            x=agg["Month"],
+            y=agg["Resolved"],
+            name="Resolved by CS",
+            marker_color=COLORS["blue"],
+            text=agg["Resolved"],
+            texttemplate="%{text:,.0f}",
+            textposition="outside",
+            cliponaxis=False,
+            hovertemplate=(
+                "<b>%{x}</b><br>"
+                "Resolved by CS: %{y:,.0f}"
+                "<extra></extra>"
+            ),
+        )
+    )
+
+    fig.add_trace(
+        go.Scatter(
+            x=agg["Month"],
+            y=agg["Resolution Rate"],
+            name="CS Resolution Rate",
+            mode="lines+markers+text",
+            line=dict(color=COLORS["green"], width=3),
+            marker=dict(size=7),
+            text=agg["Resolution Rate"],
+            texttemplate="%{text:.1%}",
+            textposition="top center",
+            yaxis="y2",
+            hovertemplate=(
+                "<b>%{x}</b><br>"
+                "CS Resolution Rate: %{y:.1%}"
+                "<extra></extra>"
+            ),
+        )
+    )
+
+    fig.update_layout(
+        title="CS Resolution Performance by Month",
+        barmode="group",
+        yaxis=dict(
+            title="Cases",
+            rangemode="tozero",
+        ),
+        yaxis2=dict(
+            title="Resolution Rate",
+            overlaying="y",
+            side="right",
+            tickformat=".0%",
+            range=[0, 1.08],
+            showgrid=False,
+        ),
+    )
+
+    fig = plotly_layout(
+        fig,
+        390,
+        show_legend=True,
+        legend_position="top",
+        margin_left=58,
+        margin_right=68,
+        margin_top=72,
+        margin_bottom=44,
+    )
+    fig.update_xaxes(
+        type="category",
+        categoryorder="array",
+        categoryarray=agg["Month"].tolist(),
+    )
+
+    st.plotly_chart(
+        fig,
+        use_container_width=True,
+        config={"displayModeBar": False},
+    )
+
+
+def render_cs_solution_table(df: pd.DataFrame):
+    """
+    Detail table sourced directly from sheet 'CS Resolutions Rate'.
+    Shows only rows/months with source data after dashboard filters.
+    """
+    if df is None or df.empty:
+        st.info("No CS Resolution data available for selected filters.")
+        return
+
+    d = df.copy()
+    d["Month"] = d["MonthDate"].dt.strftime("%b-%y")
+
+    display = d[
+        ["Office", "Month", "Total Abnormality", "Resolved", "Resolution Rate"]
+    ].copy()
+
+    display = display.sort_values(["Office", "Month"])
+
+    total_abn = float(display["Total Abnormality"].sum())
+    total_resolved = float(display["Resolved"].sum())
+    overall_rate = safe_div(total_resolved, total_abn)
+
+    total_row = pd.DataFrame([{
+        "Office": "TOTAL",
+        "Month": "",
+        "Total Abnormality": total_abn,
+        "Resolved": total_resolved,
+        "Resolution Rate": overall_rate,
+    }])
+    display = pd.concat([display, total_row], ignore_index=True)
+
+    st.markdown(
+        f"""
+        <div style="
+            color:{COLORS['navy']};
+            font-size:{UI['chart_title_size']}px;
+            font-weight:700;
+            margin:2px 0 10px 2px;">
+            CS Resolution Detail
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.dataframe(
+        display,
+        use_container_width=True,
+        hide_index=True,
+        height=390,
+        column_config={
+            "Office": st.column_config.TextColumn(
+                "Office", width="small"
+            ),
+            "Month": st.column_config.TextColumn(
+                "Month", width="small"
+            ),
+            "Total Abnormality": st.column_config.NumberColumn(
+                "Total Abnormalities", width="medium", format="%,.0f"
+            ),
+            "Resolved": st.column_config.NumberColumn(
+                "Resolved by CS", width="medium", format="%,.0f"
+            ),
+            "Resolution Rate": st.column_config.NumberColumn(
+                "CS Resolution Rate", width="medium", format="percent"
+            ),
+        },
+    )
 
 
 def chart_yvf(df: pd.DataFrame):
@@ -3705,7 +3922,41 @@ def main():
     with casetab_e:
         render_activity_detail_table(f_exception_detail, "Exception Handling")
 
-    section_title("6. Shipment & Customer Analysis")
+    section_title("6. CS Solution")
+
+    # Executive KPIs sourced from sheet "CS Resolutions Rate".
+    if not f_resolution.empty:
+        total_abn = float(f_resolution["Total Abnormality"].sum())
+        resolved = float(f_resolution["Resolved"].sum())
+        rate = safe_div(resolved, total_abn)
+
+        cs1, cs2, cs3 = st.columns(3, gap="medium")
+        with cs1:
+            kpi_card(
+                "TOTAL ABNORMALITIES",
+                fmt_int(total_abn),
+                "Source: CS Resolutions Rate",
+            )
+        with cs2:
+            kpi_card(
+                "RESOLVED BY CS",
+                fmt_int(resolved),
+                "Cases resolved by CS",
+            )
+        with cs3:
+            kpi_card(
+                "CS RESOLUTION RATE",
+                fmt_pct(rate),
+                f"{fmt_int(resolved)} / {fmt_int(total_abn)} cases",
+            )
+
+    cs_chart, cs_table = st.columns([0.56, 0.44], gap="medium")
+    with cs_chart:
+        chart_resolution(f_resolution)
+    with cs_table:
+        render_cs_solution_table(f_resolution)
+
+    section_title("7. Shipment & Customer Analysis")
     h1, h2 = st.columns([0.9, 1.1])
     with h1:
         kpi_card("Total Shipment", fmt_int(kpis["Total Shipment"]), "Source: Shipment volume")
@@ -3717,28 +3968,19 @@ def main():
         chart_top_customers(f_customer)
         st.markdown('</div>', unsafe_allow_html=True)
 
-    section_title("7. Effectiveness")
-    e1, e2 = st.columns(2)
-    with e1:
-        if not f_resolution.empty:
-            total_abn = f_resolution["Total Abnormality"].sum()
-            resolved = f_resolution["Resolved"].sum()
-            rate = safe_div(resolved, total_abn)
-            kpi_card("CS Resolution Rate", fmt_pct(rate), f"Resolved {fmt_int(resolved)} / {fmt_int(total_abn)} cases")
-        st.markdown('<div class="chart-box" style="margin-top:12px;">', unsafe_allow_html=True)
-        chart_resolution(f_resolution)
-        st.markdown('</div>', unsafe_allow_html=True)
-    with e2:
-        if not f_yvf.empty:
-            yvf_booking = f_yvf["YVF Booking"].sum()
-            iff = f_yvf["IFF Shipment"].sum()
-            yvf_rate = safe_div(yvf_booking, iff)
-            kpi_card("YVF Booking Ratio", fmt_pct(yvf_rate), f"YVF {fmt_int(yvf_booking)} / IFF {fmt_int(iff)}")
-        st.markdown('<div class="chart-box" style="margin-top:12px;">', unsafe_allow_html=True)
-        chart_yvf(f_yvf)
-        st.markdown('</div>', unsafe_allow_html=True)
+    section_title("8. YVF Promoter Effectiveness")
+    if not f_yvf.empty:
+        yvf_booking = f_yvf["YVF Booking"].sum()
+        iff = f_yvf["IFF Shipment"].sum()
+        yvf_rate = safe_div(yvf_booking, iff)
+        kpi_card(
+            "YVF Booking Ratio",
+            fmt_pct(yvf_rate),
+            f"YVF {fmt_int(yvf_booking)} / IFF {fmt_int(iff)}",
+        )
+    chart_yvf(f_yvf)
 
-    section_title("8. Detail & Reconciliation")
+    section_title("9. Detail & Reconciliation")
     tab1, tab2, tab3, tab4 = st.tabs(["Reconciliation", "Workload Detail", "Customer Detail", "Data Audit"])
     with tab1:
         recon = build_reconciliation(f_hc, f_workload, f_fte, f_shipment)
