@@ -9,6 +9,7 @@
 from __future__ import annotations
 
 import re
+import html
 import hashlib
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Tuple
@@ -915,6 +916,100 @@ st.markdown(
         margin-top: 5px !important;
         line-height: 1.35 !important;
     }}
+
+    /* Paired chart + detail-table layout */
+    .paired-detail-card {
+        background: #FFFFFF;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        box-shadow: 0 1px 4px rgba(16, 24, 40, 0.045);
+        padding: 12px 12px 10px 12px;
+        box-sizing: border-box;
+        width: 100%;
+        margin-top: 12px;
+        overflow: hidden;
+    }
+
+    .paired-detail-title {
+        color: var(--navy);
+        font-size: 15px;
+        line-height: 1.25;
+        font-weight: 700;
+        margin: 1px 0 10px 2px;
+    }
+
+    .paired-detail-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        table-layout: fixed;
+        font-family: var(--font-main);
+        font-size: 11px;
+        border: 1px solid #E2E8F0;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .paired-detail-table thead th {
+        background: #F8FAFC;
+        color: var(--navy);
+        font-weight: 700;
+        padding: 7px 7px;
+        border-bottom: 1px solid #D8E1EA;
+        text-align: left;
+        line-height: 1.15;
+    }
+
+    .paired-detail-table tbody td {
+        padding: 6px 7px;
+        border-bottom: 1px solid #EDF1F5;
+        color: var(--text);
+        line-height: 1.15;
+        vertical-align: middle;
+        background: #FFFFFF;
+    }
+
+    .paired-detail-table tbody tr:nth-child(even) td {
+        background: #FBFCFD;
+    }
+
+    .paired-detail-table tbody tr:last-child td {
+        border-bottom: 0;
+    }
+
+    .paired-detail-table .pair-rank {
+        text-align: center;
+        color: #667085;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .paired-detail-table .pair-number,
+    .paired-detail-table .pair-share {
+        text-align: right;
+        white-space: nowrap;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .paired-detail-table td.pair-number {
+        color: var(--navy);
+        font-weight: 600;
+    }
+
+    .paired-detail-table .pair-name {
+        text-align: left;
+        overflow-wrap: anywhere;
+    }
+
+    .customer-name-cell {
+        font-size: 10.5px;
+    }
+
+    .paired-detail-foot {
+        color: var(--muted);
+        font-size: 10.5px;
+        line-height: 1.3;
+        margin: 7px 2px 0 2px;
+    }
 
     /* Compact tabs and avoid visual competition */
     .stTabs [data-baseweb="tab-list"] {{
@@ -3340,9 +3435,11 @@ def chart_shipment_modes(mode_df: pd.DataFrame):
         tickformat=",.0f",
     )
 
+    # Match chart height to the adjacent Mode Detail table.
+    mode_chart_height = max(430, min(610, 145 + 31 * len(plot_df)))
     fig = plotly_layout(
         fig,
-        UI["chart_height_tall"],
+        mode_chart_height,
         show_legend=False,
         margin_left=58,
         margin_right=105,
@@ -3351,6 +3448,68 @@ def chart_shipment_modes(mode_df: pd.DataFrame):
     )
 
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+
+
+def mode_detail_table(mode_df: pd.DataFrame):
+    """Compact detail table paired with Shipment Volume by Transportation Mode chart."""
+    if mode_df is None or mode_df.empty:
+        st.info("No shipment mode detail available for selected filters.")
+        return
+
+    detail = (
+        mode_df.groupby("Mode", as_index=False)["Volume"]
+        .sum()
+        .sort_values("Volume", ascending=False)
+        .reset_index(drop=True)
+    )
+    total = float(detail["Volume"].sum())
+    if total <= 0:
+        st.info("No shipment mode detail available for selected filters.")
+        return
+
+    detail["Rank"] = np.arange(1, len(detail) + 1)
+    detail["Share"] = detail["Volume"] / total
+
+    rows_html = []
+    for _, row in detail.iterrows():
+        rows_html.append(
+            f"""
+            <tr>
+                <td class="pair-rank">{int(row['Rank'])}</td>
+                <td class="pair-name">{html.escape(str(row['Mode']))}</td>
+                <td class="pair-number">{float(row['Volume']):,.0f}</td>
+                <td class="pair-share">{float(row['Share']):.1%}</td>
+            </tr>
+            """
+        )
+
+    st.markdown(
+        f"""
+        <div class="paired-detail-card">
+            <div class="paired-detail-title">Transportation Mode Detail</div>
+            <table class="paired-detail-table mode-detail-table">
+                <colgroup>
+                    <col style="width:12%">
+                    <col style="width:28%">
+                    <col style="width:38%">
+                    <col style="width:22%">
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th class="pair-rank">Rank</th>
+                        <th>Mode</th>
+                        <th class="pair-number">Shipment Volume</th>
+                        <th class="pair-share">Share</th>
+                    </tr>
+                </thead>
+                <tbody>{''.join(rows_html)}</tbody>
+            </table>
+            <div class="paired-detail-foot">Total shipments: <b>{total:,.0f}</b></div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
 
 def build_customer_ranking(df: pd.DataFrame) -> pd.DataFrame:
     """Aggregate and rank all customers by shipment volume for current filters."""
@@ -3395,11 +3554,11 @@ def chart_top_customers(df: pd.DataFrame):
         title=dict(
             x=0.0,
             xanchor="left",
-            font=dict(size=14, color=COLORS["navy"]),
+            font=dict(size=UI["chart_title_size"], color=COLORS["navy"]),
         ),
         yaxis_title="",
         xaxis_title="Shipment Volume",
-        height=UI["chart_height_tall"],
+        height=625,
         margin=dict(l=140, r=55, t=60, b=55),
         bargap=0.18,
     )
@@ -3408,9 +3567,10 @@ def chart_top_customers(df: pd.DataFrame):
         tickfont=dict(size=UI["axis_size"]),
     )
     fig.update_xaxes(automargin=True)
+    # Height is aligned with the Top 20 detail table shown beside the chart.
     fig = plotly_layout(
         fig,
-        UI["chart_height_tall"],
+        625,
         show_legend=False,
         margin_left=155,
         margin_right=60,
@@ -3420,65 +3580,82 @@ def chart_top_customers(df: pd.DataFrame):
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
 
-def customer_detail_table(df: pd.DataFrame):
-    """Compact executive customer table: Top 20 first, full ranking on demand."""
+def customer_top20_detail_table(df: pd.DataFrame):
+    """Top 20 customer detail table paired with the Top 20 customer chart."""
     ranking = build_customer_ranking(df)
-
     if ranking.empty:
         st.info("No customer detail data available for selected filters.")
         return
 
+    top_detail = ranking.head(20).copy()
+    rows_html = []
+    for _, row in top_detail.iterrows():
+        rank_val = int(row["Rank"]) if not pd.isna(row["Rank"]) else ""
+        customer_val = html.escape(str(row["Customer"]))
+        shipment_val = pd.to_numeric(row["Shipment Volume"], errors="coerce")
+        shipment_text = "" if pd.isna(shipment_val) else f"{shipment_val:,.0f}"
+        rows_html.append(
+            f"""
+            <tr>
+                <td class="pair-rank">{rank_val}</td>
+                <td class="pair-name customer-name-cell">{customer_val}</td>
+                <td class="pair-number">{shipment_text}</td>
+            </tr>
+            """
+        )
+
     st.markdown(
         f"""
-        <div style="
-            color:{COLORS['navy']};
-            font-size:15px;
-            font-weight:800;
-            margin:2px 0 8px 0;">
-            Customer Detail
+        <div class="paired-detail-card customer-paired-card">
+            <div class="paired-detail-title">Customer Detail — Top 20</div>
+            <table class="paired-detail-table customer-paired-table">
+                <colgroup>
+                    <col style="width:12%">
+                    <col style="width:58%">
+                    <col style="width:30%">
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th class="pair-rank">Rank</th>
+                        <th>Customer</th>
+                        <th class="pair-number">Shipment Volume</th>
+                    </tr>
+                </thead>
+                <tbody>{''.join(rows_html)}</tbody>
+            </table>
+            <div class="paired-detail-foot">
+                Showing Top {len(top_detail):,} of {len(ranking):,} customers.
+            </div>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
-    # Keep the management view compact. The full ranking remains available below.
-    top_detail = ranking.head(20).copy()
 
-    column_cfg = {
-        "Rank": st.column_config.NumberColumn(
-            "Rank", width="small", format="%d"
-        ),
-        "Customer": st.column_config.TextColumn(
-            "Customer", width="large"
-        ),
-        "Shipment Volume": st.column_config.NumberColumn(
-            "Shipment Volume", width="medium", format="%,.0f"
-        ),
-    }
+def customer_full_detail_expander(df: pd.DataFrame):
+    """Full customer ranking, hidden by default to preserve the executive layout."""
+    ranking = build_customer_ranking(df)
+    if ranking.empty:
+        return
 
-    # Center the 3-column table so it does not visually stretch across the full page.
-    _, table_col, _ = st.columns([0.06, 0.88, 0.06])
-    with table_col:
+    with st.expander("View Full Customer Detail", expanded=False):
         st.dataframe(
-            top_detail,
+            ranking,
             use_container_width=True,
             hide_index=True,
-            height=430,
-            column_config=column_cfg,
+            height=460,
+            column_config={
+                "Rank": st.column_config.NumberColumn(
+                    "Rank", width="small", format="%d"
+                ),
+                "Customer": st.column_config.TextColumn(
+                    "Customer", width="large"
+                ),
+                "Shipment Volume": st.column_config.NumberColumn(
+                    "Shipment Volume", width="small", format="%,.0f"
+                ),
+            },
         )
-        st.caption(
-            f"Showing Top {len(top_detail):,} of {len(ranking):,} customers. "
-            "Open the section below to view the full ranking."
-        )
-
-        with st.expander("View Full Customer Detail", expanded=False):
-            st.dataframe(
-                ranking,
-                use_container_width=True,
-                hide_index=True,
-                height=460,
-                column_config=column_cfg,
-            )
 
 
 def chart_resolution(df: pd.DataFrame):
@@ -4316,21 +4493,27 @@ def main():
     with sk4:
         st.empty()
 
-    # Executive layout:
-    # Row 1: Transportation Mode horizontal bar | Top 20 Customers horizontal bar
-    # Row 2: Compact Top 20 Customer Detail; full ranking available in expander
-    chart_left, chart_right = st.columns([0.48, 0.52], gap="medium")
+    # Executive paired layout:
+    # Block 1 = Transportation Mode chart (left) + matching detail table (right).
+    mode_chart_col, mode_detail_col = st.columns([1.25, 0.75], gap="medium")
 
-    with chart_left:
-        st.markdown('<div class="chart-box" style="margin-top:12px;">', unsafe_allow_html=True)
+    with mode_chart_col:
         chart_shipment_modes(f_mode)
 
-    with chart_right:
-        st.markdown('<div class="chart-box" style="margin-top:12px;">', unsafe_allow_html=True)
+    with mode_detail_col:
+        mode_detail_table(f_mode)
+
+    # Block 2 = Top 20 Customers chart (left) + matching Top 20 detail table (right).
+    customer_chart_col, customer_detail_col = st.columns([1.15, 0.85], gap="medium")
+
+    with customer_chart_col:
         chart_top_customers(f_customer_ns)
 
-    st.markdown('<div class="chart-box" style="margin-top:12px;">', unsafe_allow_html=True)
-    customer_detail_table(f_customer_ns)
+    with customer_detail_col:
+        customer_top20_detail_table(f_customer_ns)
+
+    # Full ranking remains available below without crowding the management view.
+    customer_full_detail_expander(f_customer_ns)
 
     section_title("3. Workload by PIC")
 
