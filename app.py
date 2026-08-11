@@ -1,6 +1,6 @@
 # ============================================================
 # CS WORKLOAD & CAPACITY DASHBOARD
-# BUILD: V19_ALL_CHARTS_LAYOUT_STANDARDIZED
+# BUILD: V20_SECTION3_COMPACT_EXECUTIVE
 # BUILD: SECTION2_SAME_ROW_V6
 # Python + Streamlit + Pandas + Plotly
 # Data source: (100826)TEMPLATE_DATA FOR DASHBOARD_V1.xlsx
@@ -502,7 +502,52 @@ st.markdown(
         border: 1px solid {COLORS['border']};
         padding: 8px 16px;
     }}
-    </style>
+    
+    /* Section 3 compact executive layout */
+    .compact-workload-kpi {{
+        min-height: 138px !important;
+        height: 138px !important;
+        padding: 16px 18px 14px 18px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: center !important;
+    }}
+    .compact-workload-kpi .kpi-label {{
+        margin-bottom: 8px !important;
+        line-height: 1.15 !important;
+    }}
+    .compact-workload-kpi .kpi-value {{
+        margin: 2px 0 6px 0 !important;
+        line-height: 1.05 !important;
+    }}
+    .compact-workload-kpi .kpi-note {{
+        margin-top: 4px !important;
+        line-height: 1.15 !important;
+    }}
+    .workload-util-card, .workload-status-card {{
+        min-height: 94px !important;
+        height: 94px !important;
+        padding: 13px 16px !important;
+    }}
+    .workload-util-card {{
+        display: grid !important;
+        grid-template-columns: 175px minmax(0, 1fr) !important;
+        align-items: center !important;
+        column-gap: 18px !important;
+    }}
+    .workload-status-card {{
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: center !important;
+    }}
+    @media (max-width: 1100px) {{
+        .workload-util-card {{
+            grid-template-columns: 155px minmax(0, 1fr) !important;
+            column-gap: 12px !important;
+        }}
+    }}
+
+</style>
     """,
     unsafe_allow_html=True,
 )
@@ -2706,7 +2751,7 @@ def main():
     # Available Standard Time / PIC = 95% × 8 × 22 = 167.2 hours.
     # Therefore: PIC Workload = CS FTE coefficient × 167.2 hours.
     # When All Offices is selected, only overloaded PICs/offices are displayed.
-    st.markdown('<div class="chart-box" style="margin-top:12px;">', unsafe_allow_html=True)
+    st.markdown('<div class="chart-box" style="margin-top:8px;">', unsafe_allow_html=True)
     chart_workload_by_pic(f_fte, office)
     st.markdown('</div>', unsafe_allow_html=True)
 
