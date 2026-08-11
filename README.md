@@ -15,7 +15,7 @@
 `Data Quality & Reconciliation` is placed in an expander after Section 07 and is not treated as Section 08.
 
 ## Filters
-Sidebar filters: Year → Month → Office, plus Reset Filters. Filters are dynamic from available source data. YVF currently has no Month field, therefore only Office can be applied to Section 07 until monthly YVF data is added.
+Sidebar filters: Month → Office. Không có Year và không có Reset Filters. Nút Upload Excel file đặt phía dưới 2 bộ lọc. Filters là dynamic từ dữ liệu nguồn. YVF hiện chưa có Month field, vì vậy Section 07 chỉ áp dụng Office cho đến khi dữ liệu YVF theo tháng được bổ sung.
 
 ## Main business logic
 - 1 FTE capacity standard = `8 × 95% × 22 = 167.2 hours/month`.

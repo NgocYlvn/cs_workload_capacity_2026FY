@@ -89,11 +89,48 @@ st.markdown(
     section[data-testid="stSidebar"] {{
         background: {COLORS['navy']};
     }}
-    section[data-testid="stSidebar"] * {{
-        color: white !important;
+    /* Sidebar: high-contrast labels, captions and controls */
+    section[data-testid="stSidebar"] {{
+        background: {COLORS['navy']};
     }}
-    section[data-testid="stSidebar"] div[data-baseweb="select"] * {{
-        color: {COLORS['text']} !important;
+    section[data-testid="stSidebar"] h1,
+    section[data-testid="stSidebar"] h2,
+    section[data-testid="stSidebar"] h3,
+    section[data-testid="stSidebar"] label,
+    section[data-testid="stSidebar"] p,
+    section[data-testid="stSidebar"] small,
+    section[data-testid="stSidebar"] [data-testid="stCaptionContainer"] {{
+        color: #FFFFFF !important;
+        opacity: 1 !important;
+    }}
+    section[data-testid="stSidebar"] div[data-baseweb="select"] > div {{
+        background: #FFFFFF !important;
+        border-color: #D9E2EC !important;
+    }}
+    section[data-testid="stSidebar"] div[data-baseweb="select"] span,
+    section[data-testid="stSidebar"] div[data-baseweb="select"] input,
+    section[data-testid="stSidebar"] div[data-baseweb="select"] svg {{
+        color: {COLORS['navy']} !important;
+        fill: {COLORS['navy']} !important;
+        opacity: 1 !important;
+    }}
+    section[data-testid="stSidebar"] [data-testid="stFileUploader"] section {{
+        background: #FFFFFF !important;
+        border-color: #D9E2EC !important;
+    }}
+    section[data-testid="stSidebar"] [data-testid="stFileUploader"] section * {{
+        color: {COLORS['navy']} !important;
+        opacity: 1 !important;
+    }}
+    section[data-testid="stSidebar"] [data-testid="stFileUploader"] button {{
+        background: #FFFFFF !important;
+        color: {COLORS['navy']} !important;
+        border: 1px solid #B8C7D6 !important;
+        opacity: 1 !important;
+    }}
+    section[data-testid="stSidebar"] [data-testid="stFileUploader"] button * {{
+        color: {COLORS['navy']} !important;
+        opacity: 1 !important;
     }}
     .main-header {{
         background: {COLORS['white']};
@@ -836,25 +873,19 @@ def chart_yvf(df: pd.DataFrame):
 
 
 def main():
-    with st.sidebar:
-        st.markdown("## FILTERS")
-        st.caption("Year / Month / Office")
-        uploaded = st.file_uploader("Upload Excel file", type=["xlsx", "xlsm", "xls"], help="Nếu không upload, Dashboard sẽ đọc file mặc định trong cùng thư mục app.py.")
-        if uploaded:
-            tmp_path = Path("_uploaded_dashboard_data.xlsx")
-            tmp_path.write_bytes(uploaded.getbuffer())
-            file_path = tmp_path
-        else:
-            file_path = Path(DEFAULT_FILE)
-        st.markdown("---")
-        if st.button("RESET FILTERS", use_container_width=True):
-            st.session_state["year_filter"] = "All"
-            st.session_state["month_filter"] = "All"
-            st.session_state["office_filter"] = "All Offices"
-            st.rerun()
+    # Load default workbook first. The upload control is intentionally placed
+    # below the Month / Office filters in the sidebar.
+    file_path = Path(DEFAULT_FILE)
+
+    # If a file was uploaded in this session, use it.
+    uploaded_cached = st.session_state.get("dashboard_uploaded_file")
+    if uploaded_cached:
+        tmp_path = Path("_uploaded_dashboard_data.xlsx")
+        tmp_path.write_bytes(uploaded_cached)
+        file_path = tmp_path
 
     if not Path(file_path).exists():
-        st.error(f"Không tìm thấy file dữ liệu: {file_path}. Vui lòng đặt file Excel cùng thư mục app.py hoặc upload bằng Sidebar.")
+        st.error(f"Không tìm thấy file dữ liệu: {file_path}. Vui lòng đặt file Excel cùng thư mục app.py hoặc upload file ở Sidebar.")
         st.stop()
 
     with st.spinner("Loading and validating Excel data..."):
@@ -868,8 +899,7 @@ def main():
         yvf = prepare_yvf(raw["yvf"])
 
     periods = all_periods(hc, workload, fte, shipment, customer, resolution)
-    years = ["All"] + sorted({str(pd.Timestamp(p).year) for p in periods})
-    month_options_all = ["All"] + [format_month(p) for p in periods]
+    month_options = ["All"] + [format_month(p) for p in periods]
 
     offices_from_data = sorted(set(
         list(hc.get("Office", pd.Series(dtype=str)).dropna().unique())
@@ -880,18 +910,29 @@ def main():
     ))
     office_options = ["All Offices"] + sorted(set(STANDARD_OFFICES + [o for o in offices_from_data if o]))
 
+    # Sidebar order: Month -> Office -> Upload file. No Year and no Reset button.
     with st.sidebar:
-        year = st.selectbox("YEAR", years, key="year_filter")
-        if year != "All":
-            filtered_periods_for_month = [p for p in periods if str(pd.Timestamp(p).year) == year]
-            month_options = ["All"] + [format_month(p) for p in filtered_periods_for_month]
-        else:
-            month_options = month_options_all
+        st.markdown("## FILTERS")
+        st.caption("Month / Office")
         month = st.selectbox("MONTH", month_options, key="month_filter")
         office = st.selectbox("OFFICE", office_options, key="office_filter")
         st.markdown("---")
+        uploaded = st.file_uploader(
+            "UPLOAD EXCEL FILE",
+            type=["xlsx", "xlsm", "xls"],
+            help="Nếu không upload, Dashboard sẽ đọc file mặc định trong cùng thư mục app.py.",
+            key="excel_uploader",
+        )
+        if uploaded is not None:
+            new_bytes = uploaded.getvalue()
+            if st.session_state.get("dashboard_uploaded_file") != new_bytes:
+                st.session_state["dashboard_uploaded_file"] = new_bytes
+                st.rerun()
         st.caption(f"Source file: {Path(file_path).name}")
         st.caption("Capacity standard: 167.2 hrs/FTE/month")
+
+    # Year is intentionally not exposed as a filter.
+    year = "All"
 
     # Apply filters
     f_hc = apply_filters(hc, year, month, office)
@@ -911,7 +952,7 @@ def main():
         <div class="main-header">
             <div class="main-title">{APP_TITLE}</div>
             <div class="subtitle">{APP_SUBTITLE}</div>
-            <div class="subtitle"><b>Selected Period:</b> {year} / {month} &nbsp; | &nbsp; <b>Selected Office:</b> {office}</div>
+            <div class="subtitle"><b>Selected Month:</b> {month} &nbsp; | &nbsp; <b>Selected Office:</b> {office}</div>
         </div>
         """,
         unsafe_allow_html=True,
