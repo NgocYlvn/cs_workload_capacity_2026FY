@@ -1,6 +1,6 @@
 # ============================================================
 # CS WORKLOAD & CAPACITY DASHBOARD
-# BUILD: V43_HC_COLOR_HIERARCHY
+# BUILD: V44_HC_TREND_PRESENTATION
 # BUILD: SECTION2_SAME_ROW_V6
 # Python + Streamlit + Pandas + Plotly
 # Data source: (100826)TEMPLATE_DATA FOR DASHBOARD_V1.xlsx
@@ -2484,27 +2484,49 @@ def build_reconciliation(hc, workload, fte, shipment) -> pd.DataFrame:
 
 
 def chart_office_capacity_trend(df: pd.DataFrame):
-    """3-line HC trend from sheet HC with shaded gap between Approved HC and Actual HC."""
+    """
+    Executive HC trend from sheet HC.
+
+    Presentation only:
+    - Actual HC = Corporate Blue
+    - Required HC = Orange
+    - Approved HC = Navy dashed reference line
+    - Light orange fill = shortage gap between Actual and Required HC
+    - Required HC labels show both required value and HC gap
+    """
     if df.empty:
         st.info("No HC trend data available for selected filters.")
         return
 
-    required_cols = ["MonthDate", "Total Approved HC", "Total Actual HC", "Total Required HC"]
+    required_cols = [
+        "MonthDate",
+        "Total Approved HC",
+        "Total Actual HC",
+        "Total Required HC",
+    ]
     missing = [c for c in required_cols if c not in df.columns]
     if missing:
         st.info("HC trend cannot be displayed because required HC columns are missing.")
         return
 
-    trend_source = df[
-        ["MonthDate", "Total Approved HC", "Total Actual HC", "Total Required HC"]
-    ].copy()
+    trend_source = df[required_cols].copy()
 
-    for col in ["Total Approved HC", "Total Actual HC", "Total Required HC"]:
-        trend_source[col] = pd.to_numeric(trend_source[col], errors="coerce")
+    for col in [
+        "Total Approved HC",
+        "Total Actual HC",
+        "Total Required HC",
+    ]:
+        trend_source[col] = pd.to_numeric(
+            trend_source[col], errors="coerce"
+        )
 
     # Exclude months where all three HC values are blank.
     trend_source = trend_source.dropna(
-        subset=["Total Approved HC", "Total Actual HC", "Total Required HC"],
+        subset=[
+            "Total Approved HC",
+            "Total Actual HC",
+            "Total Required HC",
+        ],
         how="all",
     )
 
@@ -2514,65 +2536,148 @@ def chart_office_capacity_trend(df: pd.DataFrame):
 
     trend = (
         trend_source.groupby("MonthDate", as_index=False)[
-            ["Total Approved HC", "Total Actual HC", "Total Required HC"]
+            [
+                "Total Approved HC",
+                "Total Actual HC",
+                "Total Required HC",
+            ]
         ]
         .sum(min_count=1)
         .sort_values("MonthDate")
     )
+
     trend["Month"] = trend["MonthDate"].dt.strftime("%b-%y")
+    trend["HC Gap"] = (
+        trend["Total Required HC"] - trend["Total Actual HC"]
+    )
 
     fig = go.Figure()
 
-    # Approved HC line
-    fig.add_trace(
-        go.Scatter(
-            x=trend["Month"],
-            y=trend["Total Approved HC"],
-            mode="lines+markers",
-            name="Approved HC",
-            line=dict(color=BUSINESS_COLORS["approved"], width=3),
-            marker=dict(size=7),
-            hovertemplate="%{x}<br>Approved HC: %{y:,.1f}<extra></extra>",
-        )
-    )
-
-    # Actual HC line — baseline for the shaded Actual vs Required gap.
+    # Actual HC — primary current-capacity line.
+    # Draw first so Required HC can shade only the gap above/below Actual HC.
     fig.add_trace(
         go.Scatter(
             x=trend["Month"],
             y=trend["Total Actual HC"],
             mode="lines+markers",
             name="Actual HC",
-            line=dict(color=BUSINESS_COLORS["actual"], width=3),
-            marker=dict(size=7),
-            hovertemplate="%{x}<br>Actual HC: %{y:,.1f}<extra></extra>",
+            line=dict(
+                color=BUSINESS_COLORS["actual"],
+                width=3,
+            ),
+            marker=dict(
+                size=8,
+                symbol="circle",
+                color=BUSINESS_COLORS["actual"],
+            ),
+            hovertemplate=(
+                "<b>%{x}</b><br>"
+                "Actual HC: %{y:,.1f}"
+                "<extra></extra>"
+            ),
         )
     )
 
-    # Required HC line + shaded gap to Actual HC.
-    # The fill is intentionally between Actual HC and Required HC.
+    # Required HC — demand line.
+    # fill='tonexty' shades ONLY the gap between Actual and Required HC.
     fig.add_trace(
         go.Scatter(
             x=trend["Month"],
             y=trend["Total Required HC"],
-            mode="lines+markers",
+            mode="lines+markers+text",
             name="Required HC",
-            line=dict(color=BUSINESS_COLORS["required"], width=3, dash="dot"),
-            marker=dict(size=7),
+            line=dict(
+                color=BUSINESS_COLORS["required"],
+                width=3,
+            ),
+            marker=dict(
+                size=8,
+                symbol="circle",
+                color=BUSINESS_COLORS["required"],
+            ),
             fill="tonexty",
-            fillcolor="rgba(245, 158, 11, 0.14)",
-            hovertemplate="%{x}<br>Required HC: %{y:,.2f}<extra></extra>",
+            fillcolor="rgba(245, 158, 11, 0.08)",
+            text=[
+                f"{req:,.2f}<br>Gap {gap:+,.2f}"
+                for req, gap in zip(
+                    trend["Total Required HC"],
+                    trend["HC Gap"],
+                )
+            ],
+            textposition="top center",
+            textfont=dict(
+                size=10,
+                color=BUSINESS_COLORS["required"],
+                family=UI["font_family"],
+            ),
+            customdata=trend[["HC Gap"]].to_numpy(),
+            hovertemplate=(
+                "<b>%{x}</b><br>"
+                "Required HC: %{y:,.2f}<br>"
+                "HC Gap: %{customdata[0]:+,.2f}"
+                "<extra></extra>"
+            ),
+        )
+    )
+
+    # Approved HC — reference baseline.
+    # Draw last so it remains visible even when Approved HC = Actual HC.
+    fig.add_trace(
+        go.Scatter(
+            x=trend["Month"],
+            y=trend["Total Approved HC"],
+            mode="lines+markers",
+            name="Approved HC",
+            line=dict(
+                color=BUSINESS_COLORS["approved"],
+                width=2,
+                dash="dash",
+            ),
+            marker=dict(
+                size=7,
+                symbol="circle-open",
+                color=BUSINESS_COLORS["approved"],
+                line=dict(
+                    color=BUSINESS_COLORS["approved"],
+                    width=1.5,
+                ),
+            ),
+            hovertemplate=(
+                "<b>%{x}</b><br>"
+                "Approved HC: %{y:,.1f}"
+                "<extra></extra>"
+            ),
         )
     )
 
     fig.update_layout(
-        title="HC Capacity Trend & Gap",
+        title="Actual vs Required HC Trend",
         yaxis_title="HC",
         hovermode="x unified",
     )
-    fig = plotly_layout(fig, UI["chart_height"], show_legend=True, legend_position="top", margin_left=56, margin_right=42, margin_top=66, margin_bottom=46)
-    fig.update_xaxes(type="category", categoryorder="array", categoryarray=trend["Month"].tolist())
-    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+
+    fig = plotly_layout(
+        fig,
+        UI["chart_height"],
+        show_legend=True,
+        legend_position="top",
+        margin_left=56,
+        margin_right=42,
+        margin_top=78,
+        margin_bottom=46,
+    )
+
+    fig.update_xaxes(
+        type="category",
+        categoryorder="array",
+        categoryarray=trend["Month"].tolist(),
+    )
+
+    st.plotly_chart(
+        fig,
+        use_container_width=True,
+        config={"displayModeBar": False},
+    )
 
 
 
