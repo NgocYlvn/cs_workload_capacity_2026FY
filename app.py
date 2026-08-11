@@ -1,5 +1,6 @@
 # ============================================================
 # CS WORKLOAD & CAPACITY DASHBOARD
+# BUILD: SECTION2_SAME_ROW_V6
 # Python + Streamlit + Pandas + Plotly
 # Data source: (100826)TEMPLATE_DATA FOR DASHBOARD_V1.xlsx
 # ============================================================
@@ -1243,7 +1244,7 @@ def chart_service_matrix(df: pd.DataFrame):
 
 
 def chart_shipment_modes(mode_df: pd.DataFrame):
-    """Donut chart showing shipment-volume share by transportation mode."""
+    """Balanced donut chart showing shipment-volume share by transportation mode."""
     if mode_df.empty:
         st.info("No shipment mode data available for selected filters.")
         return
@@ -1259,17 +1260,17 @@ def chart_shipment_modes(mode_df: pd.DataFrame):
         st.info("No shipment mode data available for selected filters.")
         return
 
-    agg["Share"] = agg["Volume"] / total
-
     fig = go.Figure(
         data=[
             go.Pie(
                 labels=agg["Mode"],
                 values=agg["Volume"],
-                hole=0.62,
+                hole=0.58,
                 sort=False,
                 textinfo="label+percent",
                 textposition="outside",
+                textfont=dict(size=11),
+                automargin=True,
                 hovertemplate=(
                     "<b>%{label}</b><br>"
                     "Shipment Volume: %{value:,.0f}<br>"
@@ -1281,14 +1282,12 @@ def chart_shipment_modes(mode_df: pd.DataFrame):
         ]
     )
 
-    # Total shipment volume shown in the center of the donut.
     fig.add_annotation(
-        text=f"<b>{total:,.0f}</b><br><span style='font-size:12px'>TOTAL SHIPMENT</span>",
-        x=0.5,
-        y=0.5,
+        text=f"<b>{total:,.0f}</b><br><span style='font-size:11px'>TOTAL SHIPMENT</span>",
+        x=0.5, y=0.5,
         showarrow=False,
         align="center",
-        font=dict(color=COLORS["navy"], size=20),
+        font=dict(color=COLORS["navy"], size=18),
     )
 
     fig.update_layout(
@@ -1296,21 +1295,16 @@ def chart_shipment_modes(mode_df: pd.DataFrame):
             text="Shipment Volume by Transportation Mode",
             x=0.0,
             xanchor="left",
+            font=dict(size=14, color=COLORS["navy"]),
         ),
-        showlegend=True,
-        legend=dict(
-            orientation="v",
-            yanchor="middle",
-            y=0.5,
-            xanchor="left",
-            x=1.02,
-            title="",
-        ),
-        margin=dict(l=40, r=180, t=65, b=35),
-        height=440,
+        showlegend=False,
+        height=500,
+        margin=dict(l=65, r=65, t=60, b=45),
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
         font=dict(family="Arial", color=COLORS["text"]),
+        uniformtext_minsize=9,
+        uniformtext_mode="show",
     )
 
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
@@ -1355,8 +1349,25 @@ def chart_top_customers(df: pd.DataFrame):
         cliponaxis=False,
         hovertemplate="%{y}<br>Shipment Volume: %{x:,.0f}<extra></extra>",
     )
-    fig.update_layout(yaxis_title="", xaxis_title="Shipment Volume")
-    fig = plotly_layout(fig, 540)
+    fig.update_layout(
+        title=dict(
+            x=0.0,
+            xanchor="left",
+            font=dict(size=14, color=COLORS["navy"]),
+        ),
+        yaxis_title="",
+        xaxis_title="Shipment Volume",
+        height=500,
+        margin=dict(l=135, r=55, t=60, b=55),
+        bargap=0.18,
+    )
+    fig.update_yaxes(
+        automargin=True,
+        tickfont=dict(size=11),
+    )
+    fig.update_xaxes(automargin=True)
+    fig = plotly_layout(fig, 500)
+    fig.update_layout(margin=dict(l=135, r=55, t=60, b=55))
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
 
@@ -1634,25 +1645,23 @@ def main():
     with sk4:
         st.empty()
 
-    # Transportation Mode market-share chart from Shipment volume sheet.
-    st.markdown('<div class="chart-box" style="margin-top:14px;">', unsafe_allow_html=True)
-    chart_shipment_modes(f_mode)
-    st.markdown('</div>', unsafe_allow_html=True)
+    # Two balanced charts on the same row.
+    chart_left, chart_right = st.columns(2, gap="medium")
 
-    # Customer-level detail is not available in Shipment volume sheet.
-    # Per business requirement, Top 20 and full Customer Detail use Customer Volume-N&S only.
-    # Month / Office filters remain synchronized with the Shipment KPIs.
-    c_left, c_right = st.columns([1.25, 0.75], gap="medium")
+    with chart_left:
+        st.markdown('<div class="chart-box" style="margin-top:14px;">', unsafe_allow_html=True)
+        chart_shipment_modes(f_mode)
+        st.markdown('</div>', unsafe_allow_html=True)
 
-    with c_left:
+    with chart_right:
         st.markdown('<div class="chart-box" style="margin-top:14px;">', unsafe_allow_html=True)
         chart_top_customers(f_customer_ns)
         st.markdown('</div>', unsafe_allow_html=True)
 
-    with c_right:
-        st.markdown('<div class="chart-box" style="margin-top:14px;">', unsafe_allow_html=True)
-        customer_detail_table(f_customer_ns)
-        st.markdown('</div>', unsafe_allow_html=True)
+    # Full customer detail table below the charts; scrollable to show all customers.
+    st.markdown('<div class="chart-box" style="margin-top:14px;">', unsafe_allow_html=True)
+    customer_detail_table(f_customer_ns)
+    st.markdown('</div>', unsafe_allow_html=True)
 
     section_title("3. Workload by Service Type & Composition")
     s1, s2 = st.columns([1.1, 0.9])
