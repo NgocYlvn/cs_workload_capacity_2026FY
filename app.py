@@ -1,6 +1,6 @@
 # ============================================================
 # CS WORKLOAD & CAPACITY DASHBOARD
-# BUILD: V35_SECTION5_DETAIL_COLUMN_ORDER
+# BUILD: V36_SECTION5_CODE_DESCRIPTION_MAPPING
 # BUILD: SECTION2_SAME_ROW_V6
 # Python + Streamlit + Pandas + Plotly
 # Data source: (100826)TEMPLATE_DATA FOR DASHBOARD_V1.xlsx
@@ -110,6 +110,7 @@ SHEET_NAMES = {
     "ancillary": "A",
     "supporting": "S",
     "exception": "E",
+    "notes": "Ghi chú",
 }
 
 # ============================================================
@@ -1683,7 +1684,15 @@ def prepare_case_detail(
     criteria_col = first_existing(d, ["Criteria"])
     detail_col = first_existing(
         d,
-        ["EXCEPTION DETAIL", "Exception Detail", "Detail", "Description", "Activity"],
+        [
+            "Scope details",       # Sheet A
+            "Job details",         # Sheet S
+            "EXCEPTION DETAIL",    # Sheet E
+            "Exception Detail",
+            "Detail",
+            "Description",
+            "Activity",
+        ],
     )
 
     id_cols = [office_col]
@@ -1731,6 +1740,86 @@ def prepare_case_detail(
     ].copy()
 
     return long[base_cols].reset_index(drop=True)
+
+
+
+@st.cache_data(show_spinner=False)
+def prepare_code_note_map(df: pd.DataFrame) -> Dict[str, str]:
+    """
+    Sheet 'Ghi chú':
+        Col A = Scope of Job code
+        Col B = description.
+
+    Used mainly for Core Service codes such as AE-CTAB:
+        suffix CTAB -> "Customs + Trucking + Air"
+
+    A/S/E sheets already contain their own descriptive columns
+    (Scope details / Job details / EXCEPTION DETAIL), which take priority.
+    """
+    if df is None or df.empty or df.shape[1] < 2:
+        return {}
+
+    d = df.copy()
+    code_col = d.columns[0]
+    desc_col = d.columns[1]
+
+    d[code_col] = d[code_col].astype(str).str.strip().str.upper()
+    d[desc_col] = d[desc_col].astype(str).str.strip()
+
+    # Remove title/header/blank rows.
+    d = d[
+        d[code_col].ne("")
+        & d[desc_col].ne("")
+        & d[code_col].ne("SCOPE OF JOB")
+        & d[code_col].ne("NAN")
+        & d[desc_col].ne("nan")
+    ].copy()
+
+    return dict(zip(d[code_col], d[desc_col]))
+
+
+def add_code_description(
+    df: pd.DataFrame,
+    activity_type: str,
+    note_map: Dict[str, str],
+) -> pd.DataFrame:
+    """
+    Create the dashboard field 'Code Description'.
+
+    Priority:
+    1) A/S/E: source description already available in the corresponding sheet.
+    2) C: lookup suffix of Scope code against sheet 'Ghi chú'
+       e.g. AE-ABBB -> ABBB -> Air Freight Only.
+    3) Fallback: lookup whole code in 'Ghi chú'.
+    """
+    if df is None or df.empty:
+        return df
+
+    d = df.copy()
+    d["Code"] = d["Code"].fillna("").astype(str).str.strip()
+    d["Detail"] = d["Detail"].fillna("").astype(str).str.strip()
+
+    def _decode(row):
+        code = str(row.get("Code", "")).strip().upper()
+        source_detail = str(row.get("Detail", "")).strip()
+
+        # Ancillary / Supporting / Exception: use source wording first.
+        if activity_type != "Core Service" and source_detail:
+            return source_detail
+
+        # Core: AE-CTAB -> CTAB
+        suffix = code.split("-", 1)[1] if "-" in code else code
+        if suffix in note_map:
+            return note_map[suffix]
+
+        if code in note_map:
+            return note_map[code]
+
+        # Defensive fallback if a source detail exists.
+        return source_detail
+
+    d["Code Description"] = d.apply(_decode, axis=1)
+    return d
 
 
 def workload_breakdown_table(df: pd.DataFrame) -> pd.DataFrame:
@@ -1951,10 +2040,9 @@ def render_activity_detail_table(
 
     d["Month"] = d["MonthDate"].dt.strftime("%b-%y")
 
-    # Keep a consistent business column order across all C / A / S / E detail tabs.
-    # Primary order requested: Office → Month → Code → Volume.
-    # Any additional E-specific descriptive fields are appended afterward.
-    preferred = ["Office", "Month", "Code", "Volume", "BU", "Criteria", "Detail"]
+    # Consistent business order requested for all C / A / S / E tabs:
+    # Office → Month → Code → Code Description → Volume
+    preferred = ["Office", "Month", "Code", "Code Description", "Volume"]
     cols = [c for c in preferred if c in d.columns]
 
     # Drop descriptive columns that are completely blank.
@@ -1986,9 +2074,9 @@ def render_activity_detail_table(
         "Office": st.column_config.TextColumn("Office", width="small"),
         "Month": st.column_config.TextColumn("Month", width="small"),
         "Code": st.column_config.TextColumn("Code", width="medium"),
-        "BU": st.column_config.TextColumn("BU", width="small"),
-        "Criteria": st.column_config.TextColumn("Criteria", width="medium"),
-        "Detail": st.column_config.TextColumn("Detail", width="large"),
+        "Code Description": st.column_config.TextColumn(
+            "Code Description", width="large"
+        ),
         "Volume": st.column_config.NumberColumn(
             "Volume", format="%,.0f", width="small"
         ),
@@ -3190,6 +3278,15 @@ def main():
         ancillary_detail = prepare_case_detail(raw["ancillary"], "Ancillary Service")
         supporting_detail = prepare_case_detail(raw["supporting"], "Supporting Activity")
         exception_detail = prepare_case_detail(raw["exception"], "Exception Handling")
+
+        # Code description lookup from sheet "Ghi chú".
+        code_note_map = prepare_code_note_map(raw["notes"])
+
+        # Add one consistent "Code Description" field to all C/A/S/E sources.
+        core_detail = add_code_description(core_detail, "Core Service", code_note_map)
+        ancillary_detail = add_code_description(ancillary_detail, "Ancillary Service", code_note_map)
+        supporting_detail = add_code_description(supporting_detail, "Supporting Activity", code_note_map)
+        exception_detail = add_code_description(exception_detail, "Exception Handling", code_note_map)
 
     periods = all_periods(hc, workload, fte, shipment, customer, customer_ns, resolution)
     month_options = ["All"] + [format_month(p) for p in periods]
