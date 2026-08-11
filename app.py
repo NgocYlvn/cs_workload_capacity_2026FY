@@ -100,6 +100,9 @@ UI = {
     "chart_height_tall": 520,
 }
 
+# Shared height for Shipment Volume chart/detail pairs
+SHIPMENT_PAIR_HEIGHT = 500
+
 CORPORATE_PALETTE = [
     COLORS["blue"],
     COLORS["navy"],
@@ -3181,7 +3184,7 @@ def chart_shipment_modes(mode_df: pd.DataFrame):
     fig.update_layout(title_text="", xaxis_title="Shipment Volume", yaxis_title="", bargap=0.26)
     fig.update_yaxes(categoryorder="array", categoryarray=plot_df["Mode"].tolist(), automargin=True, tickfont=dict(size=UI["axis_size"]))
     fig.update_xaxes(automargin=True, rangemode="tozero", tickformat=",.0f")
-    fig = plotly_layout(fig, 500, show_legend=False, margin_left=58, margin_right=105, margin_top=40, margin_bottom=52)
+    fig = plotly_layout(fig, SHIPMENT_PAIR_HEIGHT, show_legend=False, margin_left=58, margin_right=105, margin_top=40, margin_bottom=52)
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
 def mode_detail_table(mode_df: pd.DataFrame):
@@ -3199,7 +3202,7 @@ def mode_detail_table(mode_df: pd.DataFrame):
     detail["Share"] = detail["Volume"] / total
     display = detail.rename(columns={"Volume": "Shipment Volume"})[["Rank", "Mode", "Shipment Volume", "Share"]].copy()
     st.dataframe(
-        display, use_container_width=True, hide_index=True, height=500,
+        display, use_container_width=True, hide_index=True, height=SHIPMENT_PAIR_HEIGHT,
         column_config={
             "Rank": st.column_config.NumberColumn("Rank", width="small", format="%d"),
             "Mode": st.column_config.TextColumn("Mode", width="small"),
@@ -3236,11 +3239,11 @@ def chart_top_customers(df: pd.DataFrame):
     fig.update_layout(title_text="", yaxis_title="", xaxis_title="Shipment Volume", bargap=0.18)
     fig.update_yaxes(automargin=True, tickfont=dict(size=UI["axis_size"]))
     fig.update_xaxes(automargin=True)
-    fig = plotly_layout(fig, 720, show_legend=False, margin_left=155, margin_right=60, margin_top=22, margin_bottom=50)
+    fig = plotly_layout(fig, SHIPMENT_PAIR_HEIGHT, show_legend=False, margin_left=155, margin_right=60, margin_top=22, margin_bottom=50)
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
 def customer_detail_volume_table(df: pd.DataFrame):
-    """Full customer ranking paired with the Top 20 chart; scrollable and no TOTAL row."""
+    """Full customer ranking paired with the Top 10 chart; scrollable and no TOTAL row."""
     ranking = build_customer_ranking(df)
     if ranking.empty:
         st.info("No customer detail data available for selected filters.")
@@ -3251,7 +3254,7 @@ def customer_detail_volume_table(df: pd.DataFrame):
         ranking,
         use_container_width=True,
         hide_index=True,
-        height=720,  # fixed height so all customers remain available via vertical scroll
+        height=SHIPMENT_PAIR_HEIGHT,  # same height as paired Top 10 chart; vertical scroll keeps the full list accessible
         column_config={
             "Rank": st.column_config.NumberColumn("Rank", width="small", format="%d"),
             "Customer": st.column_config.TextColumn("Customer", width="large"),
