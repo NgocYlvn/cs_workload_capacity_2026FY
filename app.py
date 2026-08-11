@@ -1,6 +1,6 @@
 # ============================================================
 # CS WORKLOAD & CAPACITY DASHBOARD
-# BUILD: V37_SECTION6_CS_SOLUTION
+# BUILD: V38_SECTION7_YVF_FINAL
 # BUILD: SECTION2_SAME_ROW_V6
 # Python + Streamlit + Pandas + Plotly
 # Data source: (100826)TEMPLATE_DATA FOR DASHBOARD_V1.xlsx
@@ -2157,23 +2157,72 @@ def prepare_resolution(df: pd.DataFrame) -> pd.DataFrame:
 
 @st.cache_data(show_spinner=False)
 def prepare_yvf(df: pd.DataFrame) -> pd.DataFrame:
-    if df.empty:
-        return pd.DataFrame(columns=["Office", "YVF Booking", "IFF Shipment", "YVF Booking Ratio"])
-    df = df.copy()
-    office_col = first_existing(df, ["OFFICE", "Office"])
-    yvf_col = first_existing(df, ["Total YVF booking/month", "Total YVF booking"])
-    iff_col = first_existing(df, ["Total IFF shipment/month", "Total IFF shipment"])
-    ratio_col = first_existing(df, ["YVF booking ratio"])
-    if not office_col:
-        return pd.DataFrame(columns=["Office"])
-    df["Office"] = df[office_col].map(normalize_office)
-    df["YVF Booking"] = numeric_series(df[yvf_col]) if yvf_col else 0
-    df["IFF Shipment"] = numeric_series(df[iff_col]) if iff_col else 0
-    if ratio_col:
-        df["YVF Booking Ratio"] = numeric_series(df[ratio_col])
-    else:
-        df["YVF Booking Ratio"] = df.apply(lambda r: safe_div(r["YVF Booking"], r["IFF Shipment"]), axis=1)
-    return df
+    """
+    Sheet 'YVF' — source structure:
+        OFFICE | [Month, if available] |
+        Total YVF booking/month | Total IFF shipment/month | YVF booking ratio
+
+    Rules:
+    - Preserve the source structure; do not invent months.
+    - If a Month column exists, parse it and allow Month/Year filtering.
+    - Rows where both YVF Booking and IFF Shipment are blank are excluded,
+      so future empty periods never appear on the dashboard.
+    - Recalculate YVF Booking Ratio = YVF Booking / IFF Shipment to avoid
+      stale Excel formula-cache values.
+    """
+    base_cols = [
+        "Office", "MonthDate",
+        "YVF Booking", "IFF Shipment", "YVF Booking Ratio",
+    ]
+    if df is None or df.empty:
+        return pd.DataFrame(columns=base_cols)
+
+    d = df.copy()
+
+    office_col = first_existing(d, ["OFFICE", "Office"])
+    month_col = first_existing(d, ["Month"])
+    yvf_col = first_existing(
+        d, ["Total YVF booking/month", "Total YVF booking"]
+    )
+    iff_col = first_existing(
+        d, ["Total IFF shipment/month", "Total IFF shipment"]
+    )
+
+    if not office_col or not yvf_col or not iff_col:
+        return pd.DataFrame(columns=base_cols)
+
+    d["Office"] = d[office_col].map(normalize_office)
+    d["MonthDate"] = (
+        d[month_col].map(parse_month)
+        if month_col else pd.NaT
+    )
+
+    # Preserve blanks first so empty/future periods are not converted to zeros.
+    d["YVF Booking"] = pd.to_numeric(d[yvf_col], errors="coerce")
+    d["IFF Shipment"] = pd.to_numeric(d[iff_col], errors="coerce")
+
+    d = d[
+        (d["Office"] != "")
+        & (
+            d["YVF Booking"].notna()
+            | d["IFF Shipment"].notna()
+        )
+    ].copy()
+
+    if d.empty:
+        return pd.DataFrame(columns=base_cols)
+
+    d["YVF Booking"] = d["YVF Booking"].fillna(0)
+    d["IFF Shipment"] = d["IFF Shipment"].fillna(0)
+
+    d["YVF Booking Ratio"] = np.where(
+        d["IFF Shipment"] > 0,
+        d["YVF Booking"] / d["IFF Shipment"],
+        np.nan,
+    )
+
+    return d[base_cols].reset_index(drop=True)
+
 
 
 def all_periods(*dfs: pd.DataFrame) -> List[pd.Timestamp]:
@@ -3438,17 +3487,262 @@ def render_cs_solution_table(df: pd.DataFrame):
 
 
 def chart_yvf(df: pd.DataFrame):
-    if df.empty:
-        st.info("No YVF data available.")
+    """
+    YVF Promoter Effectiveness:
+    - Bars: Total YVF Bookings vs Total IFF Shipments
+    - Line: YVF Booking Ratio
+    - If Month exists in source: trend by month.
+    - Otherwise: comparison by Office, exactly matching current source structure.
+    """
+    if df is None or df.empty:
+        st.info("No YVF data available for selected filters.")
         return
+
     d = df.copy()
-    d = d[d["Office"].isin(STANDARD_OFFICES)]
-    fig = px.bar(d, x="Office", y="YVF Booking Ratio", text="YVF Booking Ratio", color_discrete_sequence=[COLORS["blue"]], title="YVF Promoter Effectiveness – Booking Ratio")
-    fig.update_traces(texttemplate="%{text:.1%}", textposition="outside", cliponaxis=False, hovertemplate="%{x}: %{y:.1%}<extra></extra>")
-    fig.update_yaxes(tickformat=".0%")
-    fig.update_xaxes(categoryorder="array", categoryarray=agg["Month"].tolist())
-    fig = plotly_layout(fig, UI["chart_height"], show_legend=True, legend_position="top", margin_left=58, margin_right=60, margin_top=66, margin_bottom=48)
-    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+    d = d[
+        (pd.to_numeric(d["YVF Booking"], errors="coerce").fillna(0) != 0)
+        | (pd.to_numeric(d["IFF Shipment"], errors="coerce").fillna(0) != 0)
+    ].copy()
+
+    if d.empty:
+        st.info("No YVF data available for selected filters.")
+        return
+
+    has_month = (
+        "MonthDate" in d.columns
+        and d["MonthDate"].notna().any()
+    )
+
+    if has_month:
+        agg = (
+            d.groupby("MonthDate", as_index=False)
+            .agg(
+                **{
+                    "YVF Booking": ("YVF Booking", "sum"),
+                    "IFF Shipment": ("IFF Shipment", "sum"),
+                }
+            )
+            .sort_values("MonthDate")
+        )
+        agg["Category"] = agg["MonthDate"].dt.strftime("%b-%y")
+        chart_title = "YVF Booking Performance by Month"
+    else:
+        agg = (
+            d.groupby("Office", as_index=False)
+            .agg(
+                **{
+                    "YVF Booking": ("YVF Booking", "sum"),
+                    "IFF Shipment": ("IFF Shipment", "sum"),
+                }
+            )
+        )
+        office_order = [o for o in STANDARD_OFFICES if o in agg["Office"].tolist()]
+        agg["Office"] = pd.Categorical(
+            agg["Office"], categories=office_order, ordered=True
+        )
+        agg = agg.sort_values("Office")
+        agg["Category"] = agg["Office"].astype(str)
+        chart_title = "YVF Booking Performance by Office"
+
+    agg["YVF Booking Ratio"] = np.where(
+        agg["IFF Shipment"] > 0,
+        agg["YVF Booking"] / agg["IFF Shipment"],
+        np.nan,
+    )
+
+    fig = go.Figure()
+
+    fig.add_trace(
+        go.Bar(
+            x=agg["Category"],
+            y=agg["YVF Booking"],
+            name="YVF Bookings",
+            marker_color=COLORS["blue"],
+            text=agg["YVF Booking"],
+            texttemplate="%{text:,.0f}",
+            textposition="outside",
+            cliponaxis=False,
+            hovertemplate=(
+                "<b>%{x}</b><br>"
+                "YVF Bookings: %{y:,.0f}"
+                "<extra></extra>"
+            ),
+        )
+    )
+
+    fig.add_trace(
+        go.Bar(
+            x=agg["Category"],
+            y=agg["IFF Shipment"],
+            name="IFF Shipments",
+            marker_color="#A7B9C9",
+            text=agg["IFF Shipment"],
+            texttemplate="%{text:,.0f}",
+            textposition="outside",
+            cliponaxis=False,
+            hovertemplate=(
+                "<b>%{x}</b><br>"
+                "IFF Shipments: %{y:,.0f}"
+                "<extra></extra>"
+            ),
+        )
+    )
+
+    fig.add_trace(
+        go.Scatter(
+            x=agg["Category"],
+            y=agg["YVF Booking Ratio"],
+            name="YVF Booking Ratio",
+            mode="lines+markers+text",
+            line=dict(color=COLORS["green"], width=3),
+            marker=dict(size=7),
+            text=agg["YVF Booking Ratio"],
+            texttemplate="%{text:.1%}",
+            textposition="top center",
+            yaxis="y2",
+            hovertemplate=(
+                "<b>%{x}</b><br>"
+                "YVF Booking Ratio: %{y:.1%}"
+                "<extra></extra>"
+            ),
+        )
+    )
+
+    fig.update_layout(
+        title=chart_title,
+        barmode="group",
+        yaxis=dict(
+            title="Bookings / Shipments",
+            rangemode="tozero",
+        ),
+        yaxis2=dict(
+            title="Booking Ratio",
+            overlaying="y",
+            side="right",
+            tickformat=".0%",
+            rangemode="tozero",
+            showgrid=False,
+        ),
+    )
+
+    fig = plotly_layout(
+        fig,
+        390,
+        show_legend=True,
+        legend_position="top",
+        margin_left=58,
+        margin_right=70,
+        margin_top=72,
+        margin_bottom=44,
+    )
+    fig.update_xaxes(
+        type="category",
+        categoryorder="array",
+        categoryarray=agg["Category"].tolist(),
+    )
+
+    st.plotly_chart(
+        fig,
+        use_container_width=True,
+        config={"displayModeBar": False},
+    )
+
+
+def render_yvf_table(df: pd.DataFrame):
+    """
+    Table sourced from sheet 'YVF'.
+    Shows only rows with actual source data.
+    """
+    if df is None or df.empty:
+        st.info("No YVF data available for selected filters.")
+        return
+
+    d = df.copy()
+    d = d[
+        (pd.to_numeric(d["YVF Booking"], errors="coerce").fillna(0) != 0)
+        | (pd.to_numeric(d["IFF Shipment"], errors="coerce").fillna(0) != 0)
+    ].copy()
+
+    if d.empty:
+        st.info("No YVF data available for selected filters.")
+        return
+
+    has_month = (
+        "MonthDate" in d.columns
+        and d["MonthDate"].notna().any()
+    )
+
+    if has_month:
+        d["Month"] = d["MonthDate"].dt.strftime("%b-%y")
+        display = d[
+            ["Office", "Month", "YVF Booking", "IFF Shipment", "YVF Booking Ratio"]
+        ].copy()
+        sort_cols = ["Month", "Office"]
+    else:
+        display = d[
+            ["Office", "YVF Booking", "IFF Shipment", "YVF Booking Ratio"]
+        ].copy()
+        sort_cols = ["Office"]
+
+    display = display.sort_values(sort_cols)
+
+    total_yvf = float(display["YVF Booking"].sum())
+    total_iff = float(display["IFF Shipment"].sum())
+    total_ratio = safe_div(total_yvf, total_iff)
+
+    total_row = {
+        "Office": "TOTAL",
+        "YVF Booking": total_yvf,
+        "IFF Shipment": total_iff,
+        "YVF Booking Ratio": total_ratio,
+    }
+    if has_month:
+        total_row["Month"] = ""
+
+    display = pd.concat(
+        [display, pd.DataFrame([total_row])],
+        ignore_index=True,
+    )
+
+    column_cfg = {
+        "Office": st.column_config.TextColumn("Office", width="small"),
+        "YVF Booking": st.column_config.NumberColumn(
+            "Total YVF Bookings", width="medium", format="%,.0f"
+        ),
+        "IFF Shipment": st.column_config.NumberColumn(
+            "Total IFF Shipments", width="medium", format="%,.0f"
+        ),
+        "YVF Booking Ratio": st.column_config.NumberColumn(
+            "YVF Booking Ratio", width="medium", format="percent"
+        ),
+    }
+    if has_month:
+        column_cfg["Month"] = st.column_config.TextColumn(
+            "Month", width="small"
+        )
+
+    st.markdown(
+        f"""
+        <div style="
+            color:{COLORS['navy']};
+            font-size:{UI['chart_title_size']}px;
+            font-weight:700;
+            margin:2px 0 10px 2px;">
+            YVF Performance Detail
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.dataframe(
+        display,
+        use_container_width=True,
+        hide_index=True,
+        height=390,
+        column_config=column_cfg,
+    )
+
+
 
 # ============================================================
 # MAIN APP
@@ -3557,7 +3851,17 @@ def main():
     f_customer = apply_filters(customer, year, month, office)
     f_customer_ns = apply_filters(customer_ns, year, month, office)
     f_resolution = apply_filters(resolution, year, month, office)
-    f_yvf = filter_office_only(yvf, office)
+    # YVF follows Month/Year filters only when the source sheet contains Month.
+    # Current office-only source remains valid without inventing a time dimension.
+    if (
+        yvf is not None
+        and not yvf.empty
+        and "MonthDate" in yvf.columns
+        and yvf["MonthDate"].notna().any()
+    ):
+        f_yvf = apply_filters(yvf, year, month, office)
+    else:
+        f_yvf = filter_office_only(yvf, office)
 
     f_core_detail = apply_filters(core_detail, year, month, office)
     f_ancillary_detail = apply_filters(ancillary_detail, year, month, office)
@@ -3956,62 +4260,38 @@ def main():
     with cs_table:
         render_cs_solution_table(f_resolution)
 
-    section_title("7. Shipment & Customer Analysis")
-    h1, h2 = st.columns([0.9, 1.1])
-    with h1:
-        kpi_card("Total Shipment", fmt_int(kpis["Total Shipment"]), "Source: Shipment volume")
-        st.markdown('<div class="chart-box" style="margin-top:12px;">', unsafe_allow_html=True)
-        chart_shipment_modes(f_mode)
-        st.markdown('</div>', unsafe_allow_html=True)
-    with h2:
-        st.markdown('<div class="chart-box">', unsafe_allow_html=True)
-        chart_top_customers(f_customer)
-        st.markdown('</div>', unsafe_allow_html=True)
+    section_title("7. YVF Promoter Effectiveness")
 
-    section_title("8. YVF Promoter Effectiveness")
     if not f_yvf.empty:
-        yvf_booking = f_yvf["YVF Booking"].sum()
-        iff = f_yvf["IFF Shipment"].sum()
+        yvf_booking = float(f_yvf["YVF Booking"].sum())
+        iff = float(f_yvf["IFF Shipment"].sum())
         yvf_rate = safe_div(yvf_booking, iff)
-        kpi_card(
-            "YVF Booking Ratio",
-            fmt_pct(yvf_rate),
-            f"YVF {fmt_int(yvf_booking)} / IFF {fmt_int(iff)}",
-        )
-    chart_yvf(f_yvf)
 
-    section_title("9. Detail & Reconciliation")
-    tab1, tab2, tab3, tab4 = st.tabs(["Reconciliation", "Workload Detail", "Customer Detail", "Data Audit"])
-    with tab1:
-        recon = build_reconciliation(f_hc, f_workload, f_fte, f_shipment)
-        st.dataframe(recon, use_container_width=True, hide_index=True)
-    with tab2:
-        detail_cols = ["Office", "MonthDate", "Segment", "Service Label", "Core Hours", "Ancillary Hours", "Supporting Hours", "Exception Hours", "Workload Hours"]
-        detail = f_workload[[c for c in detail_cols if c in f_workload.columns]].copy()
-        if not detail.empty:
-            detail["Month"] = detail["MonthDate"].dt.strftime("%b-%y")
-            detail = detail.drop(columns=["MonthDate"])
-        st.dataframe(detail, use_container_width=True, hide_index=True)
-    with tab3:
-        cust = f_customer.copy()
-        if not cust.empty:
-            cust["Month"] = cust["MonthDate"].dt.strftime("%b-%y")
-            cust = cust.drop(columns=["MonthDate"])
-        st.dataframe(cust, use_container_width=True, hide_index=True)
-    with tab4:
-        audit_rows = []
-        for key, sheet in SHEET_NAMES.items():
-            df = raw.get(key, pd.DataFrame())
-            audit_rows.append({
-                "Sheet": sheet,
-                "Rows": len(df),
-                "Columns": len(df.columns) if not df.empty else 0,
-                "Status": "PASS" if not df.empty else "WARNING",
-                "Note": "Loaded" if not df.empty else "Sheet missing or empty",
-            })
-        audit = pd.DataFrame(audit_rows)
-        st.dataframe(audit, use_container_width=True, hide_index=True)
-        st.caption("Excel formula warning: Nếu file chứa công thức nhưng chưa lưu cached results, hãy mở Excel → Calculate → Save trước khi chạy Dashboard.")
+        y1, y2, y3 = st.columns(3, gap="medium")
+        with y1:
+            kpi_card(
+                "TOTAL YVF BOOKINGS",
+                fmt_int(yvf_booking),
+                "Source: YVF",
+            )
+        with y2:
+            kpi_card(
+                "TOTAL IFF SHIPMENTS",
+                fmt_int(iff),
+                "Source: YVF",
+            )
+        with y3:
+            kpi_card(
+                "YVF BOOKING RATIO",
+                fmt_pct(yvf_rate),
+                f"{fmt_int(yvf_booking)} / {fmt_int(iff)}",
+            )
+
+    yvf_chart_col, yvf_table_col = st.columns([0.56, 0.44], gap="medium")
+    with yvf_chart_col:
+        chart_yvf(f_yvf)
+    with yvf_table_col:
+        render_yvf_table(f_yvf)
 
 
 if __name__ == "__main__":
