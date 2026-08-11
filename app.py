@@ -89,11 +89,58 @@ st.markdown(
     section[data-testid="stSidebar"] {{
         background: {COLORS['navy']};
     }}
-    section[data-testid="stSidebar"] * {{
-        color: white !important;
+    /* Sidebar: tuyệt đối không dùng chữ xám */
+    section[data-testid="stSidebar"] {{
+        background: {COLORS['navy']};
+    }}
+    section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"],
+    section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p,
+    section[data-testid="stSidebar"] [data-testid="stCaptionContainer"],
+    section[data-testid="stSidebar"] label,
+    section[data-testid="stSidebar"] .stCaption {{
+        color: #FFFFFF !important;
+        opacity: 1 !important;
+    }}
+    section[data-testid="stSidebar"] div[data-baseweb="select"] > div {{
+        background: #FFFFFF !important;
+        border-color: #FFFFFF !important;
     }}
     section[data-testid="stSidebar"] div[data-baseweb="select"] * {{
-        color: {COLORS['text']} !important;
+        color: {COLORS['navy']} !important;
+        opacity: 1 !important;
+    }}
+    section[data-testid="stSidebar"] div[data-baseweb="select"] svg {{
+        fill: {COLORS['navy']} !important;
+    }}
+    section[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] {{
+        background: #FFFFFF !important;
+        border: 1px solid #FFFFFF !important;
+    }}
+    section[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] * {{
+        color: {COLORS['navy']} !important;
+        opacity: 1 !important;
+    }}
+    section[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] button {{
+        background: #F7FAFC !important;
+        color: {COLORS['navy']} !important;
+        border: 1px solid #CBD5E1 !important;
+        font-weight: 700 !important;
+        opacity: 1 !important;
+    }}
+    section[data-testid="stSidebar"] .stButton > button {{
+        background: #FFFFFF !important;
+        color: {COLORS['navy']} !important;
+        border: 1px solid #FFFFFF !important;
+        font-weight: 800 !important;
+        opacity: 1 !important;
+    }}
+    section[data-testid="stSidebar"] .stButton > button:hover {{
+        background: #EAF3F8 !important;
+        color: {COLORS['navy']} !important;
+        border-color: #EAF3F8 !important;
+    }}
+    section[data-testid="stSidebar"] hr {{
+        border-color: rgba(255,255,255,0.30) !important;
     }}
     .main-header {{
         background: {COLORS['white']};
@@ -336,8 +383,26 @@ def kpi_card(label: str, value: str, note: str = "", status: Optional[Tuple[str,
     )
 
 
-def section_title(text: str):
-    st.markdown(f'<div class="section-title">{text}</div>', unsafe_allow_html=True)
+def section_title(number: str, title: str, subtitle: str = ""):
+    st.markdown(
+        f'<div class="section-title"><span class="section-number">{number}</span>{title}</div>',
+        unsafe_allow_html=True,
+    )
+    if subtitle:
+        st.markdown(f'<div class="section-subtitle">{subtitle}</div>', unsafe_allow_html=True)
+
+
+def styled_table(df: pd.DataFrame, formats: Optional[Dict[str, str]] = None, height: Optional[int] = None):
+    """Render a compact management table with optional pandas display formats."""
+    if df is None or df.empty:
+        st.info("No data available for selected filters.")
+        return
+    show = df.copy()
+    if formats:
+        styler = show.style.format(formats, na_rep="N/A")
+        st.dataframe(styler, use_container_width=True, hide_index=True, height=height)
+    else:
+        st.dataframe(show, use_container_width=True, hide_index=True, height=height)
 
 
 def plotly_layout(fig: go.Figure, height: int = 340) -> go.Figure:
@@ -659,6 +724,164 @@ def build_reconciliation(hc, workload, fte, shipment) -> pd.DataFrame:
     add("Utilization", kpis["Utilization"], np.nan, "WARNING", "Dashboard formula: Workload Hours / Capacity Hours.")
     return pd.DataFrame(rows)
 
+
+
+def build_office_capacity_table(hc: pd.DataFrame, workload: pd.DataFrame, fte: pd.DataFrame) -> pd.DataFrame:
+    """Office-level capacity snapshot for Section 01."""
+    offices = sorted(set(
+        list(hc.get("Office", pd.Series(dtype=str)).dropna().unique())
+        + list(workload.get("Office", pd.Series(dtype=str)).dropna().unique())
+        + list(fte.get("Office", pd.Series(dtype=str)).dropna().unique())
+    ))
+    rows = []
+    for office in offices:
+        h = hc[hc["Office"] == office] if not hc.empty else pd.DataFrame()
+        w = workload[workload["Office"] == office] if not workload.empty else pd.DataFrame()
+        f = fte[fte["Office"] == office] if not fte.empty else pd.DataFrame()
+        workload_hours = float(w["Workload Hours"].sum()) if not w.empty else 0.0
+        months = max(len(set(w.get("MonthDate", pd.Series(dtype="datetime64[ns]")).dropna())) , 1)
+        required_fte = safe_div(workload_hours, CAPACITY_HOURS_PER_FTE * months)
+        actual_fte = weighted_period_avg(f, "Actual FTE") if not f.empty else 0.0
+        approved_hc = weighted_period_avg(h, "Total Approved HC") if not h.empty else 0.0
+        actual_hc = weighted_period_avg(h, "Total Actual HC") if not h.empty else 0.0
+        rows.append({
+            "Office": office,
+            "Approved HC": approved_hc,
+            "Actual HC": actual_hc,
+            "Actual FTE": actual_fte,
+            "Required FTE": required_fte,
+            "FTE Gap": actual_fte - required_fte,
+        })
+    return pd.DataFrame(rows)
+
+
+def build_pic_capacity_table(fte: pd.DataFrame) -> pd.DataFrame:
+    """PIC workload-equivalent view based on CS FTE.
+
+    CS FTE is a decimal workload ratio per PIC. Therefore:
+      Workload-equivalent Hours = Actual FTE x 167.2 x selected months
+      Standard Capacity/PIC     = 167.2 x selected months
+      Utilization               = Workload-equivalent Hours / Standard Capacity
+    This does not invent a PIC workload split from BU allocation.
+    """
+    if fte.empty:
+        return pd.DataFrame()
+    d = fte.copy()
+    d = d[d["CS PIC"].astype(str).str.strip().ne("")]
+    if d.empty:
+        return pd.DataFrame()
+    agg = d.groupby(["Office", "CS PIC"], as_index=False).agg(
+        Actual_FTE_Total=("Actual FTE", "sum"),
+        Months=("MonthDate", "nunique"),
+    )
+    agg["Months"] = agg["Months"].clip(lower=1)
+    agg["Actual FTE"] = agg["Actual_FTE_Total"] / agg["Months"]
+    agg["Available Capacity (hrs)"] = CAPACITY_HOURS_PER_FTE * agg["Months"]
+    agg["Actual Workload (hrs)"] = agg["Actual_FTE_Total"] * CAPACITY_HOURS_PER_FTE
+    agg["Utilization %"] = agg.apply(
+        lambda r: safe_div(r["Actual Workload (hrs)"], r["Available Capacity (hrs)"]), axis=1
+    )
+    agg["Status"] = agg["Utilization %"].apply(lambda x: status_from_util(x)[0])
+    return agg[["Office", "CS PIC", "Actual FTE", "Available Capacity (hrs)", "Actual Workload (hrs)", "Utilization %", "Status"]]
+
+
+def build_service_matrix_table(df: pd.DataFrame) -> pd.DataFrame:
+    if df.empty:
+        return pd.DataFrame()
+    pivot = df.pivot_table(index="Office", columns="Segment", values="Workload Hours", aggfunc="sum", fill_value=0)
+    for seg in SERVICE_ORDER:
+        if seg not in pivot.columns:
+            pivot[seg] = 0.0
+    pivot = pivot[SERVICE_ORDER]
+    pivot["Total"] = pivot.sum(axis=1)
+    return pivot.reset_index()
+
+
+def build_activity_table(df: pd.DataFrame) -> pd.DataFrame:
+    if df.empty:
+        return pd.DataFrame()
+    agg = df.groupby("Segment", as_index=False).agg({
+        "Core Hours": "sum",
+        "Ancillary Hours": "sum",
+        "Supporting Hours": "sum",
+        "Exception Hours": "sum",
+        "Workload Hours": "sum",
+    })
+    agg["Ratio %"] = agg["Workload Hours"].apply(lambda x: safe_div(x, agg["Workload Hours"].sum()))
+    agg["Order"] = agg["Segment"].apply(lambda x: SERVICE_ORDER.index(x) if x in SERVICE_ORDER else 999)
+    agg = agg.sort_values("Order").drop(columns="Order")
+    return agg.rename(columns={"Workload Hours": "Total Hours"})
+
+
+def build_resolution_table(df: pd.DataFrame) -> pd.DataFrame:
+    if df.empty:
+        return pd.DataFrame()
+    agg = df.groupby("Office", as_index=False).agg({"Total Abnormality": "sum", "Resolved": "sum"})
+    agg["Resolution Rate"] = agg.apply(lambda r: safe_div(r["Resolved"], r["Total Abnormality"]), axis=1)
+    return agg
+
+
+def build_yvf_table(df: pd.DataFrame) -> pd.DataFrame:
+    if df.empty:
+        return pd.DataFrame()
+    agg = df.groupby("Office", as_index=False).agg({"YVF Booking": "sum", "IFF Shipment": "sum"})
+    agg["YVF Booking Ratio"] = agg.apply(lambda r: safe_div(r["YVF Booking"], r["IFF Shipment"]), axis=1)
+    return agg
+
+
+def chart_hc_fte_trend(hc: pd.DataFrame, workload: pd.DataFrame):
+    """Trend of Approved HC, Actual HC and workload-derived Required FTE."""
+    if hc.empty and workload.empty:
+        st.info("No HC/FTE trend data available.")
+        return
+    hc_m = pd.DataFrame(columns=["MonthDate", "Approved HC", "Actual HC"])
+    if not hc.empty:
+        hc_m = hc.groupby("MonthDate", as_index=False).agg({"Total Approved HC": "sum", "Total Actual HC": "sum"})
+        hc_m = hc_m.rename(columns={"Total Approved HC": "Approved HC", "Total Actual HC": "Actual HC"})
+    wl_m = pd.DataFrame(columns=["MonthDate", "Required FTE"])
+    if not workload.empty:
+        wl_m = workload.groupby("MonthDate", as_index=False)["Workload Hours"].sum()
+        wl_m["Required FTE"] = wl_m["Workload Hours"] / CAPACITY_HOURS_PER_FTE
+        wl_m = wl_m[["MonthDate", "Required FTE"]]
+    trend = pd.merge(hc_m, wl_m, on="MonthDate", how="outer").sort_values("MonthDate")
+    trend["Month"] = trend["MonthDate"].dt.strftime("%b-%y")
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=trend["Month"], y=trend.get("Approved HC", 0), name="Approved HC", mode="lines+markers", line=dict(color=COLORS["navy"], width=2)))
+    fig.add_trace(go.Scatter(x=trend["Month"], y=trend.get("Actual HC", 0), name="Actual HC", mode="lines+markers", line=dict(color=COLORS["blue"], width=3)))
+    fig.add_trace(go.Scatter(x=trend["Month"], y=trend.get("Required FTE", 0), name="Required FTE", mode="lines+markers", line=dict(color=COLORS["red"], width=3, dash="dash")))
+    fig.update_layout(title="Approved HC vs Actual HC vs Required FTE", yaxis_title="HC / FTE")
+    st.plotly_chart(plotly_layout(fig, 330), use_container_width=True, config={"displayModeBar": False})
+
+
+def chart_pic_capacity(pic: pd.DataFrame):
+    if pic.empty:
+        st.info("No CS PIC FTE data available.")
+        return
+    d = pic.sort_values("Utilization %", ascending=True)
+    fig = go.Figure()
+    fig.add_trace(go.Bar(y=d["CS PIC"], x=d["Available Capacity (hrs)"], name="Available Capacity", orientation="h", marker_color=COLORS["light_blue"]))
+    fig.add_trace(go.Bar(y=d["CS PIC"], x=d["Actual Workload (hrs)"], name="Actual Workload", orientation="h", marker_color=COLORS["blue"]))
+    fig.update_layout(barmode="group", title="Actual Workload vs Standard Capacity by CS PIC", xaxis_title="Hours")
+    st.plotly_chart(plotly_layout(fig, max(340, 36 * len(d) + 100)), use_container_width=True, config={"displayModeBar": False})
+
+
+def chart_activity_by_service(df: pd.DataFrame):
+    if df.empty:
+        st.info("No activity workload data available.")
+        return
+    agg = build_activity_table(df)
+    fig = go.Figure()
+    traces = [
+        ("Core", "Core Hours", COLORS["blue"]),
+        ("Ancillary", "Ancillary Hours", COLORS["green"]),
+        ("Supporting", "Supporting Hours", COLORS["amber"]),
+        ("Exception", "Exception Hours", COLORS["red"]),
+    ]
+    for name, col, color in traces:
+        fig.add_trace(go.Bar(x=agg["Segment"], y=agg[col], name=name, marker_color=color))
+    fig.update_layout(barmode="stack", title="Workload Breakdown by Service Type & Activity", yaxis_title="Workload Hours")
+    st.plotly_chart(plotly_layout(fig, 380), use_container_width=True, config={"displayModeBar": False})
+
 # ============================================================
 # CHARTS
 # ============================================================
@@ -836,27 +1059,36 @@ def chart_yvf(df: pd.DataFrame):
 
 
 def main():
+    # ---------------- SIDEBAR / SOURCE ----------------
     with st.sidebar:
         st.markdown("## FILTERS")
-        st.caption("Year / Month / Office")
-        uploaded = st.file_uploader("Upload Excel file", type=["xlsx", "xlsm", "xls"], help="Nếu không upload, Dashboard sẽ đọc file mặc định trong cùng thư mục app.py.")
+        st.caption("Month / Office")
+        uploaded = st.file_uploader(
+            "Upload Excel file",
+            type=["xlsx", "xlsm", "xls"],
+            help="Nếu không upload, Dashboard sẽ đọc file mặc định trong cùng thư mục app.py.",
+        )
         if uploaded:
             tmp_path = Path("_uploaded_dashboard_data.xlsx")
             tmp_path.write_bytes(uploaded.getbuffer())
             file_path = tmp_path
         else:
             file_path = Path(DEFAULT_FILE)
+
         st.markdown("---")
         if st.button("RESET FILTERS", use_container_width=True):
-            st.session_state["year_filter"] = "All"
             st.session_state["month_filter"] = "All"
             st.session_state["office_filter"] = "All Offices"
             st.rerun()
 
     if not Path(file_path).exists():
-        st.error(f"Không tìm thấy file dữ liệu: {file_path}. Vui lòng đặt file Excel cùng thư mục app.py hoặc upload bằng Sidebar.")
+        st.error(
+            f"Không tìm thấy file dữ liệu: {file_path}. "
+            "Vui lòng đặt file Excel cùng thư mục app.py hoặc upload bằng Sidebar."
+        )
         st.stop()
 
+    # ---------------- LOAD & PREPARE ----------------
     with st.spinner("Loading and validating Excel data..."):
         raw = load_data(str(file_path))
         hc = prepare_hc(raw["hc"])
@@ -868,7 +1100,6 @@ def main():
         yvf = prepare_yvf(raw["yvf"])
 
     periods = all_periods(hc, workload, fte, shipment, customer, resolution)
-    years = ["All"] + sorted({str(pd.Timestamp(p).year) for p in periods})
     month_options_all = ["All"] + [format_month(p) for p in periods]
 
     offices_from_data = sorted(set(
@@ -877,23 +1108,22 @@ def main():
         + list(fte.get("Office", pd.Series(dtype=str)).dropna().unique())
         + list(shipment.get("Office", pd.Series(dtype=str)).dropna().unique())
         + list(customer.get("Office", pd.Series(dtype=str)).dropna().unique())
+        + list(resolution.get("Office", pd.Series(dtype=str)).dropna().unique())
+        + list(yvf.get("Office", pd.Series(dtype=str)).dropna().unique())
     ))
     office_options = ["All Offices"] + sorted(set(STANDARD_OFFICES + [o for o in offices_from_data if o]))
 
     with st.sidebar:
-        year = st.selectbox("YEAR", years, key="year_filter")
-        if year != "All":
-            filtered_periods_for_month = [p for p in periods if str(pd.Timestamp(p).year) == year]
-            month_options = ["All"] + [format_month(p) for p in filtered_periods_for_month]
-        else:
-            month_options = month_options_all
-        month = st.selectbox("MONTH", month_options, key="month_filter")
+        # Chỉ giữ 2 bộ lọc nghiệp vụ: Month và Office.
+        # Month hiển thị dạng Mon-YY để vẫn phân biệt được cùng một tháng ở các năm khác nhau.
+        month = st.selectbox("MONTH", month_options_all, key="month_filter")
         office = st.selectbox("OFFICE", office_options, key="office_filter")
+        year = "All"  # Giữ tương thích với hàm apply_filters; không hiển thị bộ lọc Year.
         st.markdown("---")
         st.caption(f"Source file: {Path(file_path).name}")
         st.caption("Capacity standard: 167.2 hrs/FTE/month")
 
-    # Apply filters
+    # ---------------- FILTERS ----------------
     f_hc = apply_filters(hc, year, month, office)
     f_workload = apply_filters(workload, year, month, office)
     f_fte = apply_filters(fte, year, month, office)
@@ -901,17 +1131,18 @@ def main():
     f_mode = apply_filters(shipment_mode, year, month, office)
     f_customer = apply_filters(customer, year, month, office)
     f_resolution = apply_filters(resolution, year, month, office)
+    # YVF source currently has no Month column, so only Office filter can be applied.
     f_yvf = filter_office_only(yvf, office)
 
     kpis = calculate_kpis(f_hc, f_workload, f_fte, f_shipment)
-    status = status_from_util(kpis["Utilization"])
 
+    # ---------------- HEADER ----------------
     st.markdown(
         f"""
         <div class="main-header">
             <div class="main-title">{APP_TITLE}</div>
             <div class="subtitle">{APP_SUBTITLE}</div>
-            <div class="subtitle"><b>Selected Period:</b> {year} / {month} &nbsp; | &nbsp; <b>Selected Office:</b> {office}</div>
+            <div class="subtitle"><b>Selected Month:</b> {month} &nbsp; | &nbsp; <b>Selected Office:</b> {office}</div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -921,132 +1152,211 @@ def main():
         st.markdown(
             """
             <div class="warning-box">
-            WARNING: Một số dữ liệu workload hoặc CS FTE có thể chưa đầy đủ. Dashboard vẫn chạy dynamic và sẽ tự cập nhật khi bổ sung dữ liệu vào file nguồn.
+            WARNING: Một số dữ liệu workload hoặc CS FTE chưa đầy đủ. Dashboard vẫn chạy dynamic và sẽ tự cập nhật khi dữ liệu được bổ sung vào file nguồn.
             </div>
             """,
             unsafe_allow_html=True,
         )
 
-    section_title("1. Office Capacity Snapshot")
+    # ========================================================
+    # 01 — OFFICE CAPACITY SNAPSHOT
+    # ========================================================
+    section_title("01", "OFFICE CAPACITY SNAPSHOT", "Headcount availability & resource requirement")
+    cap_table = build_office_capacity_table(f_hc, f_workload, f_fte)
+
     c1, c2, c3, c4 = st.columns(4)
     with c1:
-        kpi_card("Approved HC", fmt_num(kpis["Approved HC"], 1), "Avg monthly headcount | Source: HC")
+        kpi_card("Approved HC", fmt_num(kpis["Approved HC"], 1), "Source: HC | average of selected months")
     with c2:
-        kpi_card("Actual HC", fmt_num(kpis["Actual HC"], 1), "Avg monthly headcount | Source: HC")
+        kpi_card("Actual HC", fmt_num(kpis["Actual HC"], 1), "Source: HC | average of selected months")
     with c3:
-        kpi_card("Actual FTE", fmt_num(kpis["Actual FTE"], 2), "Avg monthly FTE | Source: CS FTE")
+        kpi_card("Actual FTE", fmt_num(kpis["Actual FTE"], 2), "Source: CS FTE | decimal workload ratio")
     with c4:
         kpi_card("Required FTE", fmt_num(kpis["Required FTE"], 2), "Workload Hours / 167.2")
 
-    c5, c6, c7, c8 = st.columns(4)
-    with c5:
+    left, right = st.columns([1.0, 1.25])
+    with left:
+        styled_table(
+            cap_table,
+            {"Approved HC": "{:,.1f}", "Actual HC": "{:,.1f}", "Actual FTE": "{:,.2f}", "Required FTE": "{:,.2f}", "FTE Gap": "{:,.2f}"},
+            height=280,
+        )
+    with right:
+        st.markdown('<div class="chart-box">', unsafe_allow_html=True)
+        chart_hc_fte_trend(f_hc, f_workload)
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    # ========================================================
+    # 02 — WORKLOAD / CAPACITY BY CS PIC
+    # ========================================================
+    section_title("02", "WORKLOAD / CAPACITY BY CS PIC", "Actual workload vs available capacity at PIC level")
+    status = status_from_util(kpis["Utilization"])
+    p1, p2, p3, p4 = st.columns(4)
+    with p1:
         kpi_card("Capacity Hours", fmt_num(kpis["Capacity Hours"], 1), "Actual FTE × 167.2")
-    with c6:
-        kpi_card("Workload Hours", fmt_num(kpis["Workload Hours"], 1), "BU allocation workload min / 60")
-    with c7:
+    with p2:
+        kpi_card("Workload Hours", fmt_num(kpis["Workload Hours"], 1), "BU allocation Total Workload / 60")
+    with p3:
         kpi_card("Utilization", fmt_pct(kpis["Utilization"]), "Workload Hours / Capacity Hours", status=status)
-    with c8:
-        gap_color_status = None
-        if kpis["FTE Gap"] < -0.05:
-            gap_color_status = ("SHORTAGE", COLORS["red"], "#FEE2E2")
-        elif kpis["FTE Gap"] > 0.05:
-            gap_color_status = ("SURPLUS", COLORS["green"], "#DCFCE7")
-        else:
-            gap_color_status = ("BALANCED", COLORS["green"], "#DCFCE7")
-        kpi_card("FTE Gap", fmt_num(kpis["FTE Gap"], 2), "Actual FTE - Required FTE", status=gap_color_status)
+    with p4:
+        gap_status = ("SHORTAGE", COLORS["red"], "#FEE2E2") if kpis["FTE Gap"] < -0.05 else (("SURPLUS", COLORS["green"], "#DCFCE7") if kpis["FTE Gap"] > 0.05 else ("BALANCED", COLORS["green"], "#DCFCE7"))
+        kpi_card("FTE Gap", fmt_num(kpis["FTE Gap"], 2), "Actual FTE - Required FTE", status=gap_status)
 
-    section_title("2. Workload & Capacity Trend")
-    t1, t2 = st.columns(2)
-    with t1:
+    pic_table = build_pic_capacity_table(f_fte)
+    q1, q2 = st.columns([1.05, 1.0])
+    with q1:
+        styled_table(
+            pic_table,
+            {"Actual FTE": "{:,.2f}", "Available Capacity (hrs)": "{:,.1f}", "Actual Workload (hrs)": "{:,.1f}", "Utilization %": "{:.1%}"},
+            height=390,
+        )
+        st.caption("PIC workload hours are workload-equivalent hours derived from CS FTE; BU allocation does not contain a PIC-level split.")
+    with q2:
         st.markdown('<div class="chart-box">', unsafe_allow_html=True)
-        chart_workload_trend(f_workload)
-        st.markdown('</div>', unsafe_allow_html=True)
-    with t2:
-        st.markdown('<div class="chart-box">', unsafe_allow_html=True)
-        chart_capacity_trend(f_workload, f_fte)
+        chart_pic_capacity(pic_table)
         st.markdown('</div>', unsafe_allow_html=True)
 
-    section_title("3. Workload by Service Type & Composition")
-    s1, s2 = st.columns([1.1, 0.9])
-    with s1:
-        st.markdown('<div class="chart-box">', unsafe_allow_html=True)
-        chart_workload_by_service(f_workload)
-        st.markdown('</div>', unsafe_allow_html=True)
-    with s2:
-        st.markdown('<div class="chart-box">', unsafe_allow_html=True)
-        chart_workload_composition(f_workload)
-        st.markdown('</div>', unsafe_allow_html=True)
-
-    section_title("4. Office × Service Workload Matrix")
     st.markdown('<div class="chart-box">', unsafe_allow_html=True)
-    chart_service_matrix(f_workload)
+    chart_capacity_trend(f_workload, f_fte)
     st.markdown('</div>', unsafe_allow_html=True)
 
-    section_title("5. Shipment & Customer Analysis")
-    h1, h2 = st.columns([0.9, 1.1])
-    with h1:
-        kpi_card("Total Shipment", fmt_int(kpis["Total Shipment"]), "Source: Shipment volume")
-        st.markdown('<div class="chart-box" style="margin-top:10px;">', unsafe_allow_html=True)
+    # ========================================================
+    # 03 — SHIPMENT VOLUME & ACTIVE CUSTOMERS
+    # ========================================================
+    section_title("03", "SHIPMENT VOLUME & ACTIVE CUSTOMERS", "Shipment mix and customer concentration")
+    active_customers = 0.0
+    if not f_shipment.empty and "Active Customers" in f_shipment.columns:
+        # Active customer is a monthly snapshot, use average for multi-month selection to avoid double counting customers.
+        active_customers = weighted_period_avg(f_shipment, "Active Customers")
+    s1, s2 = st.columns(2)
+    with s1:
+        kpi_card("Total Shipment Volume", fmt_int(kpis["Total Shipment"]), "Source: Shipment volume")
+    with s2:
+        kpi_card("Active Customers", fmt_num(active_customers, 1), "Average monthly active customers")
+
+    sh1, sh2 = st.columns([0.9, 1.1])
+    with sh1:
+        st.markdown('<div class="chart-box">', unsafe_allow_html=True)
         chart_shipment_modes(f_mode)
         st.markdown('</div>', unsafe_allow_html=True)
-    with h2:
+    with sh2:
         st.markdown('<div class="chart-box">', unsafe_allow_html=True)
         chart_top_customers(f_customer)
         st.markdown('</div>', unsafe_allow_html=True)
 
-    section_title("6. Effectiveness")
-    e1, e2 = st.columns(2)
-    with e1:
-        if not f_resolution.empty:
-            total_abn = f_resolution["Total Abnormality"].sum()
-            resolved = f_resolution["Resolved"].sum()
-            rate = safe_div(resolved, total_abn)
-            kpi_card("CS Resolution Rate", fmt_pct(rate), f"Resolved {fmt_int(resolved)} / {fmt_int(total_abn)} cases")
-        st.markdown('<div class="chart-box" style="margin-top:10px;">', unsafe_allow_html=True)
+    # ========================================================
+    # 04 — OFFICE × SEGMENT WORKLOAD MATRIX
+    # ========================================================
+    section_title("04", "OFFICE × SEGMENT WORKLOAD MATRIX", "Workload concentration by office and service segment")
+    matrix_table = build_service_matrix_table(f_workload)
+    styled_table(matrix_table, {c: "{:,.1f}" for c in SERVICE_ORDER + ["Total"] if c in matrix_table.columns}, height=230)
+    st.markdown('<div class="chart-box">', unsafe_allow_html=True)
+    chart_service_matrix(f_workload)
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    # ========================================================
+    # 05 — WORKLOAD BREAKDOWN BY SERVICE TYPE & ACTIVITY
+    # ========================================================
+    section_title("05", "WORKLOAD BREAKDOWN BY SERVICE TYPE & ACTIVITY", "Core / Ancillary / Supporting / Exception workload")
+    activity_table = build_activity_table(f_workload)
+    a1, a2 = st.columns([1.15, 0.85])
+    with a1:
+        st.markdown('<div class="chart-box">', unsafe_allow_html=True)
+        chart_activity_by_service(f_workload)
+        st.markdown('</div>', unsafe_allow_html=True)
+    with a2:
+        styled_table(
+            activity_table,
+            {"Core Hours": "{:,.1f}", "Ancillary Hours": "{:,.1f}", "Supporting Hours": "{:,.1f}", "Exception Hours": "{:,.1f}", "Total Hours": "{:,.1f}", "Ratio %": "{:.1%}"},
+            height=380,
+        )
+    st.markdown('<div class="chart-box">', unsafe_allow_html=True)
+    chart_workload_composition(f_workload)
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    # ========================================================
+    # 06 — CONTROL TOWER EFFECTIVENESS
+    # ========================================================
+    section_title("06", "CONTROL TOWER EFFECTIVENESS", "CS abnormality resolution performance")
+    total_abn = float(f_resolution["Total Abnormality"].sum()) if not f_resolution.empty else 0.0
+    resolved = float(f_resolution["Resolved"].sum()) if not f_resolution.empty else 0.0
+    rate = safe_div(resolved, total_abn)
+    r1, r2, r3 = st.columns(3)
+    with r1:
+        kpi_card("Total Abnormality", fmt_int(total_abn), "Source: CS Resolutions Rate")
+    with r2:
+        kpi_card("Resolved by CS", fmt_int(resolved), "Resolved abnormality")
+    with r3:
+        kpi_card("CS Resolution Rate", fmt_pct(rate), "Resolved / Total Abnormality")
+
+    ct1, ct2 = st.columns([1.3, 0.7])
+    with ct1:
+        st.markdown('<div class="chart-box">', unsafe_allow_html=True)
         chart_resolution(f_resolution)
         st.markdown('</div>', unsafe_allow_html=True)
-    with e2:
-        if not f_yvf.empty:
-            yvf_booking = f_yvf["YVF Booking"].sum()
-            iff = f_yvf["IFF Shipment"].sum()
-            yvf_rate = safe_div(yvf_booking, iff)
-            kpi_card("YVF Booking Ratio", fmt_pct(yvf_rate), f"YVF {fmt_int(yvf_booking)} / IFF {fmt_int(iff)}")
-        st.markdown('<div class="chart-box" style="margin-top:10px;">', unsafe_allow_html=True)
+    with ct2:
+        resolution_table = build_resolution_table(f_resolution)
+        styled_table(resolution_table, {"Total Abnormality": "{:,.0f}", "Resolved": "{:,.0f}", "Resolution Rate": "{:.1%}"}, height=300)
+
+    # ========================================================
+    # 07 — YVF PROMOTER EFFECTIVENESS
+    # ========================================================
+    section_title("07", "YVF PROMOTER EFFECTIVENESS", "YVF booking adoption by office")
+    yvf_booking = float(f_yvf["YVF Booking"].sum()) if not f_yvf.empty else 0.0
+    iff = float(f_yvf["IFF Shipment"].sum()) if not f_yvf.empty else 0.0
+    yvf_rate = safe_div(yvf_booking, iff)
+    y1, y2, y3 = st.columns(3)
+    with y1:
+        kpi_card("Total IFF Shipment", fmt_int(iff), "Source: YVF")
+    with y2:
+        kpi_card("YVF Booking", fmt_int(yvf_booking), "Source: YVF")
+    with y3:
+        kpi_card("YVF Booking Ratio", fmt_pct(yvf_rate), "YVF Booking / IFF Shipment")
+
+    yv1, yv2 = st.columns([1.1, 0.9])
+    with yv1:
+        st.markdown('<div class="chart-box">', unsafe_allow_html=True)
         chart_yvf(f_yvf)
         st.markdown('</div>', unsafe_allow_html=True)
+    with yv2:
+        yvf_table = build_yvf_table(f_yvf)
+        styled_table(yvf_table, {"YVF Booking": "{:,.0f}", "IFF Shipment": "{:,.0f}", "YVF Booking Ratio": "{:.1%}"}, height=300)
+    st.caption("YVF source sheet currently has no Month field; therefore Year/Month filters cannot be applied to Section 07 until monthly YVF data is added.")
 
-    section_title("7. Detail & Reconciliation")
-    tab1, tab2, tab3, tab4 = st.tabs(["Reconciliation", "Workload Detail", "Customer Detail", "Data Audit"])
-    with tab1:
-        recon = build_reconciliation(f_hc, f_workload, f_fte, f_shipment)
-        st.dataframe(recon, use_container_width=True, hide_index=True)
-    with tab2:
-        detail_cols = ["Office", "MonthDate", "Segment", "Service Label", "Core Hours", "Ancillary Hours", "Supporting Hours", "Exception Hours", "Workload Hours"]
-        detail = f_workload[[c for c in detail_cols if c in f_workload.columns]].copy()
-        if not detail.empty:
-            detail["Month"] = detail["MonthDate"].dt.strftime("%b-%y")
-            detail = detail.drop(columns=["MonthDate"])
-        st.dataframe(detail, use_container_width=True, hide_index=True)
-    with tab3:
-        cust = f_customer.copy()
-        if not cust.empty:
-            cust["Month"] = cust["MonthDate"].dt.strftime("%b-%y")
-            cust = cust.drop(columns=["MonthDate"])
-        st.dataframe(cust, use_container_width=True, hide_index=True)
-    with tab4:
-        audit_rows = []
-        for key, sheet in SHEET_NAMES.items():
-            df = raw.get(key, pd.DataFrame())
-            audit_rows.append({
-                "Sheet": sheet,
-                "Rows": len(df),
-                "Columns": len(df.columns) if not df.empty else 0,
-                "Status": "PASS" if not df.empty else "WARNING",
-                "Note": "Loaded" if not df.empty else "Sheet missing or empty",
-            })
-        audit = pd.DataFrame(audit_rows)
-        st.dataframe(audit, use_container_width=True, hide_index=True)
-        st.caption("Excel formula warning: Nếu file chứa công thức nhưng chưa lưu cached results, hãy mở Excel → Calculate → Save trước khi chạy Dashboard.")
+    # ========================================================
+    # DATA QUALITY / RECONCILIATION — NOT SECTION 08
+    # ========================================================
+    with st.expander("Data Quality & Reconciliation", expanded=False):
+        tab1, tab2, tab3, tab4 = st.tabs(["Reconciliation", "Workload Detail", "Customer Detail", "Data Audit"])
+        with tab1:
+            recon = build_reconciliation(f_hc, f_workload, f_fte, f_shipment)
+            st.dataframe(recon, use_container_width=True, hide_index=True)
+        with tab2:
+            detail_cols = ["Office", "MonthDate", "Segment", "Service Label", "Core Hours", "Ancillary Hours", "Supporting Hours", "Exception Hours", "Workload Hours"]
+            detail = f_workload[[c for c in detail_cols if c in f_workload.columns]].copy()
+            if not detail.empty:
+                detail["Month"] = detail["MonthDate"].dt.strftime("%b-%y")
+                detail = detail.drop(columns=["MonthDate"])
+            st.dataframe(detail, use_container_width=True, hide_index=True)
+        with tab3:
+            cust = f_customer.copy()
+            if not cust.empty:
+                cust["Month"] = cust["MonthDate"].dt.strftime("%b-%y")
+                cust = cust.drop(columns=["MonthDate"])
+            st.dataframe(cust, use_container_width=True, hide_index=True)
+        with tab4:
+            audit_rows = []
+            for key, sheet in SHEET_NAMES.items():
+                df = raw.get(key, pd.DataFrame())
+                audit_rows.append({
+                    "Sheet": sheet,
+                    "Rows": len(df),
+                    "Columns": len(df.columns) if not df.empty else 0,
+                    "Status": "PASS" if not df.empty else "WARNING",
+                    "Note": "Loaded" if not df.empty else "Sheet missing or empty",
+                })
+            st.dataframe(pd.DataFrame(audit_rows), use_container_width=True, hide_index=True)
+            st.caption("Excel formula warning: nếu file chứa formula nhưng chưa lưu cached results, hãy mở Excel → Calculate → Save trước khi chạy Dashboard.")
 
 
 if __name__ == "__main__":
