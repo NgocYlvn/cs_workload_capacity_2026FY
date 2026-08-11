@@ -918,7 +918,7 @@ st.markdown(
     }}
 
     /* Paired chart + detail-table layout */
-    .paired-detail-card {
+    .paired-detail-card {{
         background: #FFFFFF;
         border: 1px solid var(--border);
         border-radius: var(--radius);
@@ -928,17 +928,17 @@ st.markdown(
         width: 100%;
         margin-top: 12px;
         overflow: hidden;
-    }
+    }}
 
-    .paired-detail-title {
+    .paired-detail-title {{
         color: var(--navy);
         font-size: 15px;
         line-height: 1.25;
         font-weight: 700;
         margin: 1px 0 10px 2px;
-    }
+    }}
 
-    .paired-detail-table {
+    .paired-detail-table {{
         width: 100%;
         border-collapse: separate;
         border-spacing: 0;
@@ -948,9 +948,9 @@ st.markdown(
         border: 1px solid #E2E8F0;
         border-radius: 8px;
         overflow: hidden;
-    }
+    }}
 
-    .paired-detail-table thead th {
+    .paired-detail-table thead th {{
         background: #F8FAFC;
         color: var(--navy);
         font-weight: 700;
@@ -958,58 +958,58 @@ st.markdown(
         border-bottom: 1px solid #D8E1EA;
         text-align: left;
         line-height: 1.15;
-    }
+    }}
 
-    .paired-detail-table tbody td {
+    .paired-detail-table tbody td {{
         padding: 6px 7px;
         border-bottom: 1px solid #EDF1F5;
         color: var(--text);
         line-height: 1.15;
         vertical-align: middle;
         background: #FFFFFF;
-    }
+    }}
 
-    .paired-detail-table tbody tr:nth-child(even) td {
+    .paired-detail-table tbody tr:nth-child(even) td {{
         background: #FBFCFD;
-    }
+    }}
 
-    .paired-detail-table tbody tr:last-child td {
+    .paired-detail-table tbody tr:last-child td {{
         border-bottom: 0;
-    }
+    }}
 
-    .paired-detail-table .pair-rank {
+    .paired-detail-table .pair-rank {{
         text-align: center;
         color: #667085;
         font-variant-numeric: tabular-nums;
-    }
+    }}
 
     .paired-detail-table .pair-number,
-    .paired-detail-table .pair-share {
+    .paired-detail-table .pair-share {{
         text-align: right;
         white-space: nowrap;
         font-variant-numeric: tabular-nums;
-    }
+    }}
 
-    .paired-detail-table td.pair-number {
+    .paired-detail-table td.pair-number {{
         color: var(--navy);
         font-weight: 600;
-    }
+    }}
 
-    .paired-detail-table .pair-name {
+    .paired-detail-table .pair-name {{
         text-align: left;
         overflow-wrap: anywhere;
-    }
+    }}
 
-    .customer-name-cell {
+    .customer-name-cell {{
         font-size: 10.5px;
-    }
+    }}
 
-    .paired-detail-foot {
+    .paired-detail-foot {{
         color: var(--muted);
         font-size: 10.5px;
         line-height: 1.3;
         margin: 7px 2px 0 2px;
-    }
+    }}
 
     /* Compact tabs and avoid visual competition */
     .stTabs [data-baseweb="tab-list"] {{
