@@ -1,6 +1,6 @@
 # ============================================================
 # CS WORKLOAD & CAPACITY DASHBOARD
-# BUILD: V27_FIX_SECTION4_ALLOCATION_TIME_KEY
+# BUILD: V28_SECTION4_BALANCED_LAYOUT_NO_AXES
 # BUILD: SECTION2_SAME_ROW_V6
 # Python + Streamlit + Pandas + Plotly
 # Data source: (100826)TEMPLATE_DATA FOR DASHBOARD_V1.xlsx
@@ -2432,21 +2432,36 @@ def chart_service_matrix(
         )
 
     fig.update_layout(
-        title="Workload vs Shipment Volume by Service",
-        xaxis_title="Shipment Volume",
-        yaxis_title="Allocation Time (h)",
+        title="Workload by Service",
     )
     fig = plotly_layout(
         fig,
-        455,
+        430,
         show_legend=False,
-        margin_left=70,
-        margin_right=42,
-        margin_top=68,
-        margin_bottom=60,
+        margin_left=24,
+        margin_right=24,
+        margin_top=62,
+        margin_bottom=24,
     )
-    fig.update_xaxes(rangemode="tozero")
-    fig.update_yaxes(rangemode="tozero")
+
+    # Executive bubble view: keep the relative X/Y placement logic for the bubbles
+    # but hide axes, ticks, labels and gridlines for a cleaner management view.
+    fig.update_xaxes(
+        visible=False,
+        showgrid=False,
+        zeroline=False,
+        showticklabels=False,
+        title_text="",
+        fixedrange=True,
+    )
+    fig.update_yaxes(
+        visible=False,
+        showgrid=False,
+        zeroline=False,
+        showticklabels=False,
+        title_text="",
+        fixedrange=True,
+    )
 
     st.plotly_chart(
         fig,
@@ -2472,6 +2487,12 @@ def segment_workload_table(df: pd.DataFrame, mode_df: pd.DataFrame):
         "Workload Share": "Workload Share (%)",
     })
 
+    # Streamlit NumberColumn with a literal % sign does not multiply fractions by 100.
+    # Convert 0–1 shares to percentage-point values before display.
+    display["Workload Share (%)"] = (
+        pd.to_numeric(display["Workload Share (%)"], errors="coerce").fillna(0) * 100
+    )
+
     total_hours = float(display["Allocation Time (h)"].sum())
     total_volume = float(display["Shipment Volume"].sum())
     total_required_fte = float(display["Required FTE"].sum())
@@ -2479,7 +2500,7 @@ def segment_workload_table(df: pd.DataFrame, mode_df: pd.DataFrame):
     total_row = pd.DataFrame([{
         "Service": "TOTAL",
         "Allocation Time (h)": total_hours,
-        "Workload Share (%)": 1.0 if total_hours > 0 else 0.0,
+        "Workload Share (%)": 100.0 if total_hours > 0 else 0.0,
         "Required FTE": total_required_fte,
         "Shipment Volume": total_volume,
     }])
@@ -2503,7 +2524,7 @@ def segment_workload_table(df: pd.DataFrame, mode_df: pd.DataFrame):
         display,
         use_container_width=True,
         hide_index=True,
-        height=455,
+        height=430,
         column_config={
             "Service": st.column_config.TextColumn("Service", width="small"),
             "Allocation Time (h)": st.column_config.NumberColumn(
@@ -3072,17 +3093,21 @@ def main():
         else 0.0
     )
 
-    # Compact executive summary row.
-    seg_intro, seg_kpi = st.columns([0.78, 0.22], gap="medium")
+    # Compact Section 4 header: description and KPI aligned on one balanced row.
+    seg_intro, seg_kpi = st.columns([0.76, 0.24], gap="medium")
     with seg_intro:
         st.markdown(
             """
             <div style="
+                min-height:110px;
+                display:flex;
+                align-items:center;
                 color:#667085;
                 font-size:12px;
-                line-height:1.45;
-                padding:10px 2px 0 2px;">
-                Workload by Service with Allocation Time, Workload Share, Required FTE and Shipment Volume.
+                line-height:1.55;
+                padding:0 8px 0 2px;">
+                Compare workload concentration across Services using Allocation Time,
+                Workload Share, Required FTE and Shipment Volume.
             </div>
             """,
             unsafe_allow_html=True,
@@ -3094,11 +3119,12 @@ def main():
             "Source: BU allocation",
         )
 
-    seg_chart, seg_table = st.columns([0.52, 0.48], gap="medium")
+    # Balanced visual row: bubble chart slightly narrower, summary table slightly wider.
+    seg_chart, seg_table = st.columns([0.44, 0.56], gap="medium")
 
     with seg_chart:
         st.markdown(
-            '<div class="chart-box" style="margin-top:12px;">',
+            '<div class="chart-box" style="margin-top:10px;min-height:470px;">',
             unsafe_allow_html=True,
         )
         chart_service_matrix(f_workload, f_mode)
@@ -3106,7 +3132,7 @@ def main():
 
     with seg_table:
         st.markdown(
-            '<div class="chart-box" style="margin-top:12px;">',
+            '<div class="chart-box" style="margin-top:10px;min-height:470px;">',
             unsafe_allow_html=True,
         )
         segment_workload_table(f_workload, f_mode)
@@ -3124,7 +3150,7 @@ def main():
             font-size:11px;
             line-height:1.45;">
             <b style="color:#003B70;">Note:</b>
-            X = Shipment Volume; Y = Allocation Time (h); bubble size = Workload Share (%).
+            Bubble position reflects Shipment Volume and Allocation Time; bubble size = Workload Share (%).
             Required FTE uses the HC/FTE allocation source when available and falls back to Workload ÷ 167.2 h/FTE.
             Shipment Volume is sourced from the Shipment volume sheet and mapped to the corresponding Service.
         </div>
