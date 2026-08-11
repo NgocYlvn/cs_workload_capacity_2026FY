@@ -1,6 +1,6 @@
 # ============================================================
 # CS WORKLOAD & CAPACITY DASHBOARD
-# BUILD: V25_FIX_SECTION4_NAMEERROR
+# BUILD: V26_SECTION4_SEGMENT_SUMMARY_BUBBLE
 # BUILD: SECTION2_SAME_ROW_V6
 # Python + Streamlit + Pandas + Plotly
 # Data source: (100826)TEMPLATE_DATA FOR DASHBOARD_V1.xlsx
@@ -2213,61 +2213,127 @@ def build_segment_workload(
     mode_df: Optional[pd.DataFrame] = None,
 ) -> pd.DataFrame:
     """
-    Aggregate Workload Hours by Segment and optionally attach Shipment Volume by Segment.
+    Section 4 source table — Workload by Segment.
 
-    Workload source: BU allocation / workload dataframe.
-    Volume source: Shipment volume long dataframe.
-    Segment mapping follows the existing transportation/service codes where available.
+    Business fields:
+    - Allocation Time (h): total workload hours from BU allocation.
+    - Workload Share (%): Segment workload / total workload.
+    - Required FTE:
+        Prefer source field "Office HC Allocation Ratio" when available.
+        For multiple months, calculate monthly Segment FTE and average across
+        valid months because Required FTE is a monthly capacity requirement,
+        not a cumulative-period quantity.
+        Fallback = monthly Workload Hours / 167.2 hours/FTE.
+    - Shipment Volume: Shipment volume sheet, mapped to AE/AI/OE/OI/CC/TR/WH.
     """
+    base_cols = [
+        "Segment", "Allocation Time (h)", "Workload Share",
+        "Required FTE", "Shipment Volume"
+    ]
     if df is None or df.empty:
-        return pd.DataFrame(
-            columns=["Segment", "Workload Hours", "Shipment Volume", "% of Total", "Ranking"]
-        )
+        return pd.DataFrame(columns=base_cols)
+
+    d = df.copy()
+    if "Segment" not in d.columns or "Workload Hours" not in d.columns:
+        return pd.DataFrame(columns=base_cols)
+
+    d["Segment"] = d["Segment"].astype(str).str.strip().str.upper()
+    d["Workload Hours"] = pd.to_numeric(d["Workload Hours"], errors="coerce").fillna(0)
+    d = d[d["Segment"].isin(SERVICE_ORDER)].copy()
+
+    if d.empty:
+        return pd.DataFrame(columns=base_cols)
 
     seg = (
-        df.groupby("Segment", as_index=False)["Workload Hours"]
+        d.groupby("Segment", as_index=False)["Workload Hours"]
         .sum()
-        .sort_values("Workload Hours", ascending=False)
-        .reset_index(drop=True)
+        .rename(columns={"Workload Hours": "Allocation Time (h)"})
     )
-    seg = seg[seg["Workload Hours"] > 0].copy()
 
-    if seg.empty:
-        return pd.DataFrame(
-            columns=["Segment", "Workload Hours", "Shipment Volume", "% of Total", "Ranking"]
+    seg = (
+        pd.DataFrame({"Segment": SERVICE_ORDER})
+        .merge(seg, on="Segment", how="left")
+        .fillna({"Allocation Time (h)": 0.0})
+    )
+
+    total_hours = float(seg["Allocation Time (h)"].sum())
+    seg["Workload Share"] = np.where(
+        total_hours > 0,
+        seg["Allocation Time (h)"] / total_hours,
+        0.0,
+    )
+
+    fte_by_segment = pd.DataFrame({"Segment": SERVICE_ORDER, "Required FTE": 0.0})
+
+    if "MonthDate" in d.columns and d["MonthDate"].notna().any():
+        monthly = d.copy()
+
+        use_source_fte = (
+            "Office HC Allocation Ratio" in monthly.columns
+            and pd.to_numeric(
+                monthly["Office HC Allocation Ratio"], errors="coerce"
+            ).fillna(0).abs().sum() > 0
         )
 
-    total = float(seg["Workload Hours"].sum())
-    seg["% of Total"] = seg["Workload Hours"] / total if total > 0 else 0
-    seg["Ranking"] = np.arange(1, len(seg) + 1)
+        if use_source_fte:
+            monthly["Required FTE Source"] = pd.to_numeric(
+                monthly["Office HC Allocation Ratio"], errors="coerce"
+            )
+            monthly_fte = (
+                monthly.dropna(subset=["MonthDate"])
+                .groupby(["MonthDate", "Segment"], as_index=False)["Required FTE Source"]
+                .sum(min_count=1)
+                .rename(columns={"Required FTE Source": "Required FTE"})
+            )
+        else:
+            monthly_hours = (
+                monthly.dropna(subset=["MonthDate"])
+                .groupby(["MonthDate", "Segment"], as_index=False)["Workload Hours"]
+                .sum()
+            )
+            monthly_hours["Required FTE"] = (
+                monthly_hours["Workload Hours"] / CAPACITY_HOURS_PER_FTE
+            )
+            monthly_fte = monthly_hours[["MonthDate", "Segment", "Required FTE"]]
 
-    # Shipment Volume by Segment.
-    # Existing shipment source uses Mode codes, so normalize/group them into the same Segment labels.
+        if not monthly_fte.empty:
+            fte_by_segment = (
+                monthly_fte.groupby("Segment", as_index=False)["Required FTE"]
+                .mean()
+            )
+            fte_by_segment = (
+                pd.DataFrame({"Segment": SERVICE_ORDER})
+                .merge(fte_by_segment, on="Segment", how="left")
+                .fillna({"Required FTE": 0.0})
+            )
+    else:
+        fte_by_segment = seg[["Segment", "Allocation Time (h)"]].copy()
+        fte_by_segment["Required FTE"] = (
+            fte_by_segment["Allocation Time (h)"] / CAPACITY_HOURS_PER_FTE
+        )
+        fte_by_segment = fte_by_segment[["Segment", "Required FTE"]]
+
+    seg = seg.merge(fte_by_segment, on="Segment", how="left")
+    seg["Required FTE"] = pd.to_numeric(
+        seg["Required FTE"], errors="coerce"
+    ).fillna(0)
+
     seg["Shipment Volume"] = 0.0
-    if mode_df is not None and not mode_df.empty and {"Mode", "Volume"}.issubset(mode_df.columns):
+    if (
+        mode_df is not None
+        and not mode_df.empty
+        and {"Mode", "Volume"}.issubset(mode_df.columns)
+    ):
         vol = mode_df.copy()
         vol["Mode"] = vol["Mode"].astype(str).str.strip().str.upper()
+        vol["Volume"] = pd.to_numeric(vol["Volume"], errors="coerce").fillna(0)
 
-        # Map detailed transportation modes to the dashboard Segment groups.
         volume_segment_map = {
-            "AE": "AE",
-            "AI": "AI",
-            "OE": "OE",
-            "OI": "OI",
-            "OEFCL": "OE",
-            "OELCL": "OE",
-            "OIFCL": "OI",
-            "OILCL": "OI",
-            "CC": "CC",
-            "CE": "CC",
-            "CI": "CC",
-            "TR": "TR",
-            "DM": "TR",
-            "DE": "TR",
-            "DI": "TR",
-            "WH": "WH",
-            "HE": "WH",
-            "HI": "WH",
+            "AE": "AE", "AI": "AI", "OE": "OE", "OI": "OI",
+            "OEFCL": "OE", "OELCL": "OE", "OIFCL": "OI", "OILCL": "OI",
+            "CC": "CC", "CE": "CC", "CI": "CC",
+            "TR": "TR", "DM": "TR", "DE": "TR", "DI": "TR",
+            "WH": "WH", "HE": "WH", "HI": "WH",
         }
         vol["Segment"] = vol["Mode"].map(volume_segment_map)
 
@@ -2277,152 +2343,110 @@ def build_segment_workload(
             .sum()
             .rename(columns={"Volume": "Shipment Volume Source"})
         )
-
         seg = seg.merge(volume_by_segment, on="Segment", how="left")
-        seg["Shipment Volume"] = (
-            pd.to_numeric(seg["Shipment Volume Source"], errors="coerce")
-            .fillna(0)
-        )
+        seg["Shipment Volume"] = pd.to_numeric(
+            seg["Shipment Volume Source"], errors="coerce"
+        ).fillna(0)
         seg = seg.drop(columns=["Shipment Volume Source"])
 
-    return seg
+    seg["Segment"] = pd.Categorical(
+        seg["Segment"], categories=SERVICE_ORDER, ordered=True
+    )
+    seg = seg.sort_values("Segment").reset_index(drop=True)
+    seg["Segment"] = seg["Segment"].astype(str)
+
+    return seg[
+        ["Segment", "Allocation Time (h)", "Workload Share", "Required FTE", "Shipment Volume"]
+    ]
 
 
-
-def chart_service_matrix(df: pd.DataFrame):
+def chart_service_matrix(
+    df: pd.DataFrame,
+    mode_df: Optional[pd.DataFrame] = None,
+):
     """
-    Workload by Segment — packed-style bubble chart.
-    One circle = one Segment.
-    Circle size = total Workload Hours.
-    UI/visualization change only; workload aggregation logic is unchanged.
-    """
-    seg = build_segment_workload(df)
+    Workload by Segment — management bubble chart.
 
-    if seg.empty:
+    X axis = Shipment Volume
+    Y axis = Allocation Time / Workload (hours)
+    Size   = Workload Share (%)
+    """
+    seg = build_segment_workload(df, mode_df)
+
+    if seg.empty or float(seg["Allocation Time (h)"].sum()) <= 0:
         st.info("No segment workload data available for selected filters.")
         return
 
-    # Stable positions for up to 10 segments.
-    # This gives a clean packed-bubble visual without introducing a new dependency.
-    positions = [
-        (0.00, 0.10),
-        (2.35, 0.10),
-        (-2.15, 0.70),
-        (-1.55, -1.55),
-        (0.45, -1.75),
-        (2.35, -1.55),
-        (1.55, 1.70),
-        (-0.75, 1.85),
-        (3.65, 1.25),
-        (-3.45, -0.75),
-    ]
+    plot_df = seg[seg["Allocation Time (h)"] > 0].copy()
 
-    plot_df = seg.head(len(positions)).copy()
-    plot_df["x"] = [positions[i][0] for i in range(len(plot_df))]
-    plot_df["y"] = [positions[i][1] for i in range(len(plot_df))]
-
-    max_hours = float(plot_df["Workload Hours"].max())
-    min_hours = float(plot_df["Workload Hours"].min())
-
-    if max_hours == min_hours:
-        bubble_sizes = np.full(len(plot_df), 105.0)
+    max_share = float(plot_df["Workload Share"].max())
+    if max_share > 0:
+        plot_df["Bubble Size"] = 42 + (plot_df["Workload Share"] / max_share) * 72
     else:
-        normalized = (
-            (plot_df["Workload Hours"] - min_hours)
-            / (max_hours - min_hours)
-        )
-        # Diameter in pixels. Large enough to show labels, bounded for readability.
-        bubble_sizes = 62 + normalized * 105
+        plot_df["Bubble Size"] = 58
 
-    plot_df["Bubble Size"] = bubble_sizes
-    plot_df["Label"] = plot_df.apply(
-        lambda r: (
-            f"<b>{r['Segment']}</b><br>"
-            f"{r['Workload Hours']:,.1f} h<br>"
-            f"{r['% of Total']:.1%}"
-        ),
-        axis=1,
-    )
-
-    # Use a restrained corporate blue gradient by rank.
-    bubble_colors = []
-    color_steps = [
-        COLORS["navy"],
-        COLORS["blue"],
-        "#2E7EC4",
-        "#5B9BD5",
-        "#7FB3DF",
-        "#9DC8E8",
-        "#C5DDF0",
-    ]
-    for i in range(len(plot_df)):
-        bubble_colors.append(color_steps[min(i, len(color_steps) - 1)])
+    segment_color_map = {
+        svc: CORPORATE_PALETTE[i % len(CORPORATE_PALETTE)]
+        for i, svc in enumerate(SERVICE_ORDER)
+    }
 
     fig = go.Figure()
 
-    fig.add_trace(
-        go.Scatter(
-            x=plot_df["x"],
-            y=plot_df["y"],
-            mode="markers+text",
-            text=plot_df["Label"],
-            textposition="middle center",
-            textfont=dict(
-                size=12,
-                family="Arial",
-                color=[
-                    "#FFFFFF" if i < 4 else COLORS["navy"]
-                    for i in range(len(plot_df))
-                ],
-            ),
-            marker=dict(
-                size=plot_df["Bubble Size"],
-                color=bubble_colors,
-                line=dict(color="#FFFFFF", width=2.2),
-                opacity=0.98,
-            ),
-            customdata=np.column_stack([
-                plot_df["Segment"],
-                plot_df["Workload Hours"],
-                plot_df["% of Total"],
-                plot_df["Ranking"],
-            ]),
-            hovertemplate=(
-                "<b>%{customdata[0]}</b><br>"
-                "Workload: %{customdata[1]:,.1f} hours<br>"
-                "Share: %{customdata[2]:.1%}<br>"
-                "Ranking: %{customdata[3]:.0f}"
-                "<extra></extra>"
-            ),
-            showlegend=False,
+    for _, r in plot_df.iterrows():
+        svc = r["Segment"]
+        fig.add_trace(
+            go.Scatter(
+                x=[r["Shipment Volume"]],
+                y=[r["Allocation Time (h)"]],
+                mode="markers+text",
+                name=svc,
+                text=[f"<b>{svc}</b><br>{r['Workload Share']:.1%}"],
+                textposition="middle center",
+                textfont=dict(
+                    family="Arial",
+                    size=11,
+                    color="#FFFFFF" if r["Workload Share"] >= 0.07 else COLORS["navy"],
+                ),
+                marker=dict(
+                    size=[r["Bubble Size"]],
+                    color=segment_color_map.get(svc, COLORS["blue"]),
+                    opacity=0.90,
+                    line=dict(color="#FFFFFF", width=2),
+                ),
+                customdata=[[
+                    r["Allocation Time (h)"],
+                    r["Workload Share"],
+                    r["Required FTE"],
+                    r["Shipment Volume"],
+                ]],
+                hovertemplate=(
+                    f"<b>{svc}</b><br>"
+                    "Allocation Time: %{customdata[0]:,.1f} h<br>"
+                    "Workload Share: %{customdata[1]:.1%}<br>"
+                    "Required FTE: %{customdata[2]:,.2f}<br>"
+                    "Shipment Volume: %{customdata[3]:,.0f}"
+                    "<extra></extra>"
+                ),
+                showlegend=False,
+            )
         )
-    )
 
     fig.update_layout(
-        title="Workload by Segment (Bubble Chart)",
+        title="Workload vs Shipment Volume by Service",
+        xaxis_title="Shipment Volume",
+        yaxis_title="Allocation Time (h)",
     )
-
     fig = plotly_layout(
         fig,
         455,
         show_legend=False,
-        margin_left=28,
-        margin_right=28,
-        margin_top=64,
-        margin_bottom=28,
+        margin_left=70,
+        margin_right=42,
+        margin_top=68,
+        margin_bottom=60,
     )
-    fig.update_xaxes(
-        visible=False,
-        range=[-4.25, 4.75],
-        fixedrange=True,
-    )
-    fig.update_yaxes(
-        visible=False,
-        range=[-2.85, 2.85],
-        scaleanchor="x",
-        scaleratio=1,
-        fixedrange=True,
-    )
+    fig.update_xaxes(rangemode="tozero")
+    fig.update_yaxes(rangemode="tozero")
 
     st.plotly_chart(
         fig,
@@ -2432,35 +2456,35 @@ def chart_service_matrix(df: pd.DataFrame):
 
 
 def segment_workload_table(df: pd.DataFrame, mode_df: pd.DataFrame):
-    """Ranked workload table beside the Segment bubble chart."""
-    seg = build_segment_workload(df)
+    """
+    Executive summary table for Section 4.
+
+    Service | Allocation Time (h) | Workload Share (%) | Required FTE | Shipment Volume
+    """
+    seg = build_segment_workload(df, mode_df)
 
     if seg.empty:
         st.info("No segment workload data available for selected filters.")
         return
 
-    total_hours = float(seg["Workload Hours"].sum())
-    total_volume = float(seg["Shipment Volume"].sum())
+    display = seg.copy().rename(columns={
+        "Segment": "Service",
+        "Workload Share": "Workload Share (%)",
+    })
 
-    display = seg.copy()
-    display["Workload Hours"] = display["Workload Hours"].round(1)
-    display["Shipment Volume"] = display["Shipment Volume"].round(0)
-    display["% of Total"] = display["% of Total"].map(lambda x: f"{x:.1%}")
+    total_hours = float(display["Allocation Time (h)"].sum())
+    total_volume = float(display["Shipment Volume"].sum())
+    total_required_fte = float(display["Required FTE"].sum())
 
     total_row = pd.DataFrame([{
-        "Segment": "TOTAL",
-        "Workload Hours": round(total_hours, 1),
-        "Shipment Volume": round(total_volume, 0),
-        "% of Total": "100.0%",
-        "Ranking": "",
+        "Service": "TOTAL",
+        "Allocation Time (h)": total_hours,
+        "Workload Share (%)": 1.0 if total_hours > 0 else 0.0,
+        "Required FTE": total_required_fte,
+        "Shipment Volume": total_volume,
     }])
-    display = pd.concat([display, total_row], ignore_index=True)
 
-    # Executive table order requested:
-    # Segment → Shipment Volume → Actual Workload (Hours) → % of Total → Ranking
-    display = display[
-        ["Segment", "Shipment Volume", "Workload Hours", "% of Total", "Ranking"]
-    ]
+    display = pd.concat([display, total_row], ignore_index=True)
 
     st.markdown(
         f"""
@@ -2469,7 +2493,7 @@ def segment_workload_table(df: pd.DataFrame, mode_df: pd.DataFrame):
             font-size:{UI['chart_title_size']}px;
             font-weight:700;
             margin:2px 0 10px 2px;">
-            Workload Volume by Segment
+            Segment Workload Summary
         </div>
         """,
         unsafe_allow_html=True,
@@ -2481,22 +2505,21 @@ def segment_workload_table(df: pd.DataFrame, mode_df: pd.DataFrame):
         hide_index=True,
         height=455,
         column_config={
-            "Segment": st.column_config.TextColumn("Segment", width="medium"),
-            "Workload Hours": st.column_config.NumberColumn(
-                "Actual Workload (Hours)",
-                width="medium",
-                format="%,.1f",
+            "Service": st.column_config.TextColumn("Service", width="small"),
+            "Allocation Time (h)": st.column_config.NumberColumn(
+                "Allocation Time (h)", width="medium", format="%,.1f"
+            ),
+            "Workload Share (%)": st.column_config.NumberColumn(
+                "Workload Share (%)", width="medium", format="%.1f%%"
+            ),
+            "Required FTE": st.column_config.NumberColumn(
+                "Required FTE", width="small", format="%.2f"
             ),
             "Shipment Volume": st.column_config.NumberColumn(
-                "Shipment Volume",
-                width="medium",
-                format="%,.0f",
+                "Shipment Volume", width="medium", format="%,.0f"
             ),
-            "% of Total": st.column_config.TextColumn("% of Total", width="small"),
-            "Ranking": st.column_config.TextColumn("Ranking", width="small"),
         },
     )
-
 
 
 def chart_shipment_modes(mode_df: pd.DataFrame):
@@ -3059,7 +3082,7 @@ def main():
                 font-size:12px;
                 line-height:1.45;
                 padding:10px 2px 0 2px;">
-                Total workload hours by Segment. Bubble size represents each Segment's share of total workload.
+                Workload by Service with Allocation Time, Workload Share, Required FTE and Shipment Volume.
             </div>
             """,
             unsafe_allow_html=True,
@@ -3078,7 +3101,7 @@ def main():
             '<div class="chart-box" style="margin-top:12px;">',
             unsafe_allow_html=True,
         )
-        chart_service_matrix(f_workload)
+        chart_service_matrix(f_workload, f_mode)
         st.markdown('</div>', unsafe_allow_html=True)
 
     with seg_table:
@@ -3101,9 +3124,9 @@ def main():
             font-size:11px;
             line-height:1.45;">
             <b style="color:#003B70;">Note:</b>
-            Bubble size represents total Workload Hours by Segment.
-            Shipment Volume is sourced from the Shipment volume sheet and grouped to the corresponding Segment.
-            Segments are ranked in descending order of Workload Hours.
+            X = Shipment Volume; Y = Allocation Time (h); bubble size = Workload Share (%).
+            Required FTE uses the HC/FTE allocation source when available and falls back to Workload ÷ 167.2 h/FTE.
+            Shipment Volume is sourced from the Shipment volume sheet and mapped to the corresponding Service.
         </div>
         """,
         unsafe_allow_html=True,
