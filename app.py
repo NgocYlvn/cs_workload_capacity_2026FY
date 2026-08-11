@@ -1,6 +1,6 @@
 # ============================================================
 # CS WORKLOAD & CAPACITY DASHBOARD
-# BUILD: V47_RESTORE_CUSTOMER_DETAIL_TABLE
+# BUILD: V43_HC_COLOR_HIERARCHY
 # BUILD: SECTION2_SAME_ROW_V6
 # Python + Streamlit + Pandas + Plotly
 # Data source: (100826)TEMPLATE_DATA FOR DASHBOARD_V1.xlsx
@@ -2484,49 +2484,27 @@ def build_reconciliation(hc, workload, fte, shipment) -> pd.DataFrame:
 
 
 def chart_office_capacity_trend(df: pd.DataFrame):
-    """
-    Executive HC trend from sheet HC.
-
-    Presentation only:
-    - Actual HC = Corporate Blue
-    - Required HC = Orange
-    - Approved HC = Navy dashed reference line
-    - Light orange fill = shortage gap between Actual and Required HC
-    - Required HC labels show both required value and HC gap
-    """
+    """3-line HC trend from sheet HC with shaded gap between Approved HC and Actual HC."""
     if df.empty:
         st.info("No HC trend data available for selected filters.")
         return
 
-    required_cols = [
-        "MonthDate",
-        "Total Approved HC",
-        "Total Actual HC",
-        "Total Required HC",
-    ]
+    required_cols = ["MonthDate", "Total Approved HC", "Total Actual HC", "Total Required HC"]
     missing = [c for c in required_cols if c not in df.columns]
     if missing:
         st.info("HC trend cannot be displayed because required HC columns are missing.")
         return
 
-    trend_source = df[required_cols].copy()
+    trend_source = df[
+        ["MonthDate", "Total Approved HC", "Total Actual HC", "Total Required HC"]
+    ].copy()
 
-    for col in [
-        "Total Approved HC",
-        "Total Actual HC",
-        "Total Required HC",
-    ]:
-        trend_source[col] = pd.to_numeric(
-            trend_source[col], errors="coerce"
-        )
+    for col in ["Total Approved HC", "Total Actual HC", "Total Required HC"]:
+        trend_source[col] = pd.to_numeric(trend_source[col], errors="coerce")
 
     # Exclude months where all three HC values are blank.
     trend_source = trend_source.dropna(
-        subset=[
-            "Total Approved HC",
-            "Total Actual HC",
-            "Total Required HC",
-        ],
+        subset=["Total Approved HC", "Total Actual HC", "Total Required HC"],
         how="all",
     )
 
@@ -2536,148 +2514,65 @@ def chart_office_capacity_trend(df: pd.DataFrame):
 
     trend = (
         trend_source.groupby("MonthDate", as_index=False)[
-            [
-                "Total Approved HC",
-                "Total Actual HC",
-                "Total Required HC",
-            ]
+            ["Total Approved HC", "Total Actual HC", "Total Required HC"]
         ]
         .sum(min_count=1)
         .sort_values("MonthDate")
     )
-
     trend["Month"] = trend["MonthDate"].dt.strftime("%b-%y")
-    trend["HC Gap"] = (
-        trend["Total Required HC"] - trend["Total Actual HC"]
-    )
 
     fig = go.Figure()
 
-    # Actual HC — primary current-capacity line.
-    # Draw first so Required HC can shade only the gap above/below Actual HC.
-    fig.add_trace(
-        go.Scatter(
-            x=trend["Month"],
-            y=trend["Total Actual HC"],
-            mode="lines+markers",
-            name="Actual HC",
-            line=dict(
-                color=BUSINESS_COLORS["actual"],
-                width=3,
-            ),
-            marker=dict(
-                size=8,
-                symbol="circle",
-                color=BUSINESS_COLORS["actual"],
-            ),
-            hovertemplate=(
-                "<b>%{x}</b><br>"
-                "Actual HC: %{y:,.1f}"
-                "<extra></extra>"
-            ),
-        )
-    )
-
-    # Required HC — demand line.
-    # fill='tonexty' shades ONLY the gap between Actual and Required HC.
-    fig.add_trace(
-        go.Scatter(
-            x=trend["Month"],
-            y=trend["Total Required HC"],
-            mode="lines+markers+text",
-            name="Required HC",
-            line=dict(
-                color=BUSINESS_COLORS["required"],
-                width=3,
-            ),
-            marker=dict(
-                size=8,
-                symbol="circle",
-                color=BUSINESS_COLORS["required"],
-            ),
-            fill="tonexty",
-            fillcolor="rgba(245, 158, 11, 0.08)",
-            text=[
-                f"{req:,.2f}<br>Gap {gap:+,.2f}"
-                for req, gap in zip(
-                    trend["Total Required HC"],
-                    trend["HC Gap"],
-                )
-            ],
-            textposition="top center",
-            textfont=dict(
-                size=10,
-                color=BUSINESS_COLORS["required"],
-                family=UI["font_family"],
-            ),
-            customdata=trend[["HC Gap"]].to_numpy(),
-            hovertemplate=(
-                "<b>%{x}</b><br>"
-                "Required HC: %{y:,.2f}<br>"
-                "HC Gap: %{customdata[0]:+,.2f}"
-                "<extra></extra>"
-            ),
-        )
-    )
-
-    # Approved HC — reference baseline.
-    # Draw last so it remains visible even when Approved HC = Actual HC.
+    # Approved HC line
     fig.add_trace(
         go.Scatter(
             x=trend["Month"],
             y=trend["Total Approved HC"],
             mode="lines+markers",
             name="Approved HC",
-            line=dict(
-                color=BUSINESS_COLORS["approved"],
-                width=2,
-                dash="dash",
-            ),
-            marker=dict(
-                size=7,
-                symbol="circle-open",
-                color=BUSINESS_COLORS["approved"],
-                line=dict(
-                    color=BUSINESS_COLORS["approved"],
-                    width=1.5,
-                ),
-            ),
-            hovertemplate=(
-                "<b>%{x}</b><br>"
-                "Approved HC: %{y:,.1f}"
-                "<extra></extra>"
-            ),
+            line=dict(color=BUSINESS_COLORS["approved"], width=3),
+            marker=dict(size=7),
+            hovertemplate="%{x}<br>Approved HC: %{y:,.1f}<extra></extra>",
+        )
+    )
+
+    # Actual HC line — baseline for the shaded Actual vs Required gap.
+    fig.add_trace(
+        go.Scatter(
+            x=trend["Month"],
+            y=trend["Total Actual HC"],
+            mode="lines+markers",
+            name="Actual HC",
+            line=dict(color=BUSINESS_COLORS["actual"], width=3),
+            marker=dict(size=7),
+            hovertemplate="%{x}<br>Actual HC: %{y:,.1f}<extra></extra>",
+        )
+    )
+
+    # Required HC line + shaded gap to Actual HC.
+    # The fill is intentionally between Actual HC and Required HC.
+    fig.add_trace(
+        go.Scatter(
+            x=trend["Month"],
+            y=trend["Total Required HC"],
+            mode="lines+markers",
+            name="Required HC",
+            line=dict(color=BUSINESS_COLORS["required"], width=3, dash="dot"),
+            marker=dict(size=7),
+            fill="tonexty",
+            fillcolor="rgba(245, 158, 11, 0.14)",
+            hovertemplate="%{x}<br>Required HC: %{y:,.2f}<extra></extra>",
         )
     )
 
     fig.update_layout(
-        title="Actual vs Required HC Trend",
+        title="HC Capacity Trend & Gap",
         yaxis_title="HC",
         hovermode="x unified",
     )
-
-    fig = plotly_layout(
-        fig,
-        UI["chart_height"],
-        show_legend=True,
-        legend_position="top",
-        margin_left=56,
-        margin_right=42,
-        margin_top=78,
-        margin_bottom=46,
-    )
-
-    fig.update_xaxes(
-        type="category",
-        categoryorder="array",
-        categoryarray=trend["Month"].tolist(),
-    )
-
-    st.plotly_chart(
-        fig,
-        use_container_width=True,
-        config={"displayModeBar": False},
-    )
+    fig = plotly_layout(fig, UI["chart_height"], show_legend=True, legend_position="top", margin_left=56, margin_right=42, margin_top=66, margin_bottom=46)
+    fig.update_xaxes(type="category", categoryorder="array", categoryarray=trend["Month"].tolist())
+    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
 
 
@@ -3355,163 +3250,146 @@ def segment_workload_table(df: pd.DataFrame, mode_df: pd.DataFrame):
     )
 
 
-def chart_shipment_modes(df: pd.DataFrame):
-    """
-    Executive transportation-mode view.
-    Horizontal ranking bar is used instead of a donut because the source
-    contains many modes and small shares that would otherwise overlap.
-    """
-    if df is None or df.empty:
-        st.info("No shipment volume data available for selected filters.")
-        return
-
-    d = df.copy()
-    # Source field from prepare_shipment_data(): "Volume"
-    d["Volume"] = pd.to_numeric(
-        d["Volume"], errors="coerce"
-    ).fillna(0)
-
-    d = d[d["Volume"] > 0].copy()
-    if d.empty:
-        st.info("No shipment volume data available for selected filters.")
+def chart_shipment_modes(mode_df: pd.DataFrame):
+    """Balanced donut chart showing shipment-volume share by transportation mode."""
+    if mode_df.empty:
+        st.info("No shipment mode data available for selected filters.")
         return
 
     agg = (
-        d.groupby("Mode", as_index=False)["Volume"]
+        mode_df.groupby("Mode", as_index=False)["Volume"]
         .sum()
-        .sort_values("Volume", ascending=True)
+        .sort_values("Volume", ascending=False)
     )
 
     total = float(agg["Volume"].sum())
-    agg["Share"] = np.where(
-        total > 0,
-        agg["Volume"] / total,
-        0,
-    )
+    if total <= 0:
+        st.info("No shipment mode data available for selected filters.")
+        return
 
     fig = go.Figure(
-        go.Bar(
-            x=agg["Volume"],
-            y=agg["Mode"],
-            orientation="h",
-            marker_color=BUSINESS_COLORS["actual"],
-            customdata=agg[["Share"]].to_numpy(),
-            text=[
-                f"{v:,.0f}  |  {s:.1%}"
-                for v, s in zip(
-                    agg["Volume"],
-                    agg["Share"],
-                )
-            ],
-            textposition="outside",
-            cliponaxis=False,
-            hovertemplate=(
-                "<b>%{y}</b><br>"
-                "Shipment Volume: %{x:,.0f}<br>"
-                "Share: %{customdata[0]:.1%}"
-                "<extra></extra>"
-            ),
-        )
+        data=[
+            go.Pie(
+                labels=agg["Mode"],
+                values=agg["Volume"],
+                hole=0.58,
+                sort=False,
+                textinfo="label+percent",
+                textposition="outside",
+                textfont=dict(size=UI["axis_size"]),
+                automargin=True,
+                hovertemplate=(
+                    "<b>%{label}</b><br>"
+                    "Shipment Volume: %{value:,.0f}<br>"
+                    "Market Share: %{percent}"
+                    "<extra></extra>"
+                ),
+                marker=dict(
+                    colors=CORPORATE_PALETTE[:len(agg)],
+                    line=dict(color="#FFFFFF", width=2),
+                ),
+            )
+        ]
+    )
+
+    fig.add_annotation(
+        text=f"<b>{total:,.0f}</b><br><span style='font-size:11px'>TOTAL SHIPMENT</span>",
+        x=0.5, y=0.5,
+        showarrow=False,
+        align="center",
+        font=dict(color=COLORS["navy"], size=18),
     )
 
     fig.update_layout(
-        title="Shipment Volume by Transportation Mode",
-        xaxis_title="Shipment Volume",
-        yaxis_title="",
-    )
-    fig = plotly_layout(
-        fig,
-        420,
-        show_legend=False,
-        margin_left=70,
-        margin_right=90,
-        margin_top=62,
-        margin_bottom=48,
-    )
-    fig.update_yaxes(
-        categoryorder="array",
-        categoryarray=agg["Mode"].tolist(),
+        title=dict(
+            text="Shipment Volume by Transportation Mode",
+            x=0.0,
+            xanchor="left",
+            font=dict(size=14, color=COLORS["navy"]),
+        ),
+        showlegend=False,
+        height=520,
+        margin=dict(l=65, r=65, t=60, b=45),
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        font=dict(family="Arial", color=COLORS["text"]),
+        uniformtext_minsize=9,
+        uniformtext_mode="show",
     )
 
-    st.plotly_chart(
-        fig,
-        use_container_width=True,
-        config={"displayModeBar": False},
-    )
+    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
+
+def build_customer_ranking(df: pd.DataFrame) -> pd.DataFrame:
+    """Aggregate and rank all customers by shipment volume for current filters."""
+    if df is None or df.empty:
+        return pd.DataFrame(columns=["Rank", "Customer", "Shipment Volume"])
+
+    ranking = (
+        df.groupby("Customer", as_index=False)["Volume"]
+        .sum()
+        .sort_values("Volume", ascending=False)
+        .reset_index(drop=True)
+    )
+    ranking["Rank"] = np.arange(1, len(ranking) + 1)
+    ranking = ranking.rename(columns={"Volume": "Shipment Volume"})
+    return ranking[["Rank", "Customer", "Shipment Volume"]]
 
 
 def chart_top_customers(df: pd.DataFrame):
-    """
-    Executive customer concentration view.
-    Top 10 is shown for faster management reading; source/filter logic unchanged.
-    """
-    if df is None or df.empty:
-        st.info("No customer shipment data available for selected filters.")
+    if df.empty:
+        st.info("No customer volume data available for selected filters.")
         return
 
-    d = df.copy()
-    # Source field from customer-volume preparation: "Volume"
-    d["Volume"] = pd.to_numeric(
-        d["Volume"], errors="coerce"
-    ).fillna(0)
+    ranking = build_customer_ranking(df)
+    top = ranking.head(20).sort_values("Shipment Volume", ascending=True)
 
-    top = (
-        d.groupby("Customer", as_index=False)["Volume"]
-        .sum()
-        .sort_values("Volume", ascending=False)
-        .head(10)
-        .sort_values("Volume", ascending=True)
+    fig = px.bar(
+        top,
+        x="Shipment Volume",
+        y="Customer",
+        orientation="h",
+        text="Shipment Volume",
+        color_discrete_sequence=[COLORS["blue"]],
+        title="Top 20 Customers by Shipment Volume",
     )
-
-    if top.empty:
-        st.info("No customer shipment data available for selected filters.")
-        return
-
-    fig = go.Figure(
-        go.Bar(
-            x=top["Volume"],
-            y=top["Customer"],
-            orientation="h",
-            marker_color=BUSINESS_COLORS["actual"],
-            text=top["Volume"],
-            texttemplate="%{text:,.0f}",
-            textposition="outside",
-            cliponaxis=False,
-            hovertemplate=(
-                "<b>%{y}</b><br>"
-                "Shipment Volume: %{x:,.0f}"
-                "<extra></extra>"
-            ),
-        )
+    fig.update_traces(
+        texttemplate="%{text:,.0f}",
+        textposition="outside",
+        cliponaxis=False,
+        hovertemplate="%{y}<br>Shipment Volume: %{x:,.0f}<extra></extra>",
     )
-
     fig.update_layout(
-        title="Top 10 Customers by Shipment Volume",
-        xaxis_title="Shipment Volume",
+        title=dict(
+            x=0.0,
+            xanchor="left",
+            font=dict(size=14, color=COLORS["navy"]),
+        ),
         yaxis_title="",
+        xaxis_title="Shipment Volume",
+        height=UI["chart_height_tall"],
+        margin=dict(l=140, r=55, t=60, b=55),
+        bargap=0.18,
     )
+    fig.update_yaxes(
+        automargin=True,
+        tickfont=dict(size=UI["axis_size"]),
+    )
+    fig.update_xaxes(automargin=True)
     fig = plotly_layout(
         fig,
-        420,
+        UI["chart_height_tall"],
         show_legend=False,
-        margin_left=115,
-        margin_right=70,
-        margin_top=62,
-        margin_bottom=48,
+        margin_left=155,
+        margin_right=60,
+        margin_top=66,
+        margin_bottom=50,
     )
-
-    st.plotly_chart(
-        fig,
-        use_container_width=True,
-        config={"displayModeBar": False},
-    )
-
-
+    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
 
 def customer_detail_table(df: pd.DataFrame):
-    """Scrollable full customer ranking table displayed below the Top 10 chart."""
+    """Scrollable full customer ranking table displayed beside Top 20 chart."""
     ranking = build_customer_ranking(df)
 
     if ranking.empty:
@@ -3522,8 +3400,8 @@ def customer_detail_table(df: pd.DataFrame):
         f"""
         <div style="
             color:{COLORS['navy']};
-            font-size:{UI['chart_title_size']}px;
-            font-weight:700;
+            font-size:15px;
+            font-weight:800;
             margin:2px 0 8px 0;">
             Customer Detail
         </div>
@@ -3537,14 +3415,10 @@ def customer_detail_table(df: pd.DataFrame):
         hide_index=True,
         height=UI["chart_height_tall"],
         column_config={
-            "Rank": st.column_config.NumberColumn(
-                "Rank", width="small", format="%d"
-            ),
-            "Customer": st.column_config.TextColumn(
-                "Customer", width="large"
-            ),
+            "Rank": st.column_config.NumberColumn("Rank", width=70, format="%d"),
+            "Customer": st.column_config.TextColumn("Customer", width="large"),
             "Shipment Volume": st.column_config.NumberColumn(
-                "Shipment Volume", width="medium", format="%,.0f"
+                "Shipment Volume", width=130, format="%,.0f"
             ),
         },
     )
@@ -3934,11 +3808,220 @@ def render_yvf_table(df: pd.DataFrame):
 
 
 # ============================================================
+# COVER / WELCOME PAGE
+# UI only — does not change business logic or dashboard calculations
+# ============================================================
+
+def render_cover_page() -> None:
+    """Executive welcome screen shown before loading dashboard data."""
+    # Hide the sidebar and Streamlit chrome while the cover is active.
+    st.markdown(
+        f"""
+        <style>
+        section[data-testid="stSidebar"] {{ display: none !important; }}
+        [data-testid="stSidebarCollapsedControl"] {{ display: none !important; }}
+        header[data-testid="stHeader"] {{ background: transparent !important; }}
+
+        .block-container {{
+            max-width: 1500px !important;
+            padding-top: 1.15rem !important;
+            padding-bottom: 1.25rem !important;
+        }}
+
+        .cover-shell {{
+            min-height: calc(100vh - 4rem);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }}
+
+        .cover-card {{
+            width: 100%;
+            position: relative;
+            overflow: hidden;
+            background:
+                radial-gradient(circle at 88% 12%, rgba(0,91,172,0.13), transparent 30%),
+                radial-gradient(circle at 5% 95%, rgba(245,158,11,0.10), transparent 26%),
+                linear-gradient(135deg, #FFFFFF 0%, #F8FBFD 58%, #EEF5FA 100%);
+            border: 1px solid {COLORS['border']};
+            border-radius: 24px;
+            box-shadow: 0 18px 50px rgba(0,59,112,0.10);
+            padding: clamp(36px, 5vw, 72px);
+            box-sizing: border-box;
+        }}
+
+        .cover-accent {{
+            width: 76px;
+            height: 6px;
+            border-radius: 999px;
+            background: linear-gradient(90deg, {COLORS['blue']} 0%, {COLORS['amber']} 100%);
+            margin-bottom: 30px;
+        }}
+
+        .cover-eyebrow {{
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: {COLORS['blue']};
+            background: #EAF3F8;
+            border: 1px solid #D3E5F1;
+            border-radius: 999px;
+            padding: 7px 12px;
+            font-size: 11px;
+            line-height: 1;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            margin-bottom: 18px;
+        }}
+
+        .cover-title {{
+            color: {COLORS['navy']};
+            font-family: {UI['font_family']};
+            font-size: clamp(38px, 5vw, 64px);
+            line-height: 1.02;
+            letter-spacing: -0.035em;
+            font-weight: 800;
+            max-width: 980px;
+            margin: 0;
+        }}
+
+        .cover-subtitle {{
+            color: {COLORS['gray_dark']};
+            font-size: clamp(16px, 1.5vw, 20px);
+            line-height: 1.55;
+            max-width: 830px;
+            margin-top: 20px;
+            margin-bottom: 28px;
+        }}
+
+        .cover-scope {{
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 0 0 30px 0;
+        }}
+
+        .cover-pill {{
+            color: {COLORS['navy']};
+            background: rgba(255,255,255,0.82);
+            border: 1px solid {COLORS['border']};
+            border-radius: 10px;
+            padding: 9px 13px;
+            font-size: 12px;
+            font-weight: 650;
+        }}
+
+        .cover-divider {{
+            height: 1px;
+            background: linear-gradient(90deg, {COLORS['border']} 0%, rgba(217,226,236,0) 100%);
+            margin: 8px 0 22px 0;
+        }}
+
+        .cover-footer {{
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            gap: 18px;
+            color: {COLORS['muted']};
+            font-size: 11px;
+            line-height: 1.45;
+        }}
+
+        .cover-footer strong {{
+            color: {COLORS['navy']};
+            font-weight: 700;
+        }}
+
+        /* Primary cover button */
+        div[data-testid="stButton"] > button[kind="primary"] {{
+            min-height: 48px !important;
+            border: 0 !important;
+            border-radius: 10px !important;
+            padding: 0 28px !important;
+            background: {COLORS['navy']} !important;
+            color: #FFFFFF !important;
+            font-family: {UI['font_family']} !important;
+            font-size: 13px !important;
+            font-weight: 750 !important;
+            letter-spacing: 0.035em !important;
+            box-shadow: 0 8px 18px rgba(0,59,112,0.16) !important;
+        }}
+
+        div[data-testid="stButton"] > button[kind="primary"]:hover {{
+            background: {COLORS['blue']} !important;
+            transform: translateY(-1px);
+        }}
+
+        @media (max-width: 900px) {{
+            .cover-card {{ padding: 34px 26px; border-radius: 18px; }}
+            .cover-footer {{ flex-direction: column; align-items: flex-start; }}
+        }}
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.markdown(
+        f"""
+        <div class="cover-shell">
+            <div class="cover-card">
+                <div class="cover-accent"></div>
+                <div class="cover-eyebrow">CS Management Analytics</div>
+                <h1 class="cover-title">CS Capacity &amp; Productivity</h1>
+                <div class="cover-subtitle">
+                    Executive dashboard for workforce capacity, workload allocation,
+                    shipment volume and productivity visibility.
+                </div>
+                <div class="cover-scope">
+                    <span class="cover-pill">Capacity</span>
+                    <span class="cover-pill">Workload</span>
+                    <span class="cover-pill">Shipment Volume</span>
+                    <span class="cover-pill">Productivity</span>
+                    <span class="cover-pill">Office Performance</span>
+                </div>
+                <div class="cover-divider"></div>
+                <div class="cover-footer">
+                    <div><strong>Customer Service Division</strong><br>Management Dashboard • Internal Use Only</div>
+                    <div>Available Standard Time: <strong>167.2 hrs / FTE / month</strong></div>
+                </div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    # Keep CTA directly beneath the hero card for a clean single-action entry.
+    c1, c2, c3 = st.columns([1, 1.15, 1])
+    with c2:
+        if st.button(
+            "ENTER DASHBOARD  →",
+            type="primary",
+            use_container_width=True,
+            key="enter_dashboard_btn",
+        ):
+            st.session_state["dashboard_entered"] = True
+            st.rerun()
+
+
+def render_cover_gate() -> None:
+    """Stop the app on the cover until the user explicitly enters the dashboard."""
+    if "dashboard_entered" not in st.session_state:
+        st.session_state["dashboard_entered"] = False
+
+    if not st.session_state["dashboard_entered"]:
+        render_cover_page()
+        st.stop()
+
+# ============================================================
 # MAIN APP
 # ============================================================
 
 
 def main():
+    # Cover page is displayed before any Excel loading/filtering.
+    render_cover_gate()
+
     # Load default workbook first. Upload remains below Month / Office filters.
     file_path = Path(DEFAULT_FILE)
     cache_token = ""
@@ -4003,6 +4086,9 @@ def main():
 
     # Sidebar order: Month -> Office -> Upload file. No Year and no Reset button.
     with st.sidebar:
+        if st.button("← HOME", use_container_width=True, key="back_to_cover_btn"):
+            st.session_state["dashboard_entered"] = False
+            st.rerun()
         st.markdown("## FILTERS")
         st.caption("Month / Office")
         month = st.selectbox("MONTH", month_options, key="month_filter")
