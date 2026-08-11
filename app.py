@@ -1,7 +1,7 @@
 # ============================================================
 # CS WORKLOAD & CAPACITY DASHBOARD
 # BUILD: V43_HC_COLOR_HIERARCHY
-# BUILD: SECTION2_SAME_ROW_V6
+# BUILD: SECTION2_CHART_DETAIL_V4
 # Python + Streamlit + Pandas + Plotly
 # Data source: (100826)TEMPLATE_DATA FOR DASHBOARD_V1.xlsx
 # ============================================================
@@ -3436,7 +3436,7 @@ def chart_shipment_modes(mode_df: pd.DataFrame):
     )
 
     # Match chart height to the adjacent Mode Detail table.
-    mode_chart_height = max(430, min(610, 145 + 31 * len(plot_df)))
+    mode_chart_height = max(430, min(560, 110 + 34 * (len(plot_df) + 1)))
     fig = plotly_layout(
         fig,
         mode_chart_height,
@@ -3451,7 +3451,7 @@ def chart_shipment_modes(mode_df: pd.DataFrame):
 
 
 def mode_detail_table(mode_df: pd.DataFrame):
-    """Compact detail table paired with Shipment Volume by Transportation Mode chart."""
+    """Compact Streamlit dataframe paired with Shipment Volume by Transportation Mode chart."""
     if mode_df is None or mode_df.empty:
         st.info("No shipment mode detail available for selected filters.")
         return
@@ -3469,47 +3469,46 @@ def mode_detail_table(mode_df: pd.DataFrame):
 
     detail["Rank"] = np.arange(1, len(detail) + 1)
     detail["Share"] = detail["Volume"] / total
-
-    rows_html = []
-    for _, row in detail.iterrows():
-        rows_html.append(
-            f"""
-            <tr>
-                <td class="pair-rank">{int(row['Rank'])}</td>
-                <td class="pair-name">{html.escape(str(row['Mode']))}</td>
-                <td class="pair-number">{float(row['Volume']):,.0f}</td>
-                <td class="pair-share">{float(row['Share']):.1%}</td>
-            </tr>
-            """
-        )
+    display = detail.rename(columns={"Volume": "Shipment Volume"})[
+        ["Rank", "Mode", "Shipment Volume", "Share"]
+    ].copy()
 
     st.markdown(
         f"""
-        <div class="paired-detail-card">
-            <div class="paired-detail-title">Transportation Mode Detail</div>
-            <table class="paired-detail-table mode-detail-table">
-                <colgroup>
-                    <col style="width:12%">
-                    <col style="width:28%">
-                    <col style="width:38%">
-                    <col style="width:22%">
-                </colgroup>
-                <thead>
-                    <tr>
-                        <th class="pair-rank">Rank</th>
-                        <th>Mode</th>
-                        <th class="pair-number">Shipment Volume</th>
-                        <th class="pair-share">Share</th>
-                    </tr>
-                </thead>
-                <tbody>{''.join(rows_html)}</tbody>
-            </table>
-            <div class="paired-detail-foot">Total shipments: <b>{total:,.0f}</b></div>
+        <div style="
+            color:{COLORS['navy']};
+            font-size:{UI['chart_title_size']}px;
+            font-weight:700;
+            margin:2px 0 10px 2px;">
+            Transportation Mode Detail
         </div>
         """,
         unsafe_allow_html=True,
     )
 
+    # Height is sized to show all mode rows without an internal vertical scrollbar.
+    mode_table_height = max(430, min(560, 40 + 34 * (len(display) + 1)))
+    st.dataframe(
+        display,
+        use_container_width=True,
+        hide_index=True,
+        height=mode_table_height,
+        column_config={
+            "Rank": st.column_config.NumberColumn(
+                "Rank", width="small", format="%d"
+            ),
+            "Mode": st.column_config.TextColumn(
+                "Mode", width="small"
+            ),
+            "Shipment Volume": st.column_config.NumberColumn(
+                "Shipment Volume", width="medium", format="%,.0f"
+            ),
+            "Share": st.column_config.NumberColumn(
+                "Share", width="small", format="percent"
+            ),
+        },
+    )
+    st.caption(f"Total shipments: {total:,.0f}")
 
 def build_customer_ranking(df: pd.DataFrame) -> pd.DataFrame:
     """Aggregate and rank all customers by shipment volume for current filters."""
@@ -3558,7 +3557,7 @@ def chart_top_customers(df: pd.DataFrame):
         ),
         yaxis_title="",
         xaxis_title="Shipment Volume",
-        height=625,
+        height=720,
         margin=dict(l=140, r=55, t=60, b=55),
         bargap=0.18,
     )
@@ -3570,7 +3569,7 @@ def chart_top_customers(df: pd.DataFrame):
     # Height is aligned with the Top 20 detail table shown beside the chart.
     fig = plotly_layout(
         fig,
-        625,
+        720,
         show_legend=False,
         margin_left=155,
         margin_right=60,
@@ -3581,56 +3580,49 @@ def chart_top_customers(df: pd.DataFrame):
 
 
 def customer_top20_detail_table(df: pd.DataFrame):
-    """Top 20 customer detail table paired with the Top 20 customer chart."""
+    """Top 20 customer Streamlit dataframe paired with the Top 20 customer chart."""
     ranking = build_customer_ranking(df)
     if ranking.empty:
         st.info("No customer detail data available for selected filters.")
         return
 
     top_detail = ranking.head(20).copy()
-    rows_html = []
-    for _, row in top_detail.iterrows():
-        rank_val = int(row["Rank"]) if not pd.isna(row["Rank"]) else ""
-        customer_val = html.escape(str(row["Customer"]))
-        shipment_val = pd.to_numeric(row["Shipment Volume"], errors="coerce")
-        shipment_text = "" if pd.isna(shipment_val) else f"{shipment_val:,.0f}"
-        rows_html.append(
-            f"""
-            <tr>
-                <td class="pair-rank">{rank_val}</td>
-                <td class="pair-name customer-name-cell">{customer_val}</td>
-                <td class="pair-number">{shipment_text}</td>
-            </tr>
-            """
-        )
 
     st.markdown(
         f"""
-        <div class="paired-detail-card customer-paired-card">
-            <div class="paired-detail-title">Customer Detail — Top 20</div>
-            <table class="paired-detail-table customer-paired-table">
-                <colgroup>
-                    <col style="width:12%">
-                    <col style="width:58%">
-                    <col style="width:30%">
-                </colgroup>
-                <thead>
-                    <tr>
-                        <th class="pair-rank">Rank</th>
-                        <th>Customer</th>
-                        <th class="pair-number">Shipment Volume</th>
-                    </tr>
-                </thead>
-                <tbody>{''.join(rows_html)}</tbody>
-            </table>
-            <div class="paired-detail-foot">
-                Showing Top {len(top_detail):,} of {len(ranking):,} customers.
-            </div>
+        <div style="
+            color:{COLORS['navy']};
+            font-size:{UI['chart_title_size']}px;
+            font-weight:700;
+            margin:2px 0 10px 2px;">
+            Customer Detail — Top 20
         </div>
         """,
         unsafe_allow_html=True,
     )
 
+    # Display all Top 20 rows in the executive view; no HTML rendering is used.
+    customer_table_height = 720
+    st.dataframe(
+        top_detail,
+        use_container_width=True,
+        hide_index=True,
+        height=customer_table_height,
+        column_config={
+            "Rank": st.column_config.NumberColumn(
+                "Rank", width="small", format="%d"
+            ),
+            "Customer": st.column_config.TextColumn(
+                "Customer", width="large"
+            ),
+            "Shipment Volume": st.column_config.NumberColumn(
+                "Shipment Volume", width="medium", format="%,.0f"
+            ),
+        },
+    )
+    st.caption(
+        f"Showing Top {len(top_detail):,} of {len(ranking):,} customers."
+    )
 
 def customer_full_detail_expander(df: pd.DataFrame):
     """Full customer ranking, hidden by default to preserve the executive layout."""
