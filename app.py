@@ -1243,13 +1243,52 @@ def chart_service_matrix(df: pd.DataFrame):
 
 
 def chart_shipment_modes(mode_df: pd.DataFrame):
+    """Horizontal bar showing shipment volume and market share by transportation mode."""
     if mode_df.empty:
-        st.info("No shipment mode data available.")
+        st.info("No shipment mode data available for selected filters.")
         return
-    agg = mode_df.groupby("Mode", as_index=False)["Volume"].sum().sort_values("Volume", ascending=True)
-    fig = px.bar(agg, x="Volume", y="Mode", orientation="h", text="Volume", color_discrete_sequence=[COLORS["blue"]], title="Shipment Volume by Transportation Mode")
-    fig.update_traces(texttemplate="%{text:,.0f}", textposition="outside", cliponaxis=False, hovertemplate="%{y}: %{x:,.0f}<extra></extra>")
-    fig = plotly_layout(fig, 380)
+
+    agg = (
+        mode_df.groupby("Mode", as_index=False)["Volume"]
+        .sum()
+        .sort_values("Volume", ascending=False)
+    )
+
+    total = float(agg["Volume"].sum())
+    agg["Share"] = agg["Volume"].apply(lambda x: safe_div(x, total))
+    agg["Label"] = agg.apply(
+        lambda r: f"{r['Volume']:,.0f} | {r['Share']*100:.1f}%",
+        axis=1,
+    )
+
+    # Reverse for horizontal bar so largest category appears at the top.
+    plot_df = agg.sort_values("Volume", ascending=True)
+
+    fig = px.bar(
+        plot_df,
+        x="Volume",
+        y="Mode",
+        orientation="h",
+        text="Label",
+        color_discrete_sequence=[COLORS["blue"]],
+        title="Shipment Volume by Transportation Mode",
+    )
+    fig.update_traces(
+        textposition="outside",
+        cliponaxis=False,
+        hovertemplate=(
+            "%{y}<br>"
+            "Shipment Volume: %{x:,.0f}<br>"
+            "Market Share: %{customdata[0]:.1%}"
+            "<extra></extra>"
+        ),
+        customdata=plot_df[["Share"]].to_numpy(),
+    )
+    fig.update_layout(
+        xaxis_title="Shipment Volume",
+        yaxis_title="",
+    )
+    fig = plotly_layout(fig, 360)
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
 
@@ -1570,6 +1609,11 @@ def main():
         st.empty()
     with sk4:
         st.empty()
+
+    # Transportation Mode market-share chart from Shipment volume sheet.
+    st.markdown('<div class="chart-box" style="margin-top:14px;">', unsafe_allow_html=True)
+    chart_shipment_modes(f_mode)
+    st.markdown('</div>', unsafe_allow_html=True)
 
     # Customer-level detail is not available in Shipment volume sheet.
     # Per business requirement, Top 20 and full Customer Detail use Customer Volume-N&S only.
