@@ -1,6 +1,6 @@
 # ============================================================
 # CS WORKLOAD & CAPACITY DASHBOARD
-# BUILD: V44_HC_TREND_PRESENTATION
+# BUILD: V45_SHIPMENT_VOLUME_PRESENTATION
 # BUILD: SECTION2_SAME_ROW_V6
 # Python + Streamlit + Pandas + Plotly
 # Data source: (100826)TEMPLATE_DATA FOR DASHBOARD_V1.xlsx
@@ -3355,178 +3355,156 @@ def segment_workload_table(df: pd.DataFrame, mode_df: pd.DataFrame):
     )
 
 
-def chart_shipment_modes(mode_df: pd.DataFrame):
-    """Balanced donut chart showing shipment-volume share by transportation mode."""
-    if mode_df.empty:
-        st.info("No shipment mode data available for selected filters.")
+def chart_shipment_modes(df: pd.DataFrame):
+    """
+    Executive transportation-mode view.
+    Horizontal ranking bar is used instead of a donut because the source
+    contains many modes and small shares that would otherwise overlap.
+    """
+    if df is None or df.empty:
+        st.info("No shipment volume data available for selected filters.")
+        return
+
+    d = df.copy()
+    d["Shipment Volume"] = pd.to_numeric(
+        d["Shipment Volume"], errors="coerce"
+    ).fillna(0)
+
+    d = d[d["Shipment Volume"] > 0].copy()
+    if d.empty:
+        st.info("No shipment volume data available for selected filters.")
         return
 
     agg = (
-        mode_df.groupby("Mode", as_index=False)["Volume"]
+        d.groupby("Mode", as_index=False)["Shipment Volume"]
         .sum()
-        .sort_values("Volume", ascending=False)
+        .sort_values("Shipment Volume", ascending=True)
     )
 
-    total = float(agg["Volume"].sum())
-    if total <= 0:
-        st.info("No shipment mode data available for selected filters.")
-        return
+    total = float(agg["Shipment Volume"].sum())
+    agg["Share"] = np.where(
+        total > 0,
+        agg["Shipment Volume"] / total,
+        0,
+    )
 
     fig = go.Figure(
-        data=[
-            go.Pie(
-                labels=agg["Mode"],
-                values=agg["Volume"],
-                hole=0.58,
-                sort=False,
-                textinfo="label+percent",
-                textposition="outside",
-                textfont=dict(size=UI["axis_size"]),
-                automargin=True,
-                hovertemplate=(
-                    "<b>%{label}</b><br>"
-                    "Shipment Volume: %{value:,.0f}<br>"
-                    "Market Share: %{percent}"
-                    "<extra></extra>"
-                ),
-                marker=dict(
-                    colors=CORPORATE_PALETTE[:len(agg)],
-                    line=dict(color="#FFFFFF", width=2),
-                ),
-            )
-        ]
-    )
-
-    fig.add_annotation(
-        text=f"<b>{total:,.0f}</b><br><span style='font-size:11px'>TOTAL SHIPMENT</span>",
-        x=0.5, y=0.5,
-        showarrow=False,
-        align="center",
-        font=dict(color=COLORS["navy"], size=18),
+        go.Bar(
+            x=agg["Shipment Volume"],
+            y=agg["Mode"],
+            orientation="h",
+            marker_color=BUSINESS_COLORS["actual"],
+            customdata=agg[["Share"]].to_numpy(),
+            text=[
+                f"{v:,.0f}  |  {s:.1%}"
+                for v, s in zip(
+                    agg["Shipment Volume"],
+                    agg["Share"],
+                )
+            ],
+            textposition="outside",
+            cliponaxis=False,
+            hovertemplate=(
+                "<b>%{y}</b><br>"
+                "Shipment Volume: %{x:,.0f}<br>"
+                "Share: %{customdata[0]:.1%}"
+                "<extra></extra>"
+            ),
+        )
     )
 
     fig.update_layout(
-        title=dict(
-            text="Shipment Volume by Transportation Mode",
-            x=0.0,
-            xanchor="left",
-            font=dict(size=14, color=COLORS["navy"]),
-        ),
-        showlegend=False,
-        height=520,
-        margin=dict(l=65, r=65, t=60, b=45),
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(0,0,0,0)",
-        font=dict(family="Arial", color=COLORS["text"]),
-        uniformtext_minsize=9,
-        uniformtext_mode="show",
+        title="Shipment Volume by Transportation Mode",
+        xaxis_title="Shipment Volume",
+        yaxis_title="",
+    )
+    fig = plotly_layout(
+        fig,
+        420,
+        show_legend=False,
+        margin_left=70,
+        margin_right=90,
+        margin_top=62,
+        margin_bottom=48,
+    )
+    fig.update_yaxes(
+        categoryorder="array",
+        categoryarray=agg["Mode"].tolist(),
     )
 
-    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
-
-
-def build_customer_ranking(df: pd.DataFrame) -> pd.DataFrame:
-    """Aggregate and rank all customers by shipment volume for current filters."""
-    if df is None or df.empty:
-        return pd.DataFrame(columns=["Rank", "Customer", "Shipment Volume"])
-
-    ranking = (
-        df.groupby("Customer", as_index=False)["Volume"]
-        .sum()
-        .sort_values("Volume", ascending=False)
-        .reset_index(drop=True)
+    st.plotly_chart(
+        fig,
+        use_container_width=True,
+        config={"displayModeBar": False},
     )
-    ranking["Rank"] = np.arange(1, len(ranking) + 1)
-    ranking = ranking.rename(columns={"Volume": "Shipment Volume"})
-    return ranking[["Rank", "Customer", "Shipment Volume"]]
+
 
 
 def chart_top_customers(df: pd.DataFrame):
-    if df.empty:
-        st.info("No customer volume data available for selected filters.")
+    """
+    Executive customer concentration view.
+    Top 10 is shown for faster management reading; source/filter logic unchanged.
+    """
+    if df is None or df.empty:
+        st.info("No customer shipment data available for selected filters.")
         return
 
-    ranking = build_customer_ranking(df)
-    top = ranking.head(20).sort_values("Shipment Volume", ascending=True)
+    d = df.copy()
+    d["Shipment Volume"] = pd.to_numeric(
+        d["Shipment Volume"], errors="coerce"
+    ).fillna(0)
 
-    fig = px.bar(
-        top,
-        x="Shipment Volume",
-        y="Customer",
-        orientation="h",
-        text="Shipment Volume",
-        color_discrete_sequence=[COLORS["blue"]],
-        title="Top 20 Customers by Shipment Volume",
+    top = (
+        d.groupby("Customer", as_index=False)["Shipment Volume"]
+        .sum()
+        .sort_values("Shipment Volume", ascending=False)
+        .head(10)
+        .sort_values("Shipment Volume", ascending=True)
     )
-    fig.update_traces(
-        texttemplate="%{text:,.0f}",
-        textposition="outside",
-        cliponaxis=False,
-        hovertemplate="%{y}<br>Shipment Volume: %{x:,.0f}<extra></extra>",
+
+    if top.empty:
+        st.info("No customer shipment data available for selected filters.")
+        return
+
+    fig = go.Figure(
+        go.Bar(
+            x=top["Shipment Volume"],
+            y=top["Customer"],
+            orientation="h",
+            marker_color=BUSINESS_COLORS["actual"],
+            text=top["Shipment Volume"],
+            texttemplate="%{text:,.0f}",
+            textposition="outside",
+            cliponaxis=False,
+            hovertemplate=(
+                "<b>%{y}</b><br>"
+                "Shipment Volume: %{x:,.0f}"
+                "<extra></extra>"
+            ),
+        )
     )
+
     fig.update_layout(
-        title=dict(
-            x=0.0,
-            xanchor="left",
-            font=dict(size=14, color=COLORS["navy"]),
-        ),
-        yaxis_title="",
+        title="Top 10 Customers by Shipment Volume",
         xaxis_title="Shipment Volume",
-        height=UI["chart_height_tall"],
-        margin=dict(l=140, r=55, t=60, b=55),
-        bargap=0.18,
+        yaxis_title="",
     )
-    fig.update_yaxes(
-        automargin=True,
-        tickfont=dict(size=UI["axis_size"]),
-    )
-    fig.update_xaxes(automargin=True)
     fig = plotly_layout(
         fig,
-        UI["chart_height_tall"],
+        420,
         show_legend=False,
-        margin_left=155,
-        margin_right=60,
-        margin_top=66,
-        margin_bottom=50,
-    )
-    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
-
-
-def customer_detail_table(df: pd.DataFrame):
-    """Scrollable full customer ranking table displayed beside Top 20 chart."""
-    ranking = build_customer_ranking(df)
-
-    if ranking.empty:
-        st.info("No customer detail data available for selected filters.")
-        return
-
-    st.markdown(
-        f"""
-        <div style="
-            color:{COLORS['navy']};
-            font-size:15px;
-            font-weight:800;
-            margin:2px 0 8px 0;">
-            Customer Detail
-        </div>
-        """,
-        unsafe_allow_html=True,
+        margin_left=115,
+        margin_right=70,
+        margin_top=62,
+        margin_bottom=48,
     )
 
-    st.dataframe(
-        ranking,
+    st.plotly_chart(
+        fig,
         use_container_width=True,
-        hide_index=True,
-        height=UI["chart_height_tall"],
-        column_config={
-            "Rank": st.column_config.NumberColumn("Rank", width=70, format="%d"),
-            "Customer": st.column_config.TextColumn("Customer", width="large"),
-            "Shipment Volume": st.column_config.NumberColumn(
-                "Shipment Volume", width=130, format="%,.0f"
-            ),
-        },
+        config={"displayModeBar": False},
     )
+
 
 
 def chart_resolution(df: pd.DataFrame):
