@@ -1475,6 +1475,27 @@ def section_title(text: str):
     st.markdown(f'<div class="section-title">{text}</div>', unsafe_allow_html=True)
 
 
+def pair_panel_title(text: str):
+    """Shared title style for chart/table pairs so both columns align visually."""
+    st.markdown(
+        f"""
+        <div style="
+            color:{COLORS['navy']};
+            font-family:{UI['font_family']};
+            font-size:{UI['chart_title_size']}px;
+            line-height:1.25;
+            font-weight:700;
+            min-height:28px;
+            display:flex;
+            align-items:center;
+            margin:0 0 8px 2px;">
+            {text}
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
 def plotly_layout(
     fig: go.Figure,
     height: int = UI["chart_height"],
@@ -2129,122 +2150,49 @@ def workload_breakdown_table(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def chart_case_allocation(df: pd.DataFrame):
-    """
-    C/A/S/E allocation by Segment.
-    Stacked horizontal bars show both total workload and its activity composition.
-    """
+    """C/A/S/E allocation by Segment."""
     summary = workload_breakdown_table(df)
-
     if summary.empty or float(summary["Total Workload (min)"].sum()) <= 0:
         st.info("No C/A/S/E workload data available for selected filters.")
         return
-
-    plot_df = summary.copy()
-    plot_df = plot_df[plot_df["Total Workload (min)"] > 0].copy()
-
-    # Highest-workload service at the top.
-    plot_df = plot_df.sort_values("Total Workload (min)", ascending=True)
-
+    pair_panel_title("C / A / S / E Workload Allocation by Segment")
+    plot_df = summary[summary["Total Workload (min)"] > 0].copy().sort_values("Total Workload (min)", ascending=True)
     components = [
         ("Core Service (min)", "Core Service", COLORS["blue"]),
         ("Ancillary Service (min)", "Ancillary Service", COLORS["green"]),
         ("Supporting Activity (min)", "Supporting Activity", COLORS["amber"]),
         ("Exception Handling (min)", "Exception Handling", COLORS["red"]),
     ]
-
     fig = go.Figure()
     for col, label, color in components:
-        fig.add_trace(
-            go.Bar(
-                y=plot_df["Segment"],
-                x=plot_df[col],
-                name=label,
-                orientation="h",
-                marker_color=color,
-                customdata=np.column_stack([
-                    plot_df["Total Workload (min)"],
-                    plot_df["Ratio"],
-                ]),
-                hovertemplate=(
-                    f"<b>{label}</b><br>"
-                    "Segment: %{y}<br>"
-                    "Workload: %{x:,.0f} min<br>"
-                    "Segment Total: %{customdata[0]:,.0f} min<br>"
-                    "Share of Total: %{customdata[1]:.1%}"
-                    "<extra></extra>"
-                ),
-            )
-        )
-
-    fig.update_layout(
-        barmode="stack",
-        title="C / A / S / E Workload Allocation by Segment",
-        xaxis_title="Workload (min)",
-        yaxis_title="",
-    )
-    fig = plotly_layout(
-        fig,
-        390,
-        show_legend=True,
-        legend_position="top",
-        margin_left=50,
-        margin_right=35,
-        margin_top=72,
-        margin_bottom=48,
-    )
+        fig.add_trace(go.Bar(y=plot_df["Segment"], x=plot_df[col], name=label, orientation="h", marker_color=color,
+            customdata=np.column_stack([plot_df["Total Workload (min)"], plot_df["Ratio"]]),
+            hovertemplate=f"<b>{label}</b><br>Segment: %{{y}}<br>Workload: %{{x:,.0f}} min<br>Segment Total: %{{customdata[0]:,.0f}} min<br>Share of Total: %{{customdata[1]:.1%}}<extra></extra>"))
+    fig.update_layout(barmode="stack", title=None, xaxis_title="Workload (min)", yaxis_title="")
+    fig = plotly_layout(fig, 390, show_legend=True, legend_position="top", margin_left=50, margin_right=35, margin_top=38, margin_bottom=48)
     fig.update_xaxes(rangemode="tozero")
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
-
 def render_workload_breakdown_table(df: pd.DataFrame):
+    """C/A/S/E workload detail; no TOTAL row."""
     summary = workload_breakdown_table(df)
-
     if summary.empty:
         st.info("No workload breakdown data available for selected filters.")
         return
-
+    pair_panel_title("Workload Breakdown Detail")
     display = summary.copy()
-    grand_total = float(display["Total Workload (min)"].sum())
-
-    total_row = pd.DataFrame([{
-        "Segment": "TOTAL",
-        "Core Service (min)": float(display["Core Service (min)"].sum()),
-        "Ancillary Service (min)": float(display["Ancillary Service (min)"].sum()),
-        "Supporting Activity (min)": float(display["Supporting Activity (min)"].sum()),
-        "Exception Handling (min)": float(display["Exception Handling (min)"].sum()),
-        "Total Workload (min)": grand_total,
-        "Ratio": 1.0 if grand_total > 0 else 0.0,
-    }])
-    display = pd.concat([display, total_row], ignore_index=True)
-
     st.dataframe(
-        display,
-        use_container_width=True,
-        hide_index=True,
-        height=390,
+        display, use_container_width=True, hide_index=True, height=390,
         column_config={
             "Segment": st.column_config.TextColumn("Segment", width="small"),
-            "Core Service (min)": st.column_config.NumberColumn(
-                "Core Service (min)", format="%,.0f", width="medium"
-            ),
-            "Ancillary Service (min)": st.column_config.NumberColumn(
-                "Ancillary Service (min)", format="%,.0f", width="medium"
-            ),
-            "Supporting Activity (min)": st.column_config.NumberColumn(
-                "Supporting Activity (min)", format="%,.0f", width="medium"
-            ),
-            "Exception Handling (min)": st.column_config.NumberColumn(
-                "Exception Handling (min)", format="%,.0f", width="medium"
-            ),
-            "Total Workload (min)": st.column_config.NumberColumn(
-                "Total Workload (min)", format="%,.0f", width="medium"
-            ),
-            "Ratio": st.column_config.NumberColumn(
-                "Ratio", format="percent", width="small"
-            ),
+            "Core Service (min)": st.column_config.NumberColumn("Core Service (min)", format="%,.0f", width="medium"),
+            "Ancillary Service (min)": st.column_config.NumberColumn("Ancillary Service (min)", format="%,.0f", width="medium"),
+            "Supporting Activity (min)": st.column_config.NumberColumn("Supporting Activity (min)", format="%,.0f", width="medium"),
+            "Exception Handling (min)": st.column_config.NumberColumn("Exception Handling (min)", format="%,.0f", width="medium"),
+            "Total Workload (min)": st.column_config.NumberColumn("Total Workload (min)", format="%,.0f", width="medium"),
+            "Ratio": st.column_config.NumberColumn("Ratio", format="percent", width="small"),
         },
     )
-
 
 def render_activity_detail_table(
     df: pd.DataFrame,
@@ -3139,376 +3087,122 @@ def chart_service_matrix(
     df: pd.DataFrame,
     mode_df: Optional[pd.DataFrame] = None,
 ):
-    """
-    Workload by Segment — flower-style packed bubble chart.
-
-    One bubble = one Segment.
-    Bubble size = Workload Share (%).
-    Bubbles are positioned close together for quick visual comparison.
-    Axes are intentionally hidden for an executive view.
-    """
+    """Workload by Segment — flower-style packed bubble chart."""
     seg = build_segment_workload(df, mode_df)
-
     if seg.empty or float(seg["Allocation Time (h)"].sum()) <= 0:
         st.info("No segment workload data available for selected filters.")
         return
 
-    # Rank only for visual placement; table keeps SERVICE_ORDER.
+    pair_panel_title("Workload by Segment")
+
     plot_df = seg[seg["Allocation Time (h)"] > 0].copy()
     plot_df = plot_df.sort_values("Workload Share", ascending=False).reset_index(drop=True)
-
-    # Flower-like positions:
-    # largest bubble in center, remaining bubbles distributed tightly around it.
     flower_positions = [
-        (0.00, 0.00),     # center
-        (-1.55, 0.30),    # left
-        (1.55, 0.30),     # right
-        (-0.85, 1.35),    # upper-left
-        (0.85, 1.35),     # upper-right
-        (-0.75, -1.30),   # lower-left
-        (0.75, -1.30),    # lower-right
-        (0.00, 2.20),
-        (0.00, -2.20),
-        (2.25, -0.75),
+        (0.00, 0.00), (-1.55, 0.30), (1.55, 0.30), (-0.85, 1.35),
+        (0.85, 1.35), (-0.75, -1.30), (0.75, -1.30), (0.00, 2.20),
+        (0.00, -2.20), (2.25, -0.75),
     ]
     plot_df["x"] = [flower_positions[i][0] for i in range(len(plot_df))]
     plot_df["y"] = [flower_positions[i][1] for i in range(len(plot_df))]
-
     max_share = float(plot_df["Workload Share"].max())
-    if max_share > 0:
-        # Tighter size range so bubbles can sit closer without excessive overlap.
-        plot_df["Bubble Size"] = 54 + (plot_df["Workload Share"] / max_share) * 76
-    else:
-        plot_df["Bubble Size"] = 70
-
-    segment_color_map = {
-        svc: CORPORATE_PALETTE[i % len(CORPORATE_PALETTE)]
-        for i, svc in enumerate(SERVICE_ORDER)
-    }
+    plot_df["Bubble Size"] = 54 + (plot_df["Workload Share"] / max_share) * 76 if max_share > 0 else 70
+    segment_color_map = {svc: CORPORATE_PALETTE[i % len(CORPORATE_PALETTE)] for i, svc in enumerate(SERVICE_ORDER)}
 
     fig = go.Figure()
-
     for _, r in plot_df.iterrows():
         svc = r["Segment"]
-        fig.add_trace(
-            go.Scatter(
-                x=[r["x"]],
-                y=[r["y"]],
-                mode="markers+text",
-                name=svc,
-                text=[f"<b>{svc}</b><br>{r['Workload Share']:.1%}"],
-                textposition="middle center",
-                textfont=dict(
-                    family="Arial",
-                    size=11,
-                    color="#FFFFFF" if r["Workload Share"] >= 0.06 else COLORS["navy"],
-                ),
-                marker=dict(
-                    size=[r["Bubble Size"]],
-                    color=segment_color_map.get(svc, COLORS["blue"]),
-                    opacity=0.94,
-                    line=dict(color="#FFFFFF", width=2.5),
-                ),
-                customdata=[[
-                    r["Shipment Volume"],
-                    r["Allocation Time (h)"],
-                    r["Required FTE"],
-                    r["Workload Share"],
-                ]],
-                hovertemplate=(
-                    f"<b>{svc}</b><br>"
-                    "Shipment Volume: %{customdata[0]:,.0f}<br>"
-                    "Allocation Time: %{customdata[1]:,.1f} hrs<br>"
-                    "Required FTE: %{customdata[2]:,.2f}<br>"
-                    "Workload Share: %{customdata[3]:.1%}"
-                    "<extra></extra>"
-                ),
-                showlegend=False,
-            )
-        )
+        fig.add_trace(go.Scatter(
+            x=[r["x"]], y=[r["y"]], mode="markers+text", name=svc,
+            text=[f"<b>{svc}</b><br>{r['Workload Share']:.1%}"],
+            textposition="middle center",
+            textfont=dict(family=UI["font_family"], size=11, color="#FFFFFF" if r["Workload Share"] >= 0.06 else COLORS["navy"]),
+            marker=dict(size=[r["Bubble Size"]], color=segment_color_map.get(svc, COLORS["blue"]), opacity=0.94, line=dict(color="#FFFFFF", width=2.5)),
+            customdata=[[r["Shipment Volume"], r["Allocation Time (h)"], r["Required FTE"], r["Workload Share"]]],
+            hovertemplate=(f"<b>{svc}</b><br>Shipment Volume: %{{customdata[0]:,.0f}}<br>Allocation Time: %{{customdata[1]:,.1f}} hrs<br>Required FTE: %{{customdata[2]:,.2f}}<br>Workload Share: %{{customdata[3]:.1%}}<extra></extra>"),
+            showlegend=False,
+        ))
 
-    fig.update_layout(title="Workload by Segment")
-    fig = plotly_layout(
-        fig,
-        390,
-        show_legend=False,
-        margin_left=20,
-        margin_right=20,
-        margin_top=58,
-        margin_bottom=18,
-    )
-
-    fig.update_xaxes(
-        visible=False,
-        showgrid=False,
-        zeroline=False,
-        showticklabels=False,
-        title_text="",
-        range=[-2.8, 2.8],
-        fixedrange=True,
-    )
-    fig.update_yaxes(
-        visible=False,
-        showgrid=False,
-        zeroline=False,
-        showticklabels=False,
-        title_text="",
-        range=[-2.55, 2.65],
-        scaleanchor="x",
-        scaleratio=1,
-        fixedrange=True,
-    )
-
-    st.plotly_chart(
-        fig,
-        use_container_width=True,
-        config={"displayModeBar": False},
-    )
-
+    fig = plotly_layout(fig, 390, show_legend=False, margin_left=20, margin_right=20, margin_top=18, margin_bottom=18)
+    fig.update_layout(title=None)
+    fig.update_xaxes(visible=False, showgrid=False, zeroline=False, showticklabels=False, title_text="", range=[-2.8, 2.8], fixedrange=True)
+    fig.update_yaxes(visible=False, showgrid=False, zeroline=False, showticklabels=False, title_text="", range=[-2.55, 2.65], scaleanchor="x", scaleratio=1, fixedrange=True)
+    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
 def segment_workload_table(df: pd.DataFrame, mode_df: pd.DataFrame):
-    """
-    Executive summary table for Section 4.
-
-    Order:
-    Segment | Shipment Volume | Allocation Time (h) | Required FTE | Workload Share (%)
-    """
+    """Executive summary table for Section 4; no TOTAL row in detail tables."""
     seg = build_segment_workload(df, mode_df)
-
     if seg.empty:
         st.info("No segment workload data available for selected filters.")
         return
 
-    display = seg.copy().rename(columns={
-        "Workload Share": "Workload Share (%)",
-    })
-
-    # Display percentage as percentage-point values.
-    display["Workload Share (%)"] = (
-        pd.to_numeric(display["Workload Share (%)"], errors="coerce").fillna(0) * 100
-    )
-
-    total_hours = float(display["Allocation Time (h)"].sum())
-    total_volume = float(display["Shipment Volume"].sum())
-    total_required_fte = float(display["Required FTE"].sum())
-
-    total_row = pd.DataFrame([{
-        "Segment": "TOTAL",
-        "Shipment Volume": total_volume,
-        "Allocation Time (h)": total_hours,
-        "Required FTE": total_required_fte,
-        "Workload Share (%)": 100.0 if total_hours > 0 else 0.0,
-    }])
-
-    display = pd.concat([display, total_row], ignore_index=True)
-
-    # Requested business order.
-    display = display[
-        ["Segment", "Shipment Volume", "Allocation Time (h)", "Required FTE", "Workload Share (%)"]
-    ]
-
-    st.markdown(
-        f"""
-        <div style="
-            color:{COLORS['navy']};
-            font-size:{UI['chart_title_size']}px;
-            font-weight:700;
-            margin:2px 0 10px 2px;">
-            Segment Workload Summary
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    pair_panel_title("Segment Workload Summary")
+    display = seg.copy().rename(columns={"Workload Share": "Workload Share (%)"})
+    display["Workload Share (%)"] = pd.to_numeric(display["Workload Share (%)"], errors="coerce").fillna(0) * 100
+    display = display[["Segment", "Shipment Volume", "Allocation Time (h)", "Required FTE", "Workload Share (%)"]]
 
     st.dataframe(
-        display,
-        use_container_width=True,
-        hide_index=True,
-        height=390,
+        display, use_container_width=True, hide_index=True, height=390,
         column_config={
-            "Segment": st.column_config.TextColumn(
-                "Segment", width="small"
-            ),
-            "Shipment Volume": st.column_config.NumberColumn(
-                "Shipment Volume", width="medium", format="%,.0f"
-            ),
-            "Allocation Time (h)": st.column_config.NumberColumn(
-                "Allocation Time (hrs)", width="medium", format="%,.1f"
-            ),
-            "Required FTE": st.column_config.NumberColumn(
-                "Required FTE", width="small", format="%.2f"
-            ),
-            "Workload Share (%)": st.column_config.NumberColumn(
-                "Workload Share (%)", width="medium", format="%.1f%%"
-            ),
+            "Segment": st.column_config.TextColumn("Segment", width="small"),
+            "Shipment Volume": st.column_config.NumberColumn("Shipment Volume", width="medium", format="%,.0f"),
+            "Allocation Time (h)": st.column_config.NumberColumn("Allocation Time (hrs)", width="medium", format="%,.1f"),
+            "Required FTE": st.column_config.NumberColumn("Required FTE", width="small", format="%.2f"),
+            "Workload Share (%)": st.column_config.NumberColumn("Workload Share (%)", width="medium", format="%.1f%%"),
         },
     )
-
 
 def chart_shipment_modes(mode_df: pd.DataFrame):
     """Horizontal bar chart showing shipment volume and share by transportation mode."""
     if mode_df.empty:
         st.info("No shipment mode data available for selected filters.")
         return
-
-    agg = (
-        mode_df.groupby("Mode", as_index=False)["Volume"]
-        .sum()
-        .sort_values("Volume", ascending=False)
-        .reset_index(drop=True)
-    )
-
+    agg = mode_df.groupby("Mode", as_index=False)["Volume"].sum().sort_values("Volume", ascending=False).reset_index(drop=True)
     total = float(agg["Volume"].sum())
     if total <= 0:
         st.info("No shipment mode data available for selected filters.")
         return
 
-    # Keep the ranking order easy to scan from top to bottom.
+    pair_panel_title("Shipment Volume by Transportation Mode")
     agg["Share"] = agg["Volume"] / total
     plot_df = agg.sort_values("Volume", ascending=True).copy()
-    plot_df["Display Label"] = plot_df.apply(
-        lambda r: f"{r['Volume']:,.0f} ({r['Share']:.1%})", axis=1
-    )
-
-    fig = go.Figure(
-        go.Bar(
-            x=plot_df["Volume"],
-            y=plot_df["Mode"],
-            orientation="h",
-            marker=dict(color=COLORS["blue"]),
-            text=plot_df["Display Label"],
-            textposition="outside",
-            textfont=dict(size=UI["axis_size"], color=COLORS["navy"]),
-            cliponaxis=False,
-            hovertemplate=(
-                "<b>%{y}</b><br>"
-                "Shipment Volume: %{x:,.0f}<br>"
-                "Share: %{customdata:.1%}"
-                "<extra></extra>"
-            ),
-            customdata=plot_df["Share"],
-        )
-    )
-
-    # Total is shown as a compact management cue, not as a separate KPI card.
-    fig.add_annotation(
-        x=1,
-        y=1.10,
-        xref="paper",
-        yref="paper",
-        text=f"<b>{total:,.0f}</b> TOTAL SHIPMENTS",
-        showarrow=False,
-        xanchor="right",
-        yanchor="bottom",
-        font=dict(
-            family=UI["font_family"],
-            size=12,
-            color=COLORS["navy"],
-        ),
-    )
-
-    fig.update_layout(
-        title=dict(
-            text="Shipment Volume by Transportation Mode",
-            x=0.0,
-            xanchor="left",
-            font=dict(
-                size=UI["chart_title_size"],
-                color=COLORS["navy"],
-                family=UI["font_family"],
-            ),
-        ),
-        xaxis_title="Shipment Volume",
-        yaxis_title="",
-        bargap=0.26,
-    )
-
-    fig.update_yaxes(
-        categoryorder="array",
-        categoryarray=plot_df["Mode"].tolist(),
-        automargin=True,
-        tickfont=dict(size=UI["axis_size"]),
-    )
-    fig.update_xaxes(
-        automargin=True,
-        rangemode="tozero",
-        tickformat=",.0f",
-    )
-
-    # Match chart height to the adjacent Mode Detail table.
-    mode_chart_height = max(430, min(560, 110 + 34 * (len(plot_df) + 1)))
-    fig = plotly_layout(
-        fig,
-        mode_chart_height,
-        show_legend=False,
-        margin_left=58,
-        margin_right=105,
-        margin_top=78,
-        margin_bottom=52,
-    )
-
+    plot_df["Display Label"] = plot_df.apply(lambda r: f"{r['Volume']:,.0f} ({r['Share']:.1%})", axis=1)
+    fig = go.Figure(go.Bar(
+        x=plot_df["Volume"], y=plot_df["Mode"], orientation="h",
+        marker=dict(color=COLORS["blue"]), text=plot_df["Display Label"], textposition="outside",
+        textfont=dict(size=UI["axis_size"], color=COLORS["navy"]), cliponaxis=False,
+        hovertemplate="<b>%{y}</b><br>Shipment Volume: %{x:,.0f}<br>Share: %{customdata:.1%}<extra></extra>",
+        customdata=plot_df["Share"],
+    ))
+    fig.add_annotation(x=1, y=1.04, xref="paper", yref="paper", text=f"<b>{total:,.0f}</b> TOTAL SHIPMENTS", showarrow=False, xanchor="right", yanchor="bottom", font=dict(family=UI["font_family"], size=12, color=COLORS["navy"]))
+    fig.update_layout(title=None, xaxis_title="Shipment Volume", yaxis_title="", bargap=0.26)
+    fig.update_yaxes(categoryorder="array", categoryarray=plot_df["Mode"].tolist(), automargin=True, tickfont=dict(size=UI["axis_size"]))
+    fig.update_xaxes(automargin=True, rangemode="tozero", tickformat=",.0f")
+    fig = plotly_layout(fig, 500, show_legend=False, margin_left=58, margin_right=105, margin_top=40, margin_bottom=52)
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
-
 def mode_detail_table(mode_df: pd.DataFrame):
-    """Compact Streamlit dataframe paired with Shipment Volume by Transportation Mode chart."""
+    """Detail table paired with the transportation-mode chart; no TOTAL row."""
     if mode_df is None or mode_df.empty:
         st.info("No shipment mode detail available for selected filters.")
         return
-
-    detail = (
-        mode_df.groupby("Mode", as_index=False)["Volume"]
-        .sum()
-        .sort_values("Volume", ascending=False)
-        .reset_index(drop=True)
-    )
+    detail = mode_df.groupby("Mode", as_index=False)["Volume"].sum().sort_values("Volume", ascending=False).reset_index(drop=True)
     total = float(detail["Volume"].sum())
     if total <= 0:
         st.info("No shipment mode detail available for selected filters.")
         return
-
+    pair_panel_title("Transportation Mode Detail")
     detail["Rank"] = np.arange(1, len(detail) + 1)
     detail["Share"] = detail["Volume"] / total
-    display = detail.rename(columns={"Volume": "Shipment Volume"})[
-        ["Rank", "Mode", "Shipment Volume", "Share"]
-    ].copy()
-
-    st.markdown(
-        f"""
-        <div style="
-            color:{COLORS['navy']};
-            font-size:{UI['chart_title_size']}px;
-            font-weight:700;
-            margin:2px 0 10px 2px;">
-            Transportation Mode Detail
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    # Height is sized to show all mode rows without an internal vertical scrollbar.
-    mode_table_height = max(430, min(560, 40 + 34 * (len(display) + 1)))
+    display = detail.rename(columns={"Volume": "Shipment Volume"})[["Rank", "Mode", "Shipment Volume", "Share"]].copy()
     st.dataframe(
-        display,
-        use_container_width=True,
-        hide_index=True,
-        height=mode_table_height,
+        display, use_container_width=True, hide_index=True, height=500,
         column_config={
-            "Rank": st.column_config.NumberColumn(
-                "Rank", width="small", format="%d"
-            ),
-            "Mode": st.column_config.TextColumn(
-                "Mode", width="small"
-            ),
-            "Shipment Volume": st.column_config.NumberColumn(
-                "Shipment Volume", width="medium", format="%,.0f"
-            ),
-            "Share": st.column_config.NumberColumn(
-                "Share", width="small", format="percent"
-            ),
+            "Rank": st.column_config.NumberColumn("Rank", width="small", format="%d"),
+            "Mode": st.column_config.TextColumn("Mode", width="small"),
+            "Shipment Volume": st.column_config.NumberColumn("Shipment Volume", width="medium", format="%,.0f"),
+            "Share": st.column_config.NumberColumn("Share", width="small", format="percent"),
         },
     )
-    st.caption(f"Total shipments: {total:,.0f}")
 
 def build_customer_ranking(df: pd.DataFrame) -> pd.DataFrame:
     """Aggregate and rank all customers by shipment volume for current filters."""
@@ -3530,98 +3224,32 @@ def chart_top_customers(df: pd.DataFrame):
     if df.empty:
         st.info("No customer volume data available for selected filters.")
         return
-
     ranking = build_customer_ranking(df)
     top = ranking.head(20).sort_values("Shipment Volume", ascending=True)
-
-    fig = px.bar(
-        top,
-        x="Shipment Volume",
-        y="Customer",
-        orientation="h",
-        text="Shipment Volume",
-        color_discrete_sequence=[COLORS["blue"]],
-        title="Top 20 Customers by Shipment Volume",
-    )
-    fig.update_traces(
-        texttemplate="%{text:,.0f}",
-        textposition="outside",
-        cliponaxis=False,
-        hovertemplate="%{y}<br>Shipment Volume: %{x:,.0f}<extra></extra>",
-    )
-    fig.update_layout(
-        title=dict(
-            x=0.0,
-            xanchor="left",
-            font=dict(size=UI["chart_title_size"], color=COLORS["navy"]),
-        ),
-        yaxis_title="",
-        xaxis_title="Shipment Volume",
-        height=720,
-        margin=dict(l=140, r=55, t=60, b=55),
-        bargap=0.18,
-    )
-    fig.update_yaxes(
-        automargin=True,
-        tickfont=dict(size=UI["axis_size"]),
-    )
+    pair_panel_title("Top 20 Customers by Shipment Volume")
+    fig = px.bar(top, x="Shipment Volume", y="Customer", orientation="h", text="Shipment Volume", color_discrete_sequence=[COLORS["blue"]])
+    fig.update_traces(texttemplate="%{text:,.0f}", textposition="outside", cliponaxis=False, hovertemplate="%{y}<br>Shipment Volume: %{x:,.0f}<extra></extra>")
+    fig.update_layout(title=None, yaxis_title="", xaxis_title="Shipment Volume", bargap=0.18)
+    fig.update_yaxes(automargin=True, tickfont=dict(size=UI["axis_size"]))
     fig.update_xaxes(automargin=True)
-    # Height is aligned with the Top 20 detail table shown beside the chart.
-    fig = plotly_layout(
-        fig,
-        720,
-        show_legend=False,
-        margin_left=155,
-        margin_right=60,
-        margin_top=66,
-        margin_bottom=50,
-    )
+    fig = plotly_layout(fig, 720, show_legend=False, margin_left=155, margin_right=60, margin_top=22, margin_bottom=50)
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
-
 def customer_top20_detail_table(df: pd.DataFrame):
-    """Top 20 customer Streamlit dataframe paired with the Top 20 customer chart."""
+    """Top 20 customer table paired with the chart; no TOTAL row."""
     ranking = build_customer_ranking(df)
     if ranking.empty:
         st.info("No customer detail data available for selected filters.")
         return
-
     top_detail = ranking.head(20).copy()
-
-    st.markdown(
-        f"""
-        <div style="
-            color:{COLORS['navy']};
-            font-size:{UI['chart_title_size']}px;
-            font-weight:700;
-            margin:2px 0 10px 2px;">
-            Customer Detail — Top 20
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    # Display all Top 20 rows in the executive view; no HTML rendering is used.
-    customer_table_height = 720
+    pair_panel_title("Customer Detail — Top 20")
     st.dataframe(
-        top_detail,
-        use_container_width=True,
-        hide_index=True,
-        height=customer_table_height,
+        top_detail, use_container_width=True, hide_index=True, height=720,
         column_config={
-            "Rank": st.column_config.NumberColumn(
-                "Rank", width="small", format="%d"
-            ),
-            "Customer": st.column_config.TextColumn(
-                "Customer", width="large"
-            ),
-            "Shipment Volume": st.column_config.NumberColumn(
-                "Shipment Volume", width="medium", format="%,.0f"
-            ),
+            "Rank": st.column_config.NumberColumn("Rank", width="small", format="%d"),
+            "Customer": st.column_config.TextColumn("Customer", width="large"),
+            "Shipment Volume": st.column_config.NumberColumn("Shipment Volume", width="medium", format="%,.0f"),
         },
-    )
-    st.caption(
-        f"Showing Top {len(top_detail):,} of {len(ranking):,} customers."
     )
 
 def customer_full_detail_expander(df: pd.DataFrame):
@@ -3651,387 +3279,89 @@ def customer_full_detail_expander(df: pd.DataFrame):
 
 
 def chart_resolution(df: pd.DataFrame):
-    """
-    CS Solution performance:
-    - Bars = Total Abnormalities vs Resolved by CS
-    - Line = CS Resolution Rate
-    - Ordered by month
-    """
+    """CS Solution performance chart."""
     if df is None or df.empty:
         st.info("No CS Resolution data available for selected filters.")
         return
-
-    agg = (
-        df.groupby("MonthDate", as_index=False)
-        .agg(
-            **{
-                "Total Abnormality": ("Total Abnormality", "sum"),
-                "Resolved": ("Resolved", "sum"),
-            }
-        )
-        .sort_values("MonthDate")
-    )
-    agg["Resolution Rate"] = np.where(
-        agg["Total Abnormality"] > 0,
-        agg["Resolved"] / agg["Total Abnormality"],
-        np.nan,
-    )
+    pair_panel_title("CS Resolution Performance by Month")
+    agg = df.groupby("MonthDate", as_index=False).agg(**{"Total Abnormality": ("Total Abnormality", "sum"), "Resolved": ("Resolved", "sum")}).sort_values("MonthDate")
+    agg["Resolution Rate"] = np.where(agg["Total Abnormality"] > 0, agg["Resolved"] / agg["Total Abnormality"], np.nan)
     agg["Month"] = agg["MonthDate"].dt.strftime("%b-%y")
-
     fig = go.Figure()
-
-    fig.add_trace(
-        go.Bar(
-            x=agg["Month"],
-            y=agg["Total Abnormality"],
-            name="Total Abnormalities",
-            marker_color=BUSINESS_COLORS["supporting"],
-            text=agg["Total Abnormality"],
-            texttemplate="%{text:,.0f}",
-            textposition="outside",
-            cliponaxis=False,
-            hovertemplate=(
-                "<b>%{x}</b><br>"
-                "Total Abnormalities: %{y:,.0f}"
-                "<extra></extra>"
-            ),
-        )
-    )
-
-    fig.add_trace(
-        go.Bar(
-            x=agg["Month"],
-            y=agg["Resolved"],
-            name="Resolved by CS",
-            marker_color=BUSINESS_COLORS["actual"],
-            text=agg["Resolved"],
-            texttemplate="%{text:,.0f}",
-            textposition="outside",
-            cliponaxis=False,
-            hovertemplate=(
-                "<b>%{x}</b><br>"
-                "Resolved by CS: %{y:,.0f}"
-                "<extra></extra>"
-            ),
-        )
-    )
-
-    fig.add_trace(
-        go.Scatter(
-            x=agg["Month"],
-            y=agg["Resolution Rate"],
-            name="CS Resolution Rate",
-            mode="lines+markers+text",
-            line=dict(color=COLORS["green"], width=3),
-            marker=dict(size=7),
-            text=agg["Resolution Rate"],
-            texttemplate="%{text:.1%}",
-            textposition="top center",
-            yaxis="y2",
-            hovertemplate=(
-                "<b>%{x}</b><br>"
-                "CS Resolution Rate: %{y:.1%}"
-                "<extra></extra>"
-            ),
-        )
-    )
-
-    fig.update_layout(
-        title="CS Resolution Performance by Month",
-        barmode="group",
-        yaxis=dict(
-            title="Cases",
-            rangemode="tozero",
-        ),
-        yaxis2=dict(
-            title="Resolution Rate",
-            overlaying="y",
-            side="right",
-            tickformat=".0%",
-            range=[0, 1.08],
-            showgrid=False,
-        ),
-    )
-
-    fig = plotly_layout(
-        fig,
-        390,
-        show_legend=True,
-        legend_position="top",
-        margin_left=58,
-        margin_right=68,
-        margin_top=72,
-        margin_bottom=44,
-    )
-    fig.update_xaxes(
-        type="category",
-        categoryorder="array",
-        categoryarray=agg["Month"].tolist(),
-    )
-
-    st.plotly_chart(
-        fig,
-        use_container_width=True,
-        config={"displayModeBar": False},
-    )
-
+    fig.add_trace(go.Bar(x=agg["Month"], y=agg["Total Abnormality"], name="Total Abnormalities", marker_color=BUSINESS_COLORS["supporting"], text=agg["Total Abnormality"], texttemplate="%{text:,.0f}", textposition="outside", cliponaxis=False))
+    fig.add_trace(go.Bar(x=agg["Month"], y=agg["Resolved"], name="Resolved by CS", marker_color=BUSINESS_COLORS["actual"], text=agg["Resolved"], texttemplate="%{text:,.0f}", textposition="outside", cliponaxis=False))
+    fig.add_trace(go.Scatter(x=agg["Month"], y=agg["Resolution Rate"], name="CS Resolution Rate", mode="lines+markers+text", line=dict(color=COLORS["green"], width=3), marker=dict(size=7), text=agg["Resolution Rate"], texttemplate="%{text:.1%}", textposition="top center", yaxis="y2"))
+    fig.update_layout(title=None, barmode="group", yaxis=dict(title="Cases", rangemode="tozero"), yaxis2=dict(title="Resolution Rate", overlaying="y", side="right", tickformat=".0%", range=[0, 1.08], showgrid=False))
+    fig = plotly_layout(fig, 390, show_legend=True, legend_position="top", margin_left=58, margin_right=68, margin_top=38, margin_bottom=44)
+    fig.update_xaxes(type="category", categoryorder="array", categoryarray=agg["Month"].tolist())
+    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
 def render_cs_solution_table(df: pd.DataFrame):
-    """
-    Detail table sourced directly from sheet 'CS Resolutions Rate'.
-    Shows only rows/months with source data after dashboard filters.
-    """
+    """CS Resolution detail table; no TOTAL row."""
     if df is None or df.empty:
         st.info("No CS Resolution data available for selected filters.")
         return
-
-    d = df.copy()
-    d = d.sort_values(["Office", "MonthDate"]).copy()
+    pair_panel_title("CS Resolution Detail")
+    d = df.copy().sort_values(["Office", "MonthDate"])
     d["Month"] = d["MonthDate"].dt.strftime("%b-%y")
-
-    display = d[
-        ["Office", "Month", "Total Abnormality", "Resolved", "Resolution Rate"]
-    ].copy()
-
-    total_abn = float(display["Total Abnormality"].sum())
-    total_resolved = float(display["Resolved"].sum())
-    overall_rate = safe_div(total_resolved, total_abn)
-
-    total_row = pd.DataFrame([{
-        "Office": "TOTAL",
-        "Month": "",
-        "Total Abnormality": total_abn,
-        "Resolved": total_resolved,
-        "Resolution Rate": overall_rate,
-    }])
-    display = pd.concat([display, total_row], ignore_index=True)
-
-    st.markdown(
-        f"""
-        <div style="
-            color:{COLORS['navy']};
-            font-size:{UI['chart_title_size']}px;
-            font-weight:700;
-            margin:2px 0 10px 2px;">
-            CS Resolution Detail
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
+    display = d[["Office", "Month", "Total Abnormality", "Resolved", "Resolution Rate"]].copy()
     st.dataframe(
-        display,
-        use_container_width=True,
-        hide_index=True,
-        height=360,
+        display, use_container_width=True, hide_index=True, height=390,
         column_config={
-            "Office": st.column_config.TextColumn(
-                "Office", width="small"
-            ),
-            "Month": st.column_config.TextColumn(
-                "Month", width="small"
-            ),
-            "Total Abnormality": st.column_config.NumberColumn(
-                "Total Abnormalities", width="medium", format="%,.0f"
-            ),
-            "Resolved": st.column_config.NumberColumn(
-                "Resolved by CS", width="medium", format="%,.0f"
-            ),
-            "Resolution Rate": st.column_config.NumberColumn(
-                "CS Resolution Rate", width="medium", format="percent"
-            ),
+            "Office": st.column_config.TextColumn("Office", width="small"),
+            "Month": st.column_config.TextColumn("Month", width="small"),
+            "Total Abnormality": st.column_config.NumberColumn("Total Abnormalities", width="medium", format="%,.0f"),
+            "Resolved": st.column_config.NumberColumn("Resolved by CS", width="medium", format="%,.0f"),
+            "Resolution Rate": st.column_config.NumberColumn("CS Resolution Rate", width="medium", format="percent"),
         },
     )
 
-
 def chart_yvf(df: pd.DataFrame):
-    """
-    YVF Promoter Effectiveness — donut chart.
-    Shows Total YVF Bookings as the adopted portion of Total IFF Shipments.
-
-    IMPORTANT:
-    YVF Bookings are a subset of IFF Shipments, therefore the two raw totals
-    must not be used as two independent pie slices.
-    Pie composition:
-        YVF Bookings
-        Remaining IFF Shipments = Total IFF Shipments - YVF Bookings
-    """
+    """YVF booking share of Total IFF Shipments."""
     if df is None or df.empty:
         st.info("No YVF data available for selected filters.")
         return
-
     d = df.copy()
     d["YVF Booking"] = pd.to_numeric(d["YVF Booking"], errors="coerce").fillna(0)
     d["IFF Shipment"] = pd.to_numeric(d["IFF Shipment"], errors="coerce").fillna(0)
-
     d = d[(d["YVF Booking"] != 0) | (d["IFF Shipment"] != 0)].copy()
     if d.empty:
         st.info("No YVF data available for selected filters.")
         return
-
-    total_yvf = float(d["YVF Booking"].sum())
-    total_iff = float(d["IFF Shipment"].sum())
-    remaining_iff = max(total_iff - total_yvf, 0.0)
-    ratio = safe_div(total_yvf, total_iff)
-
-    fig = go.Figure(
-        data=[
-            go.Pie(
-                labels=["YVF Bookings", "Non-YVF IFF Shipments"],
-                values=[total_yvf, remaining_iff],
-                hole=0.58,
-                sort=False,
-                direction="clockwise",
-                marker=dict(
-                    colors=[BUSINESS_COLORS["actual"], COLORS["grid"]],
-                    line=dict(color="white", width=2),
-                ),
-                textinfo="label+percent",
-                texttemplate="<b>%{label}</b><br>%{value:,.0f} · %{percent:.1%}",
-                textposition="outside",
-                hovertemplate=(
-                    "<b>%{label}</b><br>"
-                    "Volume: %{value:,.0f}<br>"
-                    "Share: %{percent:.1%}"
-                    "<extra></extra>"
-                ),
-            )
-        ]
-    )
-
-    fig.update_layout(
-        title="YVF Booking Share of Total IFF Shipments",
-        annotations=[
-            dict(
-                text=(
-                    f"<b>{ratio:.1%}</b>"
-                    f"<br><span style='font-size:12px'>YVF Adoption</span>"
-                    f"<br><span style='font-size:11px'>{total_yvf:,.0f} / {total_iff:,.0f}</span>"
-                ),
-                x=0.5,
-                y=0.5,
-                font=dict(
-                    size=22,
-                    color=COLORS["navy"],
-                    family=UI["font_family"],
-                ),
-                showarrow=False,
-                align="center",
-            )
-        ],
-    )
-    fig = plotly_layout(
-        fig,
-        390,
-        show_legend=True,
-        legend_position="top",
-        margin_left=44,
-        margin_right=44,
-        margin_top=78,
-        margin_bottom=30,
-    )
-
-    st.plotly_chart(
-        fig,
-        use_container_width=True,
-        config={"displayModeBar": False},
-    )
-
-
+    pair_panel_title("YVF Booking Share of Total IFF Shipments")
+    total_yvf = float(d["YVF Booking"].sum()); total_iff = float(d["IFF Shipment"].sum())
+    remaining_iff = max(total_iff - total_yvf, 0.0); ratio = safe_div(total_yvf, total_iff)
+    fig = go.Figure(data=[go.Pie(labels=["YVF Bookings", "Non-YVF IFF Shipments"], values=[total_yvf, remaining_iff], hole=0.58, sort=False, direction="clockwise", marker=dict(colors=[BUSINESS_COLORS["actual"], COLORS["grid"]], line=dict(color="white", width=2)), textinfo="label+percent", texttemplate="<b>%{label}</b><br>%{value:,.0f} · %{percent:.1%}", textposition="outside")])
+    fig.update_layout(title=None, annotations=[dict(text=f"<b>{ratio:.1%}</b><br><span style='font-size:12px'>YVF Adoption</span><br><span style='font-size:11px'>{total_yvf:,.0f} / {total_iff:,.0f}</span>", x=0.5, y=0.5, font=dict(size=22, color=COLORS["navy"], family=UI["font_family"]), showarrow=False, align="center")])
+    fig = plotly_layout(fig, 390, show_legend=True, legend_position="top", margin_left=44, margin_right=44, margin_top=38, margin_bottom=30)
+    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
 def render_yvf_table(df: pd.DataFrame):
-    """
-    Table sourced from sheet 'YVF'.
-    Shows only rows with actual source data.
-    """
+    """YVF detail table; no TOTAL row."""
     if df is None or df.empty:
         st.info("No YVF data available for selected filters.")
         return
-
     d = df.copy()
-    d = d[
-        (pd.to_numeric(d["YVF Booking"], errors="coerce").fillna(0) != 0)
-        | (pd.to_numeric(d["IFF Shipment"], errors="coerce").fillna(0) != 0)
-    ].copy()
-
+    d = d[(pd.to_numeric(d["YVF Booking"], errors="coerce").fillna(0) != 0) | (pd.to_numeric(d["IFF Shipment"], errors="coerce").fillna(0) != 0)].copy()
     if d.empty:
         st.info("No YVF data available for selected filters.")
         return
-
-    has_month = (
-        "MonthDate" in d.columns
-        and d["MonthDate"].notna().any()
-    )
-
+    pair_panel_title("YVF Performance Detail")
+    has_month = "MonthDate" in d.columns and d["MonthDate"].notna().any()
     if has_month:
-        d = d.sort_values(["MonthDate", "Office"]).copy()
-        d["Month"] = d["MonthDate"].dt.strftime("%b-%y")
-        display = d[
-            ["Office", "Month", "YVF Booking", "IFF Shipment", "YVF Booking Ratio"]
-        ].copy()
+        d = d.sort_values(["MonthDate", "Office"]).copy(); d["Month"] = d["MonthDate"].dt.strftime("%b-%y")
+        display = d[["Office", "Month", "YVF Booking", "IFF Shipment", "YVF Booking Ratio"]].copy()
     else:
-        display = d[
-            ["Office", "YVF Booking", "IFF Shipment", "YVF Booking Ratio"]
-        ].copy()
-        display = display.sort_values(["Office"])
-
-    total_yvf = float(display["YVF Booking"].sum())
-    total_iff = float(display["IFF Shipment"].sum())
-    total_ratio = safe_div(total_yvf, total_iff)
-
-    total_row = {
-        "Office": "TOTAL",
-        "YVF Booking": total_yvf,
-        "IFF Shipment": total_iff,
-        "YVF Booking Ratio": total_ratio,
-    }
-    if has_month:
-        total_row["Month"] = ""
-
-    display = pd.concat(
-        [display, pd.DataFrame([total_row])],
-        ignore_index=True,
-    )
-
+        display = d[["Office", "YVF Booking", "IFF Shipment", "YVF Booking Ratio"]].copy().sort_values(["Office"])
     column_cfg = {
         "Office": st.column_config.TextColumn("Office", width="small"),
-        "YVF Booking": st.column_config.NumberColumn(
-            "Total YVF Bookings", width="medium", format="%,.0f"
-        ),
-        "IFF Shipment": st.column_config.NumberColumn(
-            "Total IFF Shipments", width="medium", format="%,.0f"
-        ),
-        "YVF Booking Ratio": st.column_config.NumberColumn(
-            "YVF Booking Ratio", width="medium", format="percent"
-        ),
+        "YVF Booking": st.column_config.NumberColumn("Total YVF Bookings", width="medium", format="%,.0f"),
+        "IFF Shipment": st.column_config.NumberColumn("Total IFF Shipments", width="medium", format="%,.0f"),
+        "YVF Booking Ratio": st.column_config.NumberColumn("YVF Booking Ratio", width="medium", format="percent"),
     }
     if has_month:
-        column_cfg["Month"] = st.column_config.TextColumn(
-            "Month", width="small"
-        )
-
-    st.markdown(
-        f"""
-        <div style="
-            color:{COLORS['navy']};
-            font-size:{UI['chart_title_size']}px;
-            font-weight:700;
-            margin:2px 0 10px 2px;">
-            YVF Performance Detail
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    st.dataframe(
-        display,
-        use_container_width=True,
-        hide_index=True,
-        height=390,
-        column_config=column_cfg,
-    )
-
-
+        column_cfg["Month"] = st.column_config.TextColumn("Month", width="small")
+    st.dataframe(display, use_container_width=True, hide_index=True, height=390, column_config=column_cfg)
 
 # ============================================================
 # COVER / WELCOME PAGE
