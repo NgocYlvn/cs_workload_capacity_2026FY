@@ -3229,8 +3229,8 @@ def chart_top_customers(df: pd.DataFrame):
         st.info("No customer volume data available for selected filters.")
         return
     ranking = build_customer_ranking(df)
-    top = ranking.head(20).sort_values("Shipment Volume", ascending=True)
-    pair_panel_title("Top 20 Customers by Shipment Volume")
+    top = ranking.head(10).sort_values("Shipment Volume", ascending=True)
+    pair_panel_title("Top 10 Customers by Shipment Volume")
     fig = px.bar(top, x="Shipment Volume", y="Customer", orientation="h", text="Shipment Volume", color_discrete_sequence=[COLORS["blue"]])
     fig.update_traces(texttemplate="%{text:,.0f}", textposition="outside", cliponaxis=False, hovertemplate="%{y}<br>Shipment Volume: %{x:,.0f}<extra></extra>")
     fig.update_layout(title_text="", yaxis_title="", xaxis_title="Shipment Volume", bargap=0.18)
@@ -3239,47 +3239,25 @@ def chart_top_customers(df: pd.DataFrame):
     fig = plotly_layout(fig, 720, show_legend=False, margin_left=155, margin_right=60, margin_top=22, margin_bottom=50)
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
-def customer_top20_detail_table(df: pd.DataFrame):
-    """Top 20 customer table paired with the chart; no TOTAL row."""
+def customer_detail_volume_table(df: pd.DataFrame):
+    """Full customer ranking paired with the Top 20 chart; scrollable and no TOTAL row."""
     ranking = build_customer_ranking(df)
     if ranking.empty:
         st.info("No customer detail data available for selected filters.")
         return
-    top_detail = ranking.head(20).copy()
-    pair_panel_title("Customer Detail — Top 20")
+
+    pair_panel_title("Customer Detail Volume")
     st.dataframe(
-        top_detail, use_container_width=True, hide_index=True, height=720,
+        ranking,
+        use_container_width=True,
+        hide_index=True,
+        height=720,  # fixed height so all customers remain available via vertical scroll
         column_config={
             "Rank": st.column_config.NumberColumn("Rank", width="small", format="%d"),
             "Customer": st.column_config.TextColumn("Customer", width="large"),
             "Shipment Volume": st.column_config.NumberColumn("Shipment Volume", width="medium", format="%,.0f"),
         },
     )
-
-def customer_full_detail_expander(df: pd.DataFrame):
-    """Full customer ranking, hidden by default to preserve the executive layout."""
-    ranking = build_customer_ranking(df)
-    if ranking.empty:
-        return
-
-    with st.expander("View Full Customer Detail", expanded=False):
-        st.dataframe(
-            ranking,
-            use_container_width=True,
-            hide_index=True,
-            height=460,
-            column_config={
-                "Rank": st.column_config.NumberColumn(
-                    "Rank", width="small", format="%d"
-                ),
-                "Customer": st.column_config.TextColumn(
-                    "Customer", width="large"
-                ),
-                "Shipment Volume": st.column_config.NumberColumn(
-                    "Shipment Volume", width="small", format="%,.0f"
-                ),
-            },
-        )
 
 
 def chart_resolution(df: pd.DataFrame):
@@ -3829,17 +3807,15 @@ def main():
     with mode_detail_col:
         mode_detail_table(f_mode)
 
-    # Block 2 = Top 20 Customers chart (left) + matching Top 20 detail table (right).
+    # Block 2 = Top 10 Customers chart (left) + full Customer Detail Volume table (right).
     customer_chart_col, customer_detail_col = st.columns([1.15, 0.85], gap="medium")
 
     with customer_chart_col:
         chart_top_customers(f_customer_ns)
 
     with customer_detail_col:
-        customer_top20_detail_table(f_customer_ns)
+        customer_detail_volume_table(f_customer_ns)
 
-    # Full ranking remains available below without crowding the management view.
-    customer_full_detail_expander(f_customer_ns)
 
     section_title("3. Workload by PIC")
 
