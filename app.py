@@ -1,6 +1,6 @@
 # ============================================================
 # CS WORKLOAD & CAPACITY DASHBOARD
-# BUILD: V38_SECTION7_YVF_FINAL
+# BUILD: V39_SECTION7_YVF_PIE
 # BUILD: SECTION2_SAME_ROW_V6
 # Python + Streamlit + Pandas + Plotly
 # Data source: (100826)TEMPLATE_DATA FOR DASHBOARD_V1.xlsx
@@ -3488,157 +3488,85 @@ def render_cs_solution_table(df: pd.DataFrame):
 
 def chart_yvf(df: pd.DataFrame):
     """
-    YVF Promoter Effectiveness:
-    - Bars: Total YVF Bookings vs Total IFF Shipments
-    - Line: YVF Booking Ratio
-    - If Month exists in source: trend by month.
-    - Otherwise: comparison by Office, exactly matching current source structure.
+    YVF Promoter Effectiveness — donut chart.
+    Shows Total YVF Bookings as the adopted portion of Total IFF Shipments.
+
+    IMPORTANT:
+    YVF Bookings are a subset of IFF Shipments, therefore the two raw totals
+    must not be used as two independent pie slices.
+    Pie composition:
+        YVF Bookings
+        Remaining IFF Shipments = Total IFF Shipments - YVF Bookings
     """
     if df is None or df.empty:
         st.info("No YVF data available for selected filters.")
         return
 
     d = df.copy()
-    d = d[
-        (pd.to_numeric(d["YVF Booking"], errors="coerce").fillna(0) != 0)
-        | (pd.to_numeric(d["IFF Shipment"], errors="coerce").fillna(0) != 0)
-    ].copy()
+    d["YVF Booking"] = pd.to_numeric(d["YVF Booking"], errors="coerce").fillna(0)
+    d["IFF Shipment"] = pd.to_numeric(d["IFF Shipment"], errors="coerce").fillna(0)
 
+    d = d[(d["YVF Booking"] != 0) | (d["IFF Shipment"] != 0)].copy()
     if d.empty:
         st.info("No YVF data available for selected filters.")
         return
 
-    has_month = (
-        "MonthDate" in d.columns
-        and d["MonthDate"].notna().any()
-    )
+    total_yvf = float(d["YVF Booking"].sum())
+    total_iff = float(d["IFF Shipment"].sum())
+    remaining_iff = max(total_iff - total_yvf, 0.0)
+    ratio = safe_div(total_yvf, total_iff)
 
-    if has_month:
-        agg = (
-            d.groupby("MonthDate", as_index=False)
-            .agg(
-                **{
-                    "YVF Booking": ("YVF Booking", "sum"),
-                    "IFF Shipment": ("IFF Shipment", "sum"),
-                }
+    fig = go.Figure(
+        data=[
+            go.Pie(
+                labels=["YVF Bookings", "Non-YVF IFF Shipments"],
+                values=[total_yvf, remaining_iff],
+                hole=0.58,
+                sort=False,
+                direction="clockwise",
+                marker=dict(
+                    colors=[COLORS["blue"], "#D9E2EA"],
+                    line=dict(color="white", width=2),
+                ),
+                textinfo="label+percent",
+                texttemplate="<b>%{label}</b><br>%{value:,.0f} · %{percent:.1%}",
+                textposition="outside",
+                hovertemplate=(
+                    "<b>%{label}</b><br>"
+                    "Volume: %{value:,.0f}<br>"
+                    "Share: %{percent:.1%}"
+                    "<extra></extra>"
+                ),
             )
-            .sort_values("MonthDate")
-        )
-        agg["Category"] = agg["MonthDate"].dt.strftime("%b-%y")
-        chart_title = "YVF Booking Performance by Month"
-    else:
-        agg = (
-            d.groupby("Office", as_index=False)
-            .agg(
-                **{
-                    "YVF Booking": ("YVF Booking", "sum"),
-                    "IFF Shipment": ("IFF Shipment", "sum"),
-                }
-            )
-        )
-        office_order = [o for o in STANDARD_OFFICES if o in agg["Office"].tolist()]
-        agg["Office"] = pd.Categorical(
-            agg["Office"], categories=office_order, ordered=True
-        )
-        agg = agg.sort_values("Office")
-        agg["Category"] = agg["Office"].astype(str)
-        chart_title = "YVF Booking Performance by Office"
-
-    agg["YVF Booking Ratio"] = np.where(
-        agg["IFF Shipment"] > 0,
-        agg["YVF Booking"] / agg["IFF Shipment"],
-        np.nan,
-    )
-
-    fig = go.Figure()
-
-    fig.add_trace(
-        go.Bar(
-            x=agg["Category"],
-            y=agg["YVF Booking"],
-            name="YVF Bookings",
-            marker_color=COLORS["blue"],
-            text=agg["YVF Booking"],
-            texttemplate="%{text:,.0f}",
-            textposition="outside",
-            cliponaxis=False,
-            hovertemplate=(
-                "<b>%{x}</b><br>"
-                "YVF Bookings: %{y:,.0f}"
-                "<extra></extra>"
-            ),
-        )
-    )
-
-    fig.add_trace(
-        go.Bar(
-            x=agg["Category"],
-            y=agg["IFF Shipment"],
-            name="IFF Shipments",
-            marker_color="#A7B9C9",
-            text=agg["IFF Shipment"],
-            texttemplate="%{text:,.0f}",
-            textposition="outside",
-            cliponaxis=False,
-            hovertemplate=(
-                "<b>%{x}</b><br>"
-                "IFF Shipments: %{y:,.0f}"
-                "<extra></extra>"
-            ),
-        )
-    )
-
-    fig.add_trace(
-        go.Scatter(
-            x=agg["Category"],
-            y=agg["YVF Booking Ratio"],
-            name="YVF Booking Ratio",
-            mode="lines+markers+text",
-            line=dict(color=COLORS["green"], width=3),
-            marker=dict(size=7),
-            text=agg["YVF Booking Ratio"],
-            texttemplate="%{text:.1%}",
-            textposition="top center",
-            yaxis="y2",
-            hovertemplate=(
-                "<b>%{x}</b><br>"
-                "YVF Booking Ratio: %{y:.1%}"
-                "<extra></extra>"
-            ),
-        )
+        ]
     )
 
     fig.update_layout(
-        title=chart_title,
-        barmode="group",
-        yaxis=dict(
-            title="Bookings / Shipments",
-            rangemode="tozero",
+        title="YVF Booking Share of Total IFF Shipments",
+        annotations=[
+            dict(
+                text=(
+                    f"<b>{ratio:.1%}</b>"
+                    f"<br><span style='font-size:12px'>YVF Adoption</span>"
+                    f"<br><span style='font-size:11px'>{total_yvf:,.0f} / {total_iff:,.0f}</span>"
+                ),
+                x=0.5,
+                y=0.5,
+                font=dict(size=22, color=COLORS["navy"]),
+                showarrow=False,
+                align="center",
+            )
+        ],
+        showlegend=True,
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="center",
+            x=0.5,
         ),
-        yaxis2=dict(
-            title="Booking Ratio",
-            overlaying="y",
-            side="right",
-            tickformat=".0%",
-            rangemode="tozero",
-            showgrid=False,
-        ),
-    )
-
-    fig = plotly_layout(
-        fig,
-        390,
-        show_legend=True,
-        legend_position="top",
-        margin_left=58,
-        margin_right=70,
-        margin_top=72,
-        margin_bottom=44,
-    )
-    fig.update_xaxes(
-        type="category",
-        categoryorder="array",
-        categoryarray=agg["Category"].tolist(),
+        margin=dict(l=55, r=55, t=95, b=35),
+        height=390,
     )
 
     st.plotly_chart(
@@ -3646,6 +3574,7 @@ def chart_yvf(df: pd.DataFrame):
         use_container_width=True,
         config={"displayModeBar": False},
     )
+
 
 
 def render_yvf_table(df: pd.DataFrame):
