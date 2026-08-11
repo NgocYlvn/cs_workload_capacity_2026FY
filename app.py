@@ -1,6 +1,6 @@
 # ============================================================
 # CS WORKLOAD & CAPACITY DASHBOARD
-# BUILD: SECTION3_PIC_CAPACITY_V13_NOTE
+# BUILD: SECTION3_PIC_CAPACITY_V14_FORMULA_NOTE
 # BUILD: SECTION2_SAME_ROW_V6
 # Python + Streamlit + Pandas + Plotly
 # Data source: (100826)TEMPLATE_DATA FOR DASHBOARD_V1.xlsx
@@ -1419,8 +1419,8 @@ def chart_workload_by_pic(fte_df: pd.DataFrame, selected_office: str):
 
     Business display rule:
     - Standard capacity = 167.2 hours/PIC/month.
-    - PIC Workload (hrs) = CS FTE Factor × Available Standard Time / PIC.
-    - Available Standard Time / PIC = 8 hrs/day × 22 days/month × 95% efficiency = 167.2 hrs/month
+    - PIC Workload = coefficient in sheet "CS FTE" × Available Standard Time / PIC.
+    - Available Standard Time / PIC = 167.2 hours.
     - Utilization = PIC Workload / Available Standard Time / PIC = CS FTE coefficient.
     - When All Offices is selected, display ONLY offices that have at least one
       PIC with utilization > 100% (Actual FTE > 1.0).
@@ -2190,8 +2190,8 @@ def main():
     st.markdown('</div>', unsafe_allow_html=True)
 
     st.caption(
-        'PIC Workload = hệ số tại sheet "CS FTE" × Available Standard Time / PIC '
-        '(95% × 8 × 22 = 167.2 hours).'
+        '**PIC Workload (hrs) = CS FTE Factor × Available Standard Time / PIC**  \n'
+        '**Available Standard Time / PIC = 8 hrs/day × 22 days/month × 95% efficiency = 167.2 hrs/month**'
     )
 
     section_title("4. Office × Service Workload Matrix")
