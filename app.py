@@ -1,6 +1,6 @@
 # ============================================================
 # CS WORKLOAD & CAPACITY DASHBOARD
-# BUILD: V31_SECTION5_CASE_BREAKDOWN_DETAIL
+# BUILD: V32_SECTION5_DETAIL_MONTHS_WITH_DATA_ONLY
 # BUILD: SECTION2_SAME_ROW_V6
 # Python + Streamlit + Pandas + Plotly
 # Data source: (100826)TEMPLATE_DATA FOR DASHBOARD_V1.xlsx
@@ -1720,10 +1720,14 @@ def prepare_case_detail(
     )
     long["Activity Type"] = activity_type
 
+    # Keep only rows that contain real activity data.
+    # Blank cells and 0-volume months are excluded so detail tabs show only months
+    # that actually have C/A/S/E data in the corresponding source sheet.
     long = long[
         (long["Office"] != "")
         & (~long["MonthDate"].isna())
         & (long["Volume"].notna())
+        & (long["Volume"] > 0)
     ].copy()
 
     return long[base_cols].reset_index(drop=True)
@@ -1936,6 +1940,15 @@ def render_activity_detail_table(
         return
 
     d = df.copy()
+
+    # Defensive filter: detail table only shows months/rows with actual data.
+    d["Volume"] = pd.to_numeric(d["Volume"], errors="coerce")
+    d = d[d["Volume"].fillna(0) > 0].copy()
+
+    if d.empty:
+        st.info(f"No {activity_type} detail data available for selected filters.")
+        return
+
     d["Month"] = d["MonthDate"].dt.strftime("%b-%y")
 
     # Keep only useful descriptive columns.
@@ -1956,6 +1969,13 @@ def render_activity_detail_table(
     d = d.sort_values(
         [c for c in ["Office", "BU", "Code", "Month"] if c in d.columns]
     )
+
+    months_with_data = (
+        d["MonthDate"].dropna().drop_duplicates().sort_values()
+        .dt.strftime("%b-%y").tolist()
+    )
+    if months_with_data:
+        st.caption("Months with data: " + ", ".join(months_with_data))
 
     st.dataframe(
         d,
