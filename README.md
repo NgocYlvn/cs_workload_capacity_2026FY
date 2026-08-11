@@ -1,32 +1,39 @@
-# CS Workload & Capacity Dashboard
+# CS Workload & Capacity Dashboard – 7 Section Version
 
-Dashboard được thiết kế theo yêu cầu Executive/Corporate, sử dụng Python + Streamlit + Pandas + Plotly.
-
-## File cần có
-Đặt file Excel nguồn cùng thư mục với `app.py` và đổi đúng tên:
-
+## Data source
 `(100826)TEMPLATE_DATA FOR DASHBOARD_V1.xlsx`
 
-Hoặc có thể upload trực tiếp trên sidebar khi chạy app.
+## Dashboard order
+1. Office Capacity Snapshot
+2. Workload / Capacity by CS PIC
+3. Shipment Volume & Active Customers
+4. Office × Segment Workload Matrix
+5. Workload Breakdown by Service Type & Activity
+6. Control Tower Effectiveness
+7. YVF Promoter Effectiveness
 
-## Cách chạy
+`Data Quality & Reconciliation` is placed in an expander after Section 07 and is not treated as Section 08.
 
+## Filters
+Sidebar filters: Year → Month → Office, plus Reset Filters. Filters are dynamic from available source data. YVF currently has no Month field, therefore only Office can be applied to Section 07 until monthly YVF data is added.
+
+## Main business logic
+- 1 FTE capacity standard = `8 × 95% × 22 = 167.2 hours/month`.
+- Workload Hours = `BU allocation → Total Workload (min) / 60`.
+- Required FTE = `Workload Hours / 167.2`.
+- Actual FTE is sourced from `CS FTE` as decimal FTE/workload ratio; it is not headcount.
+- Capacity Hours = `Actual FTE × 167.2` per the agreed dashboard logic.
+- Utilization = `Workload Hours / Capacity Hours`.
+- BU allocation workload fields are treated as Source of Truth because the original Standard Time table is not in this workbook.
+- Missing HAN/HLC/HCM workload/FTE data is treated as a data-availability warning. Logic remains dynamic and will pick up new source rows automatically.
+
+## PIC-level note
+The workbook does not provide BU allocation workload split directly by CS PIC. Section 02 therefore derives PIC workload-equivalent hours from `CS FTE × 167.2` and clearly labels this in the dashboard instead of inventing a BU allocation PIC split.
+
+## Run
 ```bash
 pip install -r requirements.txt
 streamlit run app.py
 ```
 
-## Logic chính
-
-- Actual FTE: lấy từ sheet `CS FTE`, SUM theo Office/Month.
-- Required FTE: `Workload Hours / 167.2`.
-- Capacity Hours: `Actual FTE × 167.2`.
-- Workload Hours: `Total Workload (min) / 60` từ `BU allocation`.
-- Utilization: `Workload Hours / Capacity Hours`.
-- C/A/S/E Workload: lấy trực tiếp từ `BU allocation` làm Source of Truth.
-
-## Lưu ý
-
-- Code không hard-code riêng HAD.
-- Khi bổ sung dữ liệu HAN/HLC/HCM vào file nguồn, dashboard tự động nhận nếu cấu trúc cột giữ nguyên.
-- Nếu Excel có công thức, nên mở file bằng Excel → Calculate → Save trước khi chạy dashboard.
+Keep `app.py` and `(100826)TEMPLATE_DATA FOR DASHBOARD_V1.xlsx` in the same folder, or upload the Excel file from the Streamlit sidebar.
