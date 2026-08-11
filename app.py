@@ -3251,7 +3251,7 @@ def segment_workload_table(df: pd.DataFrame, mode_df: pd.DataFrame):
 
 
 def chart_shipment_modes(mode_df: pd.DataFrame):
-    """Balanced donut chart showing shipment-volume share by transportation mode."""
+    """Horizontal bar chart showing shipment volume and share by transportation mode."""
     if mode_df.empty:
         st.info("No shipment mode data available for selected filters.")
         return
@@ -3260,6 +3260,7 @@ def chart_shipment_modes(mode_df: pd.DataFrame):
         mode_df.groupby("Mode", as_index=False)["Volume"]
         .sum()
         .sort_values("Volume", ascending=False)
+        .reset_index(drop=True)
     )
 
     total = float(agg["Volume"].sum())
@@ -3267,37 +3268,48 @@ def chart_shipment_modes(mode_df: pd.DataFrame):
         st.info("No shipment mode data available for selected filters.")
         return
 
-    fig = go.Figure(
-        data=[
-            go.Pie(
-                labels=agg["Mode"],
-                values=agg["Volume"],
-                hole=0.58,
-                sort=False,
-                textinfo="label+percent",
-                textposition="outside",
-                textfont=dict(size=UI["axis_size"]),
-                automargin=True,
-                hovertemplate=(
-                    "<b>%{label}</b><br>"
-                    "Shipment Volume: %{value:,.0f}<br>"
-                    "Market Share: %{percent}"
-                    "<extra></extra>"
-                ),
-                marker=dict(
-                    colors=CORPORATE_PALETTE[:len(agg)],
-                    line=dict(color="#FFFFFF", width=2),
-                ),
-            )
-        ]
+    # Keep the ranking order easy to scan from top to bottom.
+    agg["Share"] = agg["Volume"] / total
+    plot_df = agg.sort_values("Volume", ascending=True).copy()
+    plot_df["Display Label"] = plot_df.apply(
+        lambda r: f"{r['Volume']:,.0f} ({r['Share']:.1%})", axis=1
     )
 
+    fig = go.Figure(
+        go.Bar(
+            x=plot_df["Volume"],
+            y=plot_df["Mode"],
+            orientation="h",
+            marker=dict(color=COLORS["blue"]),
+            text=plot_df["Display Label"],
+            textposition="outside",
+            textfont=dict(size=UI["axis_size"], color=COLORS["navy"]),
+            cliponaxis=False,
+            hovertemplate=(
+                "<b>%{y}</b><br>"
+                "Shipment Volume: %{x:,.0f}<br>"
+                "Share: %{customdata:.1%}"
+                "<extra></extra>"
+            ),
+            customdata=plot_df["Share"],
+        )
+    )
+
+    # Total is shown as a compact management cue, not as a separate KPI card.
     fig.add_annotation(
-        text=f"<b>{total:,.0f}</b><br><span style='font-size:11px'>TOTAL SHIPMENT</span>",
-        x=0.5, y=0.5,
+        x=1,
+        y=1.10,
+        xref="paper",
+        yref="paper",
+        text=f"<b>{total:,.0f}</b> TOTAL SHIPMENTS",
         showarrow=False,
-        align="center",
-        font=dict(color=COLORS["navy"], size=18),
+        xanchor="right",
+        yanchor="bottom",
+        font=dict(
+            family=UI["font_family"],
+            size=12,
+            color=COLORS["navy"],
+        ),
     )
 
     fig.update_layout(
@@ -3305,20 +3317,40 @@ def chart_shipment_modes(mode_df: pd.DataFrame):
             text="Shipment Volume by Transportation Mode",
             x=0.0,
             xanchor="left",
-            font=dict(size=14, color=COLORS["navy"]),
+            font=dict(
+                size=UI["chart_title_size"],
+                color=COLORS["navy"],
+                family=UI["font_family"],
+            ),
         ),
-        showlegend=False,
-        height=520,
-        margin=dict(l=65, r=65, t=60, b=45),
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(0,0,0,0)",
-        font=dict(family="Arial", color=COLORS["text"]),
-        uniformtext_minsize=9,
-        uniformtext_mode="show",
+        xaxis_title="Shipment Volume",
+        yaxis_title="",
+        bargap=0.26,
+    )
+
+    fig.update_yaxes(
+        categoryorder="array",
+        categoryarray=plot_df["Mode"].tolist(),
+        automargin=True,
+        tickfont=dict(size=UI["axis_size"]),
+    )
+    fig.update_xaxes(
+        automargin=True,
+        rangemode="tozero",
+        tickformat=",.0f",
+    )
+
+    fig = plotly_layout(
+        fig,
+        UI["chart_height_tall"],
+        show_legend=False,
+        margin_left=58,
+        margin_right=105,
+        margin_top=78,
+        margin_bottom=52,
     )
 
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
-
 
 def build_customer_ranking(df: pd.DataFrame) -> pd.DataFrame:
     """Aggregate and rank all customers by shipment volume for current filters."""
@@ -4245,13 +4277,13 @@ def main():
         shipment_kpi_card(
             "TOTAL SHIPMENT VOLUME",
             fmt_int(shipment_total),
-            "",
+            "Source: Shipment volume",
         )
     with sk2:
         shipment_kpi_card(
             "ACTIVE CUSTOMERS",
             fmt_int(active_customers),
-            "",
+            "Source: Shipment volume",
         )
     # Keep 2 empty columns so the two KPI cards retain the same visual width as Section 1.
     with sk3:
@@ -4260,9 +4292,9 @@ def main():
         st.empty()
 
     # Executive layout:
-    # Row 1: Donut 40% | Top 20 Customers 60%
+    # Row 1: Transportation Mode horizontal bar | Top 20 Customers horizontal bar
     # Row 2: Customer Detail full width, scrollable
-    chart_left, chart_right = st.columns([0.42, 0.58], gap="medium")
+    chart_left, chart_right = st.columns([0.48, 0.52], gap="medium")
 
     with chart_left:
         st.markdown('<div class="chart-box" style="margin-top:12px;">', unsafe_allow_html=True)
