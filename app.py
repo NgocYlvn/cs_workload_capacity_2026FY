@@ -378,10 +378,23 @@ def first_existing(df: pd.DataFrame, candidates: List[str]) -> Optional[str]:
 
 
 def weighted_period_avg(df: pd.DataFrame, value_col: str, group_col: str = "MonthDate") -> float:
-    """Average of monthly totals. Useful for HC/FTE over multi-month selections."""
-    if df.empty or value_col not in df.columns:
+    """Average of valid monthly totals only; blank future months are excluded."""
+    if df.empty or value_col not in df.columns or group_col not in df.columns:
         return 0.0
-    monthly = df.groupby(group_col, dropna=True)[value_col].sum().reset_index()
+
+    valid = df[[group_col, value_col]].copy()
+    valid[value_col] = pd.to_numeric(valid[value_col], errors="coerce")
+    valid = valid.dropna(subset=[group_col, value_col])
+
+    if valid.empty:
+        return 0.0
+
+    monthly = (
+        valid.groupby(group_col, dropna=True)[value_col]
+        .sum(min_count=1)
+        .reset_index()
+        .dropna(subset=[value_col])
+    )
     if monthly.empty:
         return 0.0
     return float(monthly[value_col].mean())
@@ -454,8 +467,10 @@ def hc_detail_card(
     """Executive HC card with equal height and two aligned detail blocks at the bottom."""
     details_html = ""
     if mng_value is not None or pic_value is not None:
-        left_val = fmt_num(mng_value or 0, 1)
-        right_val = fmt_num(pic_value or 0, 1)
+        left_decimals = 2 if "REQUIRED" in label.upper() else 0
+        right_decimals = 2 if "REQUIRED" in label.upper() else 0
+        left_val = fmt_num(mng_value or 0, left_decimals)
+        right_val = fmt_num(pic_value or 0, right_decimals)
         details_html = f"""
         <div class="hc-detail-row">
             <div class="hc-detail-item">
@@ -482,7 +497,7 @@ def hc_detail_card(
         f"""
         <div class="hc-kpi-card">
             <div class="kpi-label">{label}</div>
-            <div class="hc-kpi-total">{fmt_num(total_value, 1)}</div>
+            <div class="hc-kpi-total">{fmt_num(total_value, 2 if "REQUIRED" in label.upper() else 0)}</div>
             {status_html}
             {details_html}
         </div>
@@ -556,15 +571,33 @@ def prepare_hc(df: pd.DataFrame) -> pd.DataFrame:
         df["Total Approved HC"] = numeric_series(df.get("Approved HC MNG", 0)) + numeric_series(df.get("Approved HC PIC", 0))
     if "Total Actual HC" not in df.columns:
         df["Total Actual HC"] = numeric_series(df.get("Actual HC MNG", 0)) + numeric_series(df.get("Actual HC PIC", 0))
-    for col in [
+    hc_numeric_cols = [
         "Approved HC MNG", "Approved HC PIC", "Total Approved HC",
         "Actual HC MNG", "Actual HC PIC", "Total Actual HC",
         "Required HC MNG", "Required HC PIC", "Total Required HC",
         "HC Available Hours", "HC Actual Working Hours", "HC Utilization"
-    ]:
+    ]
+    for col in hc_numeric_cols:
         if col in df.columns:
-            df[col] = numeric_series(df[col])
-    return df.dropna(subset=["MonthDate"])
+            # IMPORTANT: keep blank Excel cells as NaN.
+            # Do not convert future blank months to 0 because that distorts averages/trends.
+            df[col] = pd.to_numeric(df[col], errors="coerce")
+
+    df = df.dropna(subset=["MonthDate"])
+
+    # Keep only HC rows that actually contain HC data.
+    hc_key_cols = [
+        c for c in [
+            "Total Approved HC", "Total Actual HC", "Total Required HC",
+            "Approved HC MNG", "Approved HC PIC",
+            "Actual HC MNG", "Actual HC PIC",
+            "Required HC MNG", "Required HC PIC"
+        ] if c in df.columns
+    ]
+    if hc_key_cols:
+        df = df.dropna(subset=hc_key_cols, how="all")
+
+    return df
 
 
 def prepare_workload(df: pd.DataFrame) -> pd.DataFrame:
@@ -837,11 +870,28 @@ def chart_office_capacity_trend(df: pd.DataFrame):
         st.info("HC trend cannot be displayed because required HC columns are missing.")
         return
 
+    trend_source = df[
+        ["MonthDate", "Total Approved HC", "Total Actual HC", "Total Required HC"]
+    ].copy()
+
+    for col in ["Total Approved HC", "Total Actual HC", "Total Required HC"]:
+        trend_source[col] = pd.to_numeric(trend_source[col], errors="coerce")
+
+    # Exclude months where all three HC values are blank.
+    trend_source = trend_source.dropna(
+        subset=["Total Approved HC", "Total Actual HC", "Total Required HC"],
+        how="all",
+    )
+
+    if trend_source.empty:
+        st.info("No HC trend data available for selected filters.")
+        return
+
     trend = (
-        df.groupby("MonthDate", as_index=False)[
+        trend_source.groupby("MonthDate", as_index=False)[
             ["Total Approved HC", "Total Actual HC", "Total Required HC"]
         ]
-        .sum()
+        .sum(min_count=1)
         .sort_values("MonthDate")
     )
     trend["Month"] = trend["MonthDate"].dt.strftime("%b-%y")
@@ -1225,8 +1275,11 @@ def main():
         )
         st.caption("Approved HC − Actual HC | Source: HC")
 
+    # KPI cards follow Month + Office filters.
+    # The line chart keeps all available months so management can see the HC trend.
+    hc_trend_data = filter_office_only(hc, office)
     st.markdown('<div class="chart-box" style="margin-top:14px;">', unsafe_allow_html=True)
-    chart_office_capacity_trend(f_hc)
+    chart_office_capacity_trend(hc_trend_data)
     st.markdown('</div>', unsafe_allow_html=True)
 
     section_title("2. Workload & Capacity Trend")
