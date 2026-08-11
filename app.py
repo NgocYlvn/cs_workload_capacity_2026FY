@@ -4063,7 +4063,7 @@ def render_cover_page() -> None:
         }}
 
         .cover-shell {{
-            min-height: calc(100vh - 4rem);
+            min-height: 66vh;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -4080,7 +4080,7 @@ def render_cover_page() -> None:
             border: 1px solid {COLORS['border']};
             border-radius: 24px;
             box-shadow: 0 18px 50px rgba(0,59,112,0.10);
-            padding: clamp(36px, 5vw, 72px);
+            padding: clamp(30px, 4vw, 58px);
             box-sizing: border-box;
         }}
 
