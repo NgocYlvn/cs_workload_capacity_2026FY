@@ -1548,7 +1548,11 @@ def plotly_layout(
             family=UI["font_family"],
             size=UI["axis_size"],
         ),
+        # Preserve an existing Plotly title when one is explicitly set.
+        # If the chart uses an external pair_panel_title(), keep Plotly title text blank
+        # to prevent some Plotly/Streamlit versions from rendering "undefined".
         title=dict(
+            text=(fig.layout.title.text or "") if getattr(fig.layout, "title", None) else "",
             font=dict(
                 size=UI["chart_title_size"],
                 color=COLORS["navy"],
@@ -3174,7 +3178,7 @@ def chart_shipment_modes(mode_df: pd.DataFrame):
         customdata=plot_df["Share"],
     ))
     fig.add_annotation(x=1, y=1.04, xref="paper", yref="paper", text=f"<b>{total:,.0f}</b> TOTAL SHIPMENTS", showarrow=False, xanchor="right", yanchor="bottom", font=dict(family=UI["font_family"], size=12, color=COLORS["navy"]))
-    fig.update_layout(title=None, xaxis_title="Shipment Volume", yaxis_title="", bargap=0.26)
+    fig.update_layout(title_text="", xaxis_title="Shipment Volume", yaxis_title="", bargap=0.26)
     fig.update_yaxes(categoryorder="array", categoryarray=plot_df["Mode"].tolist(), automargin=True, tickfont=dict(size=UI["axis_size"]))
     fig.update_xaxes(automargin=True, rangemode="tozero", tickformat=",.0f")
     fig = plotly_layout(fig, 500, show_legend=False, margin_left=58, margin_right=105, margin_top=40, margin_bottom=52)
@@ -3229,7 +3233,7 @@ def chart_top_customers(df: pd.DataFrame):
     pair_panel_title("Top 20 Customers by Shipment Volume")
     fig = px.bar(top, x="Shipment Volume", y="Customer", orientation="h", text="Shipment Volume", color_discrete_sequence=[COLORS["blue"]])
     fig.update_traces(texttemplate="%{text:,.0f}", textposition="outside", cliponaxis=False, hovertemplate="%{y}<br>Shipment Volume: %{x:,.0f}<extra></extra>")
-    fig.update_layout(title=None, yaxis_title="", xaxis_title="Shipment Volume", bargap=0.18)
+    fig.update_layout(title_text="", yaxis_title="", xaxis_title="Shipment Volume", bargap=0.18)
     fig.update_yaxes(automargin=True, tickfont=dict(size=UI["axis_size"]))
     fig.update_xaxes(automargin=True)
     fig = plotly_layout(fig, 720, show_legend=False, margin_left=155, margin_right=60, margin_top=22, margin_bottom=50)
@@ -3291,7 +3295,7 @@ def chart_resolution(df: pd.DataFrame):
     fig.add_trace(go.Bar(x=agg["Month"], y=agg["Total Abnormality"], name="Total Abnormalities", marker_color=BUSINESS_COLORS["supporting"], text=agg["Total Abnormality"], texttemplate="%{text:,.0f}", textposition="outside", cliponaxis=False))
     fig.add_trace(go.Bar(x=agg["Month"], y=agg["Resolved"], name="Resolved by CS", marker_color=BUSINESS_COLORS["actual"], text=agg["Resolved"], texttemplate="%{text:,.0f}", textposition="outside", cliponaxis=False))
     fig.add_trace(go.Scatter(x=agg["Month"], y=agg["Resolution Rate"], name="CS Resolution Rate", mode="lines+markers+text", line=dict(color=COLORS["green"], width=3), marker=dict(size=7), text=agg["Resolution Rate"], texttemplate="%{text:.1%}", textposition="top center", yaxis="y2"))
-    fig.update_layout(title=None, barmode="group", yaxis=dict(title="Cases", rangemode="tozero"), yaxis2=dict(title="Resolution Rate", overlaying="y", side="right", tickformat=".0%", range=[0, 1.08], showgrid=False))
+    fig.update_layout(title_text="", barmode="group", yaxis=dict(title="Cases", rangemode="tozero"), yaxis2=dict(title="Resolution Rate", overlaying="y", side="right", tickformat=".0%", range=[0, 1.08], showgrid=False))
     fig = plotly_layout(fig, 390, show_legend=True, legend_position="top", margin_left=58, margin_right=68, margin_top=38, margin_bottom=44)
     fig.update_xaxes(type="category", categoryorder="array", categoryarray=agg["Month"].tolist())
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
@@ -3332,7 +3336,7 @@ def chart_yvf(df: pd.DataFrame):
     total_yvf = float(d["YVF Booking"].sum()); total_iff = float(d["IFF Shipment"].sum())
     remaining_iff = max(total_iff - total_yvf, 0.0); ratio = safe_div(total_yvf, total_iff)
     fig = go.Figure(data=[go.Pie(labels=["YVF Bookings", "Non-YVF IFF Shipments"], values=[total_yvf, remaining_iff], hole=0.58, sort=False, direction="clockwise", marker=dict(colors=[BUSINESS_COLORS["actual"], COLORS["grid"]], line=dict(color="white", width=2)), textinfo="label+percent", texttemplate="<b>%{label}</b><br>%{value:,.0f} · %{percent:.1%}", textposition="outside")])
-    fig.update_layout(title=None, annotations=[dict(text=f"<b>{ratio:.1%}</b><br><span style='font-size:12px'>YVF Adoption</span><br><span style='font-size:11px'>{total_yvf:,.0f} / {total_iff:,.0f}</span>", x=0.5, y=0.5, font=dict(size=22, color=COLORS["navy"], family=UI["font_family"]), showarrow=False, align="center")])
+    fig.update_layout(title_text="", annotations=[dict(text=f"<b>{ratio:.1%}</b><br><span style='font-size:12px'>YVF Adoption</span><br><span style='font-size:11px'>{total_yvf:,.0f} / {total_iff:,.0f}</span>", x=0.5, y=0.5, font=dict(size=22, color=COLORS["navy"], family=UI["font_family"]), showarrow=False, align="center")])
     fig = plotly_layout(fig, 390, show_legend=True, legend_position="top", margin_left=44, margin_right=44, margin_top=38, margin_bottom=30)
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
