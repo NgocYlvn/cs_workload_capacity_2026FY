@@ -1,6 +1,6 @@
 # ============================================================
 # CS WORKLOAD & CAPACITY DASHBOARD
-# BUILD: SECTION3_PIC_CAPACITY_V11
+# BUILD: SECTION3_PIC_CAPACITY_V13_NOTE
 # BUILD: SECTION2_SAME_ROW_V6
 # Python + Streamlit + Pandas + Plotly
 # Data source: (100826)TEMPLATE_DATA FOR DASHBOARD_V1.xlsx
@@ -777,30 +777,61 @@ def filtered_monthly_metric(
     return float(monthly.mean())
 
 
-def hc_weighted_utilization(df: pd.DataFrame) -> float:
-    """Weighted utilization from HC, weighted by Total Actual HC."""
+def hc_capacity_utilization(df: pd.DataFrame) -> float:
+    """
+    Capacity Utilization KPI source of truth:
+    sheet HC -> column "Capacity Utilization (%)".
+
+    Single Office / Month:
+        use the source value directly.
+
+    All Offices:
+        calculate each month's overall utilization as the Actual-HC-weighted
+        average of the office source percentages, then average across selected months.
+
+    Blank future months are excluded.
+    """
     if df is None or df.empty or "HC Utilization" not in df.columns:
         return float("nan")
 
-    d = df[["MonthDate", "HC Utilization", "Total Actual HC"]].copy()
+    cols = ["MonthDate", "HC Utilization"]
+    if "Total Actual HC" in df.columns:
+        cols.append("Total Actual HC")
+
+    d = df[cols].copy()
     d["HC Utilization"] = pd.to_numeric(d["HC Utilization"], errors="coerce")
-    d["Total Actual HC"] = pd.to_numeric(d["Total Actual HC"], errors="coerce")
+    if "Total Actual HC" in d.columns:
+        d["Total Actual HC"] = pd.to_numeric(d["Total Actual HC"], errors="coerce")
+
     d = d.dropna(subset=["MonthDate", "HC Utilization"])
     if d.empty:
         return float("nan")
 
     monthly_values = []
-    for _, g in d.groupby("MonthDate"):
-        valid_weight = g["Total Actual HC"].notna() & (g["Total Actual HC"] > 0)
-        if valid_weight.any():
-            num = (g.loc[valid_weight, "HC Utilization"] * g.loc[valid_weight, "Total Actual HC"]).sum()
-            den = g.loc[valid_weight, "Total Actual HC"].sum()
-            monthly_values.append(float(num / den) if den else float("nan"))
-        else:
-            monthly_values.append(float(g["HC Utilization"].mean()))
 
-    monthly_values = [x for x in monthly_values if not pd.isna(x)]
+    for _, g in d.groupby("MonthDate"):
+        # If only one row/office for the month, this is the exact source value.
+        if len(g) == 1:
+            monthly_values.append(float(g["HC Utilization"].iloc[0]))
+            continue
+
+        # All Offices: weight by Actual HC so larger offices contribute appropriately.
+        if "Total Actual HC" in g.columns:
+            valid = g["Total Actual HC"].notna() & (g["Total Actual HC"] > 0)
+            if valid.any():
+                weighted = (
+                    g.loc[valid, "HC Utilization"]
+                    * g.loc[valid, "Total Actual HC"]
+                ).sum() / g.loc[valid, "Total Actual HC"].sum()
+                monthly_values.append(float(weighted))
+                continue
+
+        # Fallback only if HC weights are unavailable.
+        monthly_values.append(float(g["HC Utilization"].mean()))
+
+    monthly_values = [v for v in monthly_values if not pd.isna(v)]
     return float(np.mean(monthly_values)) if monthly_values else float("nan")
+
 
 
 def pic_utilization_card(util: float):
@@ -906,7 +937,10 @@ def prepare_hc(df: pd.DataFrame) -> pd.DataFrame:
         "Total Available Standard Time (95%x8x22xPIC)": "HC Available Hours",
         "Total actual Working Time (=C+A+S+E)": "HC Actual Working Hours",
         "Actual workload/PIC (hour)": "HC Actual Workload per PIC",
+        "Capacity Utilization (%)": "HC Utilization",
         "HC Utilization (%)": "HC Utilization",
+        "Overal  Workload Status": "HC Status",
+        "Overall Workload Status": "HC Status",
         "HC Status": "HC Status",
     }
     for old, new in mapping.items():
@@ -1007,8 +1041,18 @@ def prepare_fte(df: pd.DataFrame) -> pd.DataFrame:
     long["Office"] = long[office_col].map(normalize_office)
     long["CS PIC"] = long[pic_col].astype(str).str.strip()
     long["MonthDate"] = long["Month"].map(parse_month)
-    long["Actual FTE"] = numeric_series(long["Actual FTE"])
-    long = long[(long["Office"] != "") & (~long["MonthDate"].isna())]
+
+    # IMPORTANT:
+    # Keep blank future-month FTE cells as NaN.
+    # Converting blanks to 0 would dilute the average FTE when Month = All
+    # and can incorrectly hide overloaded PICs.
+    long["Actual FTE"] = pd.to_numeric(long["Actual FTE"], errors="coerce")
+
+    long = long[
+        (long["Office"] != "")
+        & (~long["MonthDate"].isna())
+        & (long["Actual FTE"].notna())
+    ]
     return long[["Office", "CS PIC", "MonthDate", "Actual FTE"]]
 
 
@@ -1375,10 +1419,13 @@ def chart_workload_by_pic(fte_df: pd.DataFrame, selected_office: str):
 
     Business display rule:
     - Standard capacity = 167.2 hours/PIC/month.
-    - Actual workload equivalent = Actual FTE × 167.2 hours.
-    - Utilization = Actual workload / Standard capacity = Actual FTE.
+    - PIC Workload = coefficient in sheet "CS FTE" × Available Standard Time / PIC.
+    - Available Standard Time / PIC = 167.2 hours.
+    - Utilization = PIC Workload / Available Standard Time / PIC = CS FTE coefficient.
     - When All Offices is selected, display ONLY offices that have at least one
       PIC with utilization > 100% (Actual FTE > 1.0).
+    - Blank future months are excluded in prepare_fte(), so Month=All does not
+      dilute PIC FTE averages.
     - When a specific Office is selected, display all PICs with data in that office.
     """
 
@@ -2089,7 +2136,9 @@ def main():
         hc_for_pic, "HC Actual Workload per PIC", "mean"
     ) if not hc_for_pic.empty else float("nan")
 
-    capacity_util = hc_weighted_utilization(hc_for_pic)
+    # IMPORTANT: Do not calculate Capacity Utilization from CS FTE.
+    # Source of truth is sheet HC -> "Capacity Utilization (%)".
+    capacity_util = hc_capacity_utilization(hc_for_pic)
 
     # Row 1: 4 compact numeric cards to avoid an overly dense 6-card row.
     p1, p2, p3, p4 = st.columns(4, gap="medium")
@@ -2132,11 +2181,18 @@ def main():
         overall_workload_status_card(capacity_util)
 
     # Chart source: CS FTE
-    # Actual workload equivalent per PIC = CS FTE × 167.2.
+    # PIC Workload = coefficient in sheet "CS FTE" × Available Standard Time / PIC.
+    # Available Standard Time / PIC = 95% × 8 × 22 = 167.2 hours.
+    # Therefore: PIC Workload = CS FTE coefficient × 167.2 hours.
     # When All Offices is selected, only overloaded PICs/offices are displayed.
     st.markdown('<div class="chart-box" style="margin-top:14px;">', unsafe_allow_html=True)
     chart_workload_by_pic(f_fte, office)
     st.markdown('</div>', unsafe_allow_html=True)
+
+    st.caption(
+        'PIC Workload = hệ số tại sheet "CS FTE" × Available Standard Time / PIC '
+        '(95% × 8 × 22 = 167.2 hours).'
+    )
 
     section_title("4. Office × Service Workload Matrix")
     st.markdown('<div class="chart-box">', unsafe_allow_html=True)
