@@ -3421,7 +3421,7 @@ def chart_top_customers(df: pd.DataFrame):
 
 
 def customer_detail_table(df: pd.DataFrame):
-    """Scrollable full customer ranking table displayed beside Top 20 chart."""
+    """Compact executive customer table: Top 20 first, full ranking on demand."""
     ranking = build_customer_ranking(df)
 
     if ranking.empty:
@@ -3441,19 +3441,44 @@ def customer_detail_table(df: pd.DataFrame):
         unsafe_allow_html=True,
     )
 
-    st.dataframe(
-        ranking,
-        use_container_width=True,
-        hide_index=True,
-        height=UI["chart_height_tall"],
-        column_config={
-            "Rank": st.column_config.NumberColumn("Rank", width=70, format="%d"),
-            "Customer": st.column_config.TextColumn("Customer", width="large"),
-            "Shipment Volume": st.column_config.NumberColumn(
-                "Shipment Volume", width=130, format="%,.0f"
-            ),
-        },
-    )
+    # Keep the management view compact. The full ranking remains available below.
+    top_detail = ranking.head(20).copy()
+
+    column_cfg = {
+        "Rank": st.column_config.NumberColumn(
+            "Rank", width="small", format="%d"
+        ),
+        "Customer": st.column_config.TextColumn(
+            "Customer", width="large"
+        ),
+        "Shipment Volume": st.column_config.NumberColumn(
+            "Shipment Volume", width="medium", format="%,.0f"
+        ),
+    }
+
+    # Center the 3-column table so it does not visually stretch across the full page.
+    _, table_col, _ = st.columns([0.06, 0.88, 0.06])
+    with table_col:
+        st.dataframe(
+            top_detail,
+            use_container_width=True,
+            hide_index=True,
+            height=430,
+            column_config=column_cfg,
+        )
+        st.caption(
+            f"Showing Top {len(top_detail):,} of {len(ranking):,} customers. "
+            "Open the section below to view the full ranking."
+        )
+
+        with st.expander("View Full Customer Detail", expanded=False):
+            st.dataframe(
+                ranking,
+                use_container_width=True,
+                hide_index=True,
+                height=460,
+                column_config=column_cfg,
+            )
 
 
 def chart_resolution(df: pd.DataFrame):
@@ -4293,7 +4318,7 @@ def main():
 
     # Executive layout:
     # Row 1: Transportation Mode horizontal bar | Top 20 Customers horizontal bar
-    # Row 2: Customer Detail full width, scrollable
+    # Row 2: Compact Top 20 Customer Detail; full ranking available in expander
     chart_left, chart_right = st.columns([0.48, 0.52], gap="medium")
 
     with chart_left:
