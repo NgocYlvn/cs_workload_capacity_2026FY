@@ -1,6 +1,6 @@
 # ============================================================
 # CS WORKLOAD & CAPACITY DASHBOARD
-# BUILD: SECTION3_PIC_CAPACITY_V14_FORMULA_NOTE
+# BUILD: V16_EXECUTIVE_UI_STANDARDIZED
 # BUILD: SECTION2_SAME_ROW_V6
 # Python + Streamlit + Pandas + Plotly
 # Data source: (100826)TEMPLATE_DATA FOR DASHBOARD_V1.xlsx
@@ -9,6 +9,7 @@
 from __future__ import annotations
 
 import re
+import hashlib
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Tuple
 
@@ -59,6 +60,39 @@ COLORS = {
     "muted": "#64748B",
     "border": "#D9E2EC",
 }
+
+
+# ============================================================
+# SHARED EXECUTIVE UI CONSTANTS
+# UI only — no business logic / calculation changes
+# ============================================================
+
+UI = {
+    "font_family": "Arial, 'Segoe UI', Inter, sans-serif",
+    "title_size": 30,
+    "section_title_size": 19,
+    "chart_title_size": 17,
+    "kpi_value_size": 32,
+    "kpi_label_size": 13,
+    "body_size": 12,
+    "axis_size": 11,
+    "note_size": 11,
+    "radius": 12,
+    "card_padding": 16,
+    "section_gap": 18,
+    "chart_height": 360,
+    "chart_height_tall": 500,
+}
+
+CORPORATE_PALETTE = [
+    COLORS["blue"],
+    COLORS["navy"],
+    COLORS["amber"],
+    COLORS["green"],
+    "#6B8EAD",
+    "#A7B9C9",
+    COLORS["red"],
+]
 
 SHEET_NAMES = {
     "hc": "HC",
@@ -467,6 +501,274 @@ st.markdown(
         border-radius: 10px 10px 0 0;
         border: 1px solid {COLORS['border']};
         padding: 8px 16px;
+    }}
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+# ============================================================
+# EXECUTIVE / CORPORATE UI OVERRIDES
+# Shared styling layer only — business logic remains unchanged
+# ============================================================
+
+st.markdown(
+    f"""
+    <style>
+    :root {{
+        --font-main: {UI['font_family']};
+        --navy: {COLORS['navy']};
+        --blue: {COLORS['blue']};
+        --orange: {COLORS['amber']};
+        --green: {COLORS['green']};
+        --red: {COLORS['red']};
+        --text: {COLORS['text']};
+        --muted: #667085;
+        --border: #D8E1EA;
+        --surface: #FFFFFF;
+        --background: #F6F8FA;
+        --radius: {UI['radius']}px;
+    }}
+
+    html, body, [class*="css"], .stApp,
+    button, input, textarea, select {{
+        font-family: var(--font-main) !important;
+    }}
+
+    .stApp {{
+        background: var(--background);
+        color: var(--text);
+    }}
+
+    .block-container {{
+        max-width: 1680px;
+        padding-top: 1.35rem !important;
+        padding-left: 1.45rem !important;
+        padding-right: 1.45rem !important;
+        padding-bottom: 2rem !important;
+    }}
+
+    /* Header */
+    .main-header {{
+        border-radius: var(--radius);
+        padding: 16px 20px;
+        margin: 0 0 14px 0 !important;
+        border: 1px solid var(--border);
+        border-left: 5px solid var(--blue);
+        box-shadow: 0 1px 4px rgba(16, 24, 40, 0.05);
+    }}
+
+    .main-title {{
+        font-size: {UI['title_size']}px !important;
+        line-height: 1.15 !important;
+        font-weight: 700 !important;
+        letter-spacing: -0.015em !important;
+        color: var(--navy) !important;
+    }}
+
+    .subtitle {{
+        font-size: {UI['body_size']}px !important;
+        line-height: 1.45 !important;
+        color: var(--muted) !important;
+        margin-top: 3px !important;
+    }}
+
+    /* Section titles */
+    .section-title {{
+        font-size: {UI['section_title_size']}px !important;
+        line-height: 1.25 !important;
+        font-weight: 700 !important;
+        color: var(--navy) !important;
+        margin: 20px 0 10px 0 !important;
+        padding: 0 0 0 10px !important;
+        border-left: 4px solid var(--orange) !important;
+    }}
+
+    /* Shared card language */
+    .kpi-card,
+    .hc-kpi-card,
+    .shipment-kpi-card,
+    .pic-kpi-card,
+    .pic-status-card,
+    .workload-status-panel,
+    .chart-box {{
+        background: var(--surface) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: var(--radius) !important;
+        box-shadow: 0 1px 4px rgba(16, 24, 40, 0.045) !important;
+        box-sizing: border-box !important;
+    }}
+
+    .kpi-card,
+    .hc-kpi-card,
+    .shipment-kpi-card,
+    .pic-kpi-card {{
+        padding: {UI['card_padding']}px !important;
+    }}
+
+    /* KPI labels */
+    .kpi-label,
+    .shipment-kpi-label,
+    .pic-kpi-label {{
+        color: #5F6B7A !important;
+        font-size: {UI['kpi_label_size']}px !important;
+        line-height: 1.25 !important;
+        font-weight: 600 !important;
+        letter-spacing: 0.025em !important;
+        text-transform: uppercase !important;
+        margin-bottom: 7px !important;
+    }}
+
+    /* KPI values */
+    .kpi-value,
+    .hc-kpi-total,
+    .shipment-kpi-value,
+    .pic-kpi-value,
+    .pic-status-value {{
+        color: var(--navy) !important;
+        font-size: {UI['kpi_value_size']}px !important;
+        line-height: 1.05 !important;
+        font-weight: 700 !important;
+        letter-spacing: -0.02em !important;
+    }}
+
+    /* Notes / formulas / sources */
+    .kpi-note,
+    .shipment-kpi-note,
+    .pic-kpi-note,
+    .hc-variance-formula,
+    [data-testid="stCaptionContainer"],
+    [data-testid="stCaptionContainer"] p {{
+        color: var(--muted) !important;
+        font-size: {UI['note_size']}px !important;
+        line-height: 1.4 !important;
+        font-weight: 400 !important;
+    }}
+
+    /* HC cards — equal structure */
+    .hc-kpi-card {{
+        height: 184px !important;
+        min-height: 184px !important;
+    }}
+
+    .hc-detail-row {{
+        margin-top: auto !important;
+        padding-top: 11px !important;
+        gap: 10px !important;
+        border-top: 1px solid #E7ECF1 !important;
+    }}
+
+    .hc-detail-label {{
+        color: var(--muted) !important;
+        font-size: 11px !important;
+        font-weight: 600 !important;
+    }}
+
+    .hc-detail-value {{
+        color: var(--navy) !important;
+        font-size: 19px !important;
+        font-weight: 700 !important;
+    }}
+
+    /* Shipment KPI cards */
+    .shipment-kpi-card {{
+        height: 154px !important;
+        min-height: 154px !important;
+    }}
+
+    /* PIC KPI cards */
+    .pic-kpi-card {{
+        height: 140px !important;
+        min-height: 140px !important;
+    }}
+
+    .pic-status-card,
+    .workload-status-panel {{
+        height: 104px !important;
+        min-height: 104px !important;
+        padding: 14px 16px !important;
+    }}
+
+    .pic-status-title {{
+        font-size: 12px !important;
+        font-weight: 600 !important;
+        color: var(--muted) !important;
+        letter-spacing: 0.025em !important;
+    }}
+
+    /* Chart wrappers */
+    .chart-box {{
+        padding: 10px 12px !important;
+        overflow: visible !important;
+    }}
+
+    /* Status */
+    .status-badge {{
+        font-size: 11px !important;
+        font-weight: 700 !important;
+        padding: 4px 9px !important;
+    }}
+
+    /* Streamlit dataframe */
+    [data-testid="stDataFrame"] {{
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        overflow: hidden;
+    }}
+
+    /* Vertical spacing between Streamlit blocks */
+    div[data-testid="stVerticalBlock"] > div {{
+        gap: 0.35rem;
+    }}
+
+    /* Sidebar remains high contrast */
+    section[data-testid="stSidebar"] {{
+        background: var(--navy) !important;
+    }}
+
+    section[data-testid="stSidebar"] h1,
+    section[data-testid="stSidebar"] h2,
+    section[data-testid="stSidebar"] h3,
+    section[data-testid="stSidebar"] label,
+    section[data-testid="stSidebar"] p,
+    section[data-testid="stSidebar"] small,
+    section[data-testid="stSidebar"] [data-testid="stCaptionContainer"],
+    section[data-testid="stSidebar"] [data-testid="stCaptionContainer"] p {{
+        color: #FFFFFF !important;
+        opacity: 1 !important;
+    }}
+
+    section[data-testid="stSidebar"] div[data-baseweb="select"] > div,
+    section[data-testid="stSidebar"] [data-testid="stFileUploader"] section {{
+        background: #FFFFFF !important;
+        border: 1px solid #C9D5E1 !important;
+        border-radius: 8px !important;
+    }}
+
+    /* Laptop responsive behavior */
+    @media (max-width: 1200px) {{
+        .block-container {{
+            padding-left: 1rem !important;
+            padding-right: 1rem !important;
+        }}
+
+        .main-title {{
+            font-size: 28px !important;
+        }}
+
+        .kpi-value,
+        .hc-kpi-total,
+        .shipment-kpi-value,
+        .pic-kpi-value,
+        .pic-status-value {{
+            font-size: 28px !important;
+        }}
+
+        .kpi-label,
+        .shipment-kpi-label,
+        .pic-kpi-label {{
+            font-size: 12px !important;
+        }}
     }}
     </style>
     """,
@@ -887,18 +1189,63 @@ def section_title(text: str):
     st.markdown(f'<div class="section-title">{text}</div>', unsafe_allow_html=True)
 
 
-def plotly_layout(fig: go.Figure, height: int = 340) -> go.Figure:
+def plotly_layout(fig: go.Figure, height: int = UI["chart_height"]) -> go.Figure:
+    """Shared Executive/Corporate Plotly theme — UI only."""
     fig.update_layout(
         height=height,
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
-        font=dict(color=COLORS["text"], family="Arial"),
-        title=dict(font=dict(size=15, color=COLORS["navy"]), x=0.0),
-        margin=dict(l=10, r=10, t=45, b=20),
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+        font=dict(
+            color=COLORS["text"],
+            family="Arial",
+            size=UI["axis_size"],
+        ),
+        title=dict(
+            font=dict(
+                size=UI["chart_title_size"],
+                color=COLORS["navy"],
+                family="Arial",
+            ),
+            x=0.0,
+            xanchor="left",
+            y=0.98,
+            yanchor="top",
+            pad=dict(t=0, b=8),
+        ),
+        margin=dict(l=48, r=30, t=58, b=42),
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1,
+            font=dict(size=UI["axis_size"]),
+            bgcolor="rgba(0,0,0,0)",
+        ),
+        hoverlabel=dict(
+            font=dict(family="Arial", size=UI["axis_size"]),
+            bgcolor="#FFFFFF",
+            bordercolor=COLORS["border"],
+        ),
     )
-    fig.update_xaxes(gridcolor="#EDF2F7", zeroline=False)
-    fig.update_yaxes(gridcolor="#EDF2F7", zeroline=False)
+    fig.update_xaxes(
+        gridcolor="#E9EEF3",
+        gridwidth=0.7,
+        zeroline=False,
+        showline=False,
+        tickfont=dict(size=UI["axis_size"]),
+        title_font=dict(size=UI["axis_size"], color="#5F6B7A"),
+        automargin=True,
+    )
+    fig.update_yaxes(
+        gridcolor="#E9EEF3",
+        gridwidth=0.7,
+        zeroline=False,
+        showline=False,
+        tickfont=dict(size=UI["axis_size"]),
+        title_font=dict(size=UI["axis_size"], color="#5F6B7A"),
+        automargin=True,
+    )
     return fig
 
 # ============================================================
@@ -906,13 +1253,43 @@ def plotly_layout(fig: go.Figure, height: int = 340) -> go.Figure:
 # ============================================================
 
 @st.cache_data(show_spinner=False)
-def load_data(path: str) -> Dict[str, pd.DataFrame]:
-    data = {}
+def load_data(path: str, cache_token: str = "") -> Dict[str, pd.DataFrame]:
+    """
+    FAST workbook loader:
+    - Open Excel workbook only ONCE with pd.ExcelFile.
+    - Parse required sheets from the same workbook handle.
+    - cache_token invalidates Streamlit cache when file content changes.
+    """
+    data: Dict[str, pd.DataFrame] = {}
+
+    try:
+        xls = pd.ExcelFile(path, engine="openpyxl")
+        available_sheets = set(xls.sheet_names)
+    except Exception:
+        return {key: pd.DataFrame() for key in SHEET_NAMES}
+
     for key, sheet in SHEET_NAMES.items():
-        data[key] = read_sheet(path, sheet, header=1)
+        if sheet not in available_sheets:
+            data[key] = pd.DataFrame()
+            continue
+
+        try:
+            df = pd.read_excel(
+                xls,
+                sheet_name=sheet,
+                header=1,
+            )
+            df.columns = [clean_col(c) for c in df.columns]
+            df = df.dropna(how="all")
+            data[key] = df
+        except Exception:
+            data[key] = pd.DataFrame()
+
     return data
 
 
+
+@st.cache_data(show_spinner=False)
 def prepare_hc(df: pd.DataFrame) -> pd.DataFrame:
     if df.empty:
         return pd.DataFrame(columns=["Office", "MonthDate"])
@@ -982,6 +1359,7 @@ def prepare_hc(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+@st.cache_data(show_spinner=False)
 def prepare_workload(df: pd.DataFrame) -> pd.DataFrame:
     if df.empty:
         return pd.DataFrame(columns=["Office", "MonthDate", "Segment"])
@@ -1026,6 +1404,7 @@ def prepare_workload(df: pd.DataFrame) -> pd.DataFrame:
     return df.dropna(subset=["MonthDate"])
 
 
+@st.cache_data(show_spinner=False)
 def prepare_fte(df: pd.DataFrame) -> pd.DataFrame:
     if df.empty:
         return pd.DataFrame(columns=["Office", "CS PIC", "MonthDate", "Actual FTE"])
@@ -1056,6 +1435,7 @@ def prepare_fte(df: pd.DataFrame) -> pd.DataFrame:
     return long[["Office", "CS PIC", "MonthDate", "Actual FTE"]]
 
 
+@st.cache_data(show_spinner=False)
 def prepare_shipment(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
     if df.empty:
         return (
@@ -1118,6 +1498,7 @@ def prepare_shipment(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
     return df, mode_long
 
 
+@st.cache_data(show_spinner=False)
 def prepare_customer(data: Dict[str, pd.DataFrame]) -> pd.DataFrame:
     # Prefer office-specific customer sheets to avoid double count with Customer Volume-N&S.
     office_sheets = ["customer_had", "customer_han", "customer_hlc", "customer_hcm"]
@@ -1133,6 +1514,7 @@ def prepare_customer(data: Dict[str, pd.DataFrame]) -> pd.DataFrame:
     return combined
 
 
+@st.cache_data(show_spinner=False)
 def customer_wide_to_long(df: pd.DataFrame) -> pd.DataFrame:
     if df.empty:
         return pd.DataFrame(columns=["Office", "Customer", "MonthDate", "Volume"])
@@ -1153,6 +1535,7 @@ def customer_wide_to_long(df: pd.DataFrame) -> pd.DataFrame:
     return long[["Office", "Customer", "MonthDate", "Volume"]]
 
 
+@st.cache_data(show_spinner=False)
 def prepare_resolution(df: pd.DataFrame) -> pd.DataFrame:
     if df.empty:
         return pd.DataFrame(columns=["Office", "MonthDate", "Total Abnormality", "Resolved", "Resolution Rate"])
@@ -1175,6 +1558,7 @@ def prepare_resolution(df: pd.DataFrame) -> pd.DataFrame:
     return df.dropna(subset=["MonthDate"])
 
 
+@st.cache_data(show_spinner=False)
 def prepare_yvf(df: pd.DataFrame) -> pd.DataFrame:
     if df.empty:
         return pd.DataFrame(columns=["Office", "YVF Booking", "IFF Shipment", "YVF Booking Ratio"])
@@ -1394,10 +1778,10 @@ def chart_office_capacity_trend(df: pd.DataFrame):
             y=trend["Total Required HC"],
             mode="lines+markers",
             name="Required HC",
-            line=dict(color=COLORS["red"], width=3, dash="dot"),
+            line=dict(color=COLORS["amber"], width=3, dash="dot"),
             marker=dict(size=7),
             fill="tonexty",
-            fillcolor="rgba(230, 0, 18, 0.12)",
+            fillcolor="rgba(245, 158, 11, 0.14)",
             hovertemplate="%{x}<br>Required HC: %{y:,.2f}<extra></extra>",
         )
     )
@@ -1407,7 +1791,7 @@ def chart_office_capacity_trend(df: pd.DataFrame):
         yaxis_title="HC",
         hovermode="x unified",
     )
-    fig = plotly_layout(fig, 360)
+    fig = plotly_layout(fig, UI["chart_height"])
     fig.update_xaxes(type="category")
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
@@ -1560,7 +1944,7 @@ def chart_workload_by_pic(fte_df: pd.DataFrame, selected_office: str):
         title_text="",
         gridcolor="rgba(0,0,0,0)",
         automargin=True,
-        tickfont=dict(size=11),
+        tickfont=dict(size=UI["axis_size"]),
     )
 
     st.plotly_chart(
@@ -1591,7 +1975,7 @@ def chart_workload_by_service(df: pd.DataFrame):
         title="Workload Breakdown by Service Type",
     )
     fig.update_traces(textposition="outside", cliponaxis=False, hovertemplate="%{y}<br>%{x:,.1f} hours<extra></extra>")
-    fig = plotly_layout(fig, 380)
+    fig = plotly_layout(fig, UI["chart_height"])
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
 
@@ -1619,7 +2003,7 @@ def chart_workload_composition(df: pd.DataFrame):
             hovertemplate=f"{row['Activity']}: {row['Hours']:,.1f} hrs ({row['Share']*100:.1f}%)<extra></extra>",
         ))
     fig.update_layout(barmode="stack", xaxis_tickformat=".0%", title="Workload Composition – C/A/S/E")
-    fig = plotly_layout(fig, 280)
+    fig = plotly_layout(fig, 300)
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
 
@@ -1639,7 +2023,7 @@ def chart_workload_trend(df: pd.DataFrame):
         title="Monthly Workload Trend",
     )
     fig.update_traces(hovertemplate="%{fullData.name}<br>%{x}: %{y:,.1f} hrs<extra></extra>")
-    fig = plotly_layout(fig, 340)
+    fig = plotly_layout(fig, UI["chart_height"])
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
 
@@ -1657,7 +2041,7 @@ def chart_capacity_trend(workload: pd.DataFrame, fte: pd.DataFrame):
     fig.add_trace(go.Bar(x=cap["Month"], y=cap["Capacity Hours"], name="Capacity Hours", marker_color=COLORS["light_blue"]))
     fig.add_trace(go.Scatter(x=cap["Month"], y=cap["Workload Hours"], name="Workload Hours", mode="lines+markers", line=dict(color=COLORS["red"], width=3)))
     fig.update_layout(title="Workload vs Capacity Trend", yaxis_title="Hours")
-    fig = plotly_layout(fig, 340)
+    fig = plotly_layout(fig, UI["chart_height"])
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
 
@@ -1708,7 +2092,7 @@ def chart_shipment_modes(mode_df: pd.DataFrame):
                 sort=False,
                 textinfo="label+percent",
                 textposition="outside",
-                textfont=dict(size=11),
+                textfont=dict(size=UI["axis_size"]),
                 automargin=True,
                 hovertemplate=(
                     "<b>%{label}</b><br>"
@@ -1716,7 +2100,10 @@ def chart_shipment_modes(mode_df: pd.DataFrame):
                     "Market Share: %{percent}"
                     "<extra></extra>"
                 ),
-                marker=dict(line=dict(color="#FFFFFF", width=2)),
+                marker=dict(
+                    colors=CORPORATE_PALETTE[:len(agg)],
+                    line=dict(color="#FFFFFF", width=2),
+                ),
             )
         ]
     )
@@ -1796,16 +2183,16 @@ def chart_top_customers(df: pd.DataFrame):
         ),
         yaxis_title="",
         xaxis_title="Shipment Volume",
-        height=500,
+        height=UI["chart_height_tall"],
         margin=dict(l=140, r=55, t=60, b=55),
         bargap=0.18,
     )
     fig.update_yaxes(
         automargin=True,
-        tickfont=dict(size=11),
+        tickfont=dict(size=UI["axis_size"]),
     )
     fig.update_xaxes(automargin=True)
-    fig = plotly_layout(fig, 500)
+    fig = plotly_layout(fig, UI["chart_height_tall"])
     fig.update_layout(margin=dict(l=140, r=55, t=60, b=55))
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
@@ -1831,16 +2218,11 @@ def customer_detail_table(df: pd.DataFrame):
         unsafe_allow_html=True,
     )
 
-    styled = ranking.style.format({
-        "Rank": "{:.0f}",
-        "Shipment Volume": "{:,.0f}",
-    })
-
     st.dataframe(
-        styled,
+        ranking,
         use_container_width=True,
         hide_index=True,
-        height=500,
+        height=UI["chart_height_tall"],
         column_config={
             "Rank": st.column_config.NumberColumn("Rank", width=70, format="%d"),
             "Customer": st.column_config.TextColumn("Customer", width="large"),
@@ -1867,7 +2249,7 @@ def chart_resolution(df: pd.DataFrame):
         yaxis=dict(title="Abnormalities"),
         yaxis2=dict(title="Resolution Rate", overlaying="y", side="right", tickformat=".0%", range=[0, max(1, agg["Resolution Rate"].max() * 1.1)]),
     )
-    fig = plotly_layout(fig, 340)
+    fig = plotly_layout(fig, UI["chart_height"])
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
 
@@ -1880,7 +2262,7 @@ def chart_yvf(df: pd.DataFrame):
     fig = px.bar(d, x="Office", y="YVF Booking Ratio", text="YVF Booking Ratio", color_discrete_sequence=[COLORS["blue"]], title="YVF Promoter Effectiveness – Booking Ratio")
     fig.update_traces(texttemplate="%{text:.1%}", textposition="outside", cliponaxis=False, hovertemplate="%{x}: %{y:.1%}<extra></extra>")
     fig.update_yaxes(tickformat=".0%")
-    fig = plotly_layout(fig, 340)
+    fig = plotly_layout(fig, UI["chart_height"])
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
 # ============================================================
@@ -1889,23 +2271,30 @@ def chart_yvf(df: pd.DataFrame):
 
 
 def main():
-    # Load default workbook first. The upload control is intentionally placed
-    # below the Month / Office filters in the sidebar.
+    # Load default workbook first. Upload remains below Month / Office filters.
     file_path = Path(DEFAULT_FILE)
+    cache_token = ""
 
-    # If a file was uploaded in this session, use it.
-    uploaded_cached = st.session_state.get("dashboard_uploaded_file")
-    if uploaded_cached:
-        tmp_path = Path("_uploaded_dashboard_data.xlsx")
-        tmp_path.write_bytes(uploaded_cached)
-        file_path = tmp_path
+    # If an uploaded workbook was already saved in this session, reuse the saved file.
+    uploaded_path_cached = st.session_state.get("dashboard_uploaded_path")
+    uploaded_sig_cached = st.session_state.get("dashboard_uploaded_sig")
 
-    if not Path(file_path).exists():
-        st.error(f"Không tìm thấy file dữ liệu: {file_path}. Vui lòng đặt file Excel cùng thư mục app.py hoặc upload file ở Sidebar.")
+    if uploaded_path_cached and Path(uploaded_path_cached).exists():
+        file_path = Path(uploaded_path_cached)
+        cache_token = uploaded_sig_cached or ""
+    elif file_path.exists():
+        stat = file_path.stat()
+        cache_token = f"{stat.st_mtime_ns}_{stat.st_size}"
+
+    if not file_path.exists():
+        st.error(
+            f"Không tìm thấy file dữ liệu: {file_path}. "
+            "Vui lòng đặt file Excel cùng thư mục app.py hoặc upload file ở Sidebar."
+        )
         st.stop()
 
     with st.spinner("Loading and validating Excel data..."):
-        raw = load_data(str(file_path))
+        raw = load_data(str(file_path), cache_token)
         hc = prepare_hc(raw["hc"])
         workload = prepare_workload(raw["workload"])
         fte = prepare_fte(raw["fte"])
@@ -1944,8 +2333,14 @@ def main():
         )
         if uploaded is not None:
             new_bytes = uploaded.getvalue()
-            if st.session_state.get("dashboard_uploaded_file") != new_bytes:
-                st.session_state["dashboard_uploaded_file"] = new_bytes
+            new_sig = hashlib.md5(new_bytes).hexdigest()
+
+            if st.session_state.get("dashboard_uploaded_sig") != new_sig:
+                tmp_path = Path("_uploaded_dashboard_data.xlsx")
+                tmp_path.write_bytes(new_bytes)
+
+                st.session_state["dashboard_uploaded_sig"] = new_sig
+                st.session_state["dashboard_uploaded_path"] = str(tmp_path)
                 st.rerun()
         st.caption(f"Source file: {Path(file_path).name}")
         st.caption("Capacity standard: 167.2 hrs/FTE/month")
@@ -2189,9 +2584,19 @@ def main():
     chart_workload_by_pic(f_fte, office)
     st.markdown('</div>', unsafe_allow_html=True)
 
-    st.caption(
-        '**PIC Workload (hrs) = CS FTE Factor × Available Standard Time / PIC**  \n'
-        '**Available Standard Time / PIC = 8 hrs/day × 22 days/month × 95% efficiency = 167.2 hrs/month**'
+    st.markdown(
+        """
+        <div style="
+            margin-top:6px;
+            color:#667085;
+            font-size:11px;
+            line-height:1.45;
+            font-family:Arial, 'Segoe UI', Inter, sans-serif;">
+            <b>PIC Workload (hrs)</b> = CS FTE Factor × Available Standard Time / PIC<br>
+            <b>Available Standard Time / PIC</b> = 8 hrs/day × 22 days/month × 95% efficiency = 167.2 hrs/month
+        </div>
+        """,
+        unsafe_allow_html=True,
     )
 
     section_title("4. Office × Service Workload Matrix")
