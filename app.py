@@ -1,6 +1,6 @@
 # ============================================================
 # CS WORKLOAD & CAPACITY DASHBOARD
-# BUILD: V33_FIX_SECTION5_DETAIL_MONTH_KEYERROR
+# BUILD: V35_SECTION5_DETAIL_COLUMN_ORDER
 # BUILD: SECTION2_SAME_ROW_V6
 # Python + Streamlit + Pandas + Plotly
 # Data source: (100826)TEMPLATE_DATA FOR DASHBOARD_V1.xlsx
@@ -1951,8 +1951,10 @@ def render_activity_detail_table(
 
     d["Month"] = d["MonthDate"].dt.strftime("%b-%y")
 
-    # Keep only useful descriptive columns.
-    preferred = ["Office", "Code", "BU", "Criteria", "Detail", "Month", "Volume"]
+    # Keep a consistent business column order across all C / A / S / E detail tabs.
+    # Primary order requested: Office → Month → Code → Volume.
+    # Any additional E-specific descriptive fields are appended afterward.
+    preferred = ["Office", "Month", "Code", "Volume", "BU", "Criteria", "Detail"]
     cols = [c for c in preferred if c in d.columns]
 
     # Drop descriptive columns that are completely blank.
@@ -1979,16 +1981,25 @@ def render_activity_detail_table(
     if months_with_data:
         st.caption("Months with data: " + ", ".join(months_with_data))
 
+    # Compact detail table: keep the four operational fields narrow and balanced.
+    compact_config = {
+        "Office": st.column_config.TextColumn("Office", width="small"),
+        "Month": st.column_config.TextColumn("Month", width="small"),
+        "Code": st.column_config.TextColumn("Code", width="medium"),
+        "BU": st.column_config.TextColumn("BU", width="small"),
+        "Criteria": st.column_config.TextColumn("Criteria", width="medium"),
+        "Detail": st.column_config.TextColumn("Detail", width="large"),
+        "Volume": st.column_config.NumberColumn(
+            "Volume", format="%,.0f", width="small"
+        ),
+    }
+
     st.dataframe(
         d,
-        use_container_width=True,
+        use_container_width=False,
         hide_index=True,
         height=min(420, max(160, 38 + len(d) * 34)),
-        column_config={
-            "Volume": st.column_config.NumberColumn(
-                "Volume", format="%,.0f", width="small"
-            )
-        },
+        column_config={c: compact_config[c] for c in d.columns if c in compact_config},
     )
 
 
