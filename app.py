@@ -191,6 +191,12 @@ st.markdown(
         display: flex;
         flex-direction: column;
         justify-content: flex-start;
+        text-align: center;
+    }}
+
+    .hc-kpi-card .kpi-label {{
+        text-align: center;
+        width: 100%;
     }}
 
     .hc-kpi-total {{
@@ -198,8 +204,10 @@ st.markdown(
         font-size: 32px;
         line-height: 1.05;
         font-weight: 850;
-        margin-top: 8px;
+        margin-top: 12px;
         margin-bottom: 8px;
+        text-align: center;
+        width: 100%;
     }}
 
     .hc-detail-row {{
