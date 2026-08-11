@@ -390,6 +390,17 @@ st.markdown(
         min-height: 30px;
     }}
 
+    .pic-kpi-unit {{
+        color: #7A8699;
+        font-size: 10px;
+        line-height: 1.2;
+        font-weight: 600;
+        margin-top: 4px;
+        margin-bottom: 8px;
+        text-align: center;
+        letter-spacing: 0.02em;
+    }}
+
     .pic-kpi-value {{
         color: #003B70;
         font-size: 27px;
@@ -1322,12 +1333,14 @@ def shipment_kpi_card(label: str, value: str, note: str = ""):
 
 
 
-def pic_kpi_card(label: str, value: str, note: str = ""):
-    """Compact numeric KPI card for Workload by PIC."""
+def pic_kpi_card(label: str, value: str, note: str = "", unit: str = ""):
+    """Compact numeric KPI card: Title -> Unit -> Value -> Note."""
+    unit_html = f'<div class="pic-kpi-unit">Unit: {unit}</div>' if unit else ""
     st.markdown(
         f"""
         <div class="pic-kpi-card">
             <div class="pic-kpi-label">{label}</div>
+            {unit_html}
             <div class="pic-kpi-value">{value}</div>
             <div class="pic-kpi-note">{note}</div>
         </div>
@@ -3927,35 +3940,39 @@ def main():
     with p1:
         pic_kpi_card(
             available_time_label,
-            fmt_num(total_available, 1, " hrs") if not pd.isna(total_available) else "N/A",
+            fmt_num(total_available, 1) if not pd.isna(total_available) else "N/A",
             "Actual HC – PIC × 167.2 hrs"
             if not is_all_months
             else "Average monthly PIC capacity",
+            unit="Hours",
         )
 
     with p2:
         pic_kpi_card(
             "AVAILABLE STANDARD TIME / PIC",
-            fmt_num(standard_per_pic, 1, " hrs"),
+            fmt_num(standard_per_pic, 1),
             "95% × 8 × 22",
+            unit="Hours / PIC",
         )
 
     with p3:
         pic_kpi_card(
             actual_working_time_label,
-            fmt_num(total_actual_working, 1, " hrs")
+            fmt_num(total_actual_working, 1)
             if not pd.isna(total_actual_working) else "N/A",
             "Actual workload/PIC × Actual HC – PIC"
             if not is_all_months
             else "Average monthly PIC workload",
+            unit="Hours",
         )
 
     with p4:
         pic_kpi_card(
             "ACTUAL WORKLOAD / PIC",
-            fmt_num(actual_workload_per_pic, 1, " hrs")
+            fmt_num(actual_workload_per_pic, 1)
             if not pd.isna(actual_workload_per_pic) else "N/A",
             "Total PIC workload ÷ Actual HC – PIC",
+            unit="Hours / PIC",
         )
 
     # Row 2: Utilization + Status as wider management indicators.
