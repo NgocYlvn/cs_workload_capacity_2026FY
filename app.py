@@ -1243,7 +1243,7 @@ def chart_service_matrix(df: pd.DataFrame):
 
 
 def chart_shipment_modes(mode_df: pd.DataFrame):
-    """Horizontal bar showing shipment volume and market share by transportation mode."""
+    """Donut chart showing shipment-volume share by transportation mode."""
     if mode_df.empty:
         st.info("No shipment mode data available for selected filters.")
         return
@@ -1255,40 +1255,64 @@ def chart_shipment_modes(mode_df: pd.DataFrame):
     )
 
     total = float(agg["Volume"].sum())
-    agg["Share"] = agg["Volume"].apply(lambda x: safe_div(x, total))
-    agg["Label"] = agg.apply(
-        lambda r: f"{r['Volume']:,.0f} | {r['Share']*100:.1f}%",
-        axis=1,
+    if total <= 0:
+        st.info("No shipment mode data available for selected filters.")
+        return
+
+    agg["Share"] = agg["Volume"] / total
+
+    fig = go.Figure(
+        data=[
+            go.Pie(
+                labels=agg["Mode"],
+                values=agg["Volume"],
+                hole=0.62,
+                sort=False,
+                textinfo="label+percent",
+                textposition="outside",
+                hovertemplate=(
+                    "<b>%{label}</b><br>"
+                    "Shipment Volume: %{value:,.0f}<br>"
+                    "Market Share: %{percent}"
+                    "<extra></extra>"
+                ),
+                marker=dict(line=dict(color="#FFFFFF", width=2)),
+            )
+        ]
     )
 
-    # Reverse for horizontal bar so largest category appears at the top.
-    plot_df = agg.sort_values("Volume", ascending=True)
+    # Total shipment volume shown in the center of the donut.
+    fig.add_annotation(
+        text=f"<b>{total:,.0f}</b><br><span style='font-size:12px'>TOTAL SHIPMENT</span>",
+        x=0.5,
+        y=0.5,
+        showarrow=False,
+        align="center",
+        font=dict(color=COLORS["navy"], size=20),
+    )
 
-    fig = px.bar(
-        plot_df,
-        x="Volume",
-        y="Mode",
-        orientation="h",
-        text="Label",
-        color_discrete_sequence=[COLORS["blue"]],
-        title="Shipment Volume by Transportation Mode",
-    )
-    fig.update_traces(
-        textposition="outside",
-        cliponaxis=False,
-        hovertemplate=(
-            "%{y}<br>"
-            "Shipment Volume: %{x:,.0f}<br>"
-            "Market Share: %{customdata[0]:.1%}"
-            "<extra></extra>"
-        ),
-        customdata=plot_df[["Share"]].to_numpy(),
-    )
     fig.update_layout(
-        xaxis_title="Shipment Volume",
-        yaxis_title="",
+        title=dict(
+            text="Shipment Volume by Transportation Mode",
+            x=0.0,
+            xanchor="left",
+        ),
+        showlegend=True,
+        legend=dict(
+            orientation="v",
+            yanchor="middle",
+            y=0.5,
+            xanchor="left",
+            x=1.02,
+            title="",
+        ),
+        margin=dict(l=40, r=180, t=65, b=35),
+        height=440,
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        font=dict(family="Arial", color=COLORS["text"]),
     )
-    fig = plotly_layout(fig, 360)
+
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
 
