@@ -1,6 +1,6 @@
 # ============================================================
 # CS WORKLOAD & CAPACITY DASHBOARD
-# BUILD: V45_SHIPMENT_VOLUME_PRESENTATION
+# BUILD: V46_FIX_SHIPMENT_VOLUME_SOURCE_COLUMNS
 # BUILD: SECTION2_SAME_ROW_V6
 # Python + Streamlit + Pandas + Plotly
 # Data source: (100826)TEMPLATE_DATA FOR DASHBOARD_V1.xlsx
@@ -3366,31 +3366,32 @@ def chart_shipment_modes(df: pd.DataFrame):
         return
 
     d = df.copy()
-    d["Shipment Volume"] = pd.to_numeric(
-        d["Shipment Volume"], errors="coerce"
+    # Source field from prepare_shipment_data(): "Volume"
+    d["Volume"] = pd.to_numeric(
+        d["Volume"], errors="coerce"
     ).fillna(0)
 
-    d = d[d["Shipment Volume"] > 0].copy()
+    d = d[d["Volume"] > 0].copy()
     if d.empty:
         st.info("No shipment volume data available for selected filters.")
         return
 
     agg = (
-        d.groupby("Mode", as_index=False)["Shipment Volume"]
+        d.groupby("Mode", as_index=False)["Volume"]
         .sum()
-        .sort_values("Shipment Volume", ascending=True)
+        .sort_values("Volume", ascending=True)
     )
 
-    total = float(agg["Shipment Volume"].sum())
+    total = float(agg["Volume"].sum())
     agg["Share"] = np.where(
         total > 0,
-        agg["Shipment Volume"] / total,
+        agg["Volume"] / total,
         0,
     )
 
     fig = go.Figure(
         go.Bar(
-            x=agg["Shipment Volume"],
+            x=agg["Volume"],
             y=agg["Mode"],
             orientation="h",
             marker_color=BUSINESS_COLORS["actual"],
@@ -3398,7 +3399,7 @@ def chart_shipment_modes(df: pd.DataFrame):
             text=[
                 f"{v:,.0f}  |  {s:.1%}"
                 for v, s in zip(
-                    agg["Shipment Volume"],
+                    agg["Volume"],
                     agg["Share"],
                 )
             ],
@@ -3450,16 +3451,17 @@ def chart_top_customers(df: pd.DataFrame):
         return
 
     d = df.copy()
-    d["Shipment Volume"] = pd.to_numeric(
-        d["Shipment Volume"], errors="coerce"
+    # Source field from customer-volume preparation: "Volume"
+    d["Volume"] = pd.to_numeric(
+        d["Volume"], errors="coerce"
     ).fillna(0)
 
     top = (
-        d.groupby("Customer", as_index=False)["Shipment Volume"]
+        d.groupby("Customer", as_index=False)["Volume"]
         .sum()
-        .sort_values("Shipment Volume", ascending=False)
+        .sort_values("Volume", ascending=False)
         .head(10)
-        .sort_values("Shipment Volume", ascending=True)
+        .sort_values("Volume", ascending=True)
     )
 
     if top.empty:
@@ -3468,11 +3470,11 @@ def chart_top_customers(df: pd.DataFrame):
 
     fig = go.Figure(
         go.Bar(
-            x=top["Shipment Volume"],
+            x=top["Volume"],
             y=top["Customer"],
             orientation="h",
             marker_color=BUSINESS_COLORS["actual"],
-            text=top["Shipment Volume"],
+            text=top["Volume"],
             texttemplate="%{text:,.0f}",
             textposition="outside",
             cliponaxis=False,
