@@ -4101,25 +4101,64 @@ def main():
         else 0.0
     )
 
-    # Compact Section 4 header: KPI only; descriptive text removed.
-    seg_kpi, seg_space = st.columns([0.24, 0.76], gap="medium")
-    with seg_kpi:
-        kpi_card(
-            "TOTAL WORKLOAD HOURS",
-            fmt_num(segment_total_hours, 1, " hrs"),
-            "Source: BU allocation",
-        )
+    # Executive layout requested:
+    # Row 1 = KPI card (left) + Workload by Segment chart (right)
+    # Row 2 = Segment Workload Summary full width
+    seg_kpi, seg_chart = st.columns([0.24, 0.76], gap="medium")
 
-    # Balanced visual row.
-    # IMPORTANT: do not wrap Streamlit widgets with raw HTML <div> tags.
-    # Streamlit renders widgets outside the HTML element, which creates empty white boxes.
-    seg_chart, seg_table = st.columns([0.44, 0.56], gap="medium")
+    with seg_kpi:
+        # Tall KPI card to visually align with the chart height.
+        st.markdown(
+            f"""
+            <div style="
+                height:390px;
+                min-height:390px;
+                box-sizing:border-box;
+                display:flex;
+                flex-direction:column;
+                justify-content:center;
+                align-items:center;
+                text-align:center;
+                background:#FFFFFF;
+                border:1px solid #D8E1EA;
+                border-radius:12px;
+                box-shadow:0 1px 4px rgba(16,24,40,0.045);
+                padding:18px;">
+                <div style="
+                    color:#5F6B7A;
+                    font-size:13px;
+                    line-height:1.25;
+                    font-weight:600;
+                    letter-spacing:0.025em;
+                    text-transform:uppercase;
+                    margin-bottom:14px;">
+                    TOTAL WORKLOAD HOURS
+                </div>
+                <div style="
+                    color:#003B70;
+                    font-size:32px;
+                    line-height:1.05;
+                    font-weight:700;
+                    letter-spacing:-0.02em;
+                    margin-bottom:10px;">
+                    {fmt_num(segment_total_hours, 1, " hrs")}
+                </div>
+                <div style="
+                    color:#667085;
+                    font-size:11px;
+                    line-height:1.4;">
+                    Source: BU allocation
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
     with seg_chart:
         chart_service_matrix(f_workload, f_mode)
 
-    with seg_table:
-        segment_workload_table(f_workload, f_mode)
+    # Full-width detail table below the KPI + chart row.
+    segment_workload_table(f_workload, f_mode)
 
     st.markdown(
         """
