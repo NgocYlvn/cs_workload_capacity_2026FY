@@ -3152,7 +3152,7 @@ def chart_service_matrix(
     plot_df["x"] = [flower_positions[i][0] for i in range(len(plot_df))]
     plot_df["y"] = [flower_positions[i][1] for i in range(len(plot_df))]
     max_share = float(plot_df["Workload Share"].max())
-    plot_df["Bubble Size"] = 58 + (plot_df["Workload Share"] / max_share) * 82 if max_share > 0 else 74
+    plot_df["Bubble Size"] = 52 + (plot_df["Workload Share"] / max_share) * 74 if max_share > 0 else 68
     segment_color_map = {svc: CORPORATE_PALETTE[i % len(CORPORATE_PALETTE)] for i, svc in enumerate(SERVICE_ORDER)}
 
     fig = go.Figure()
@@ -3169,7 +3169,7 @@ def chart_service_matrix(
             showlegend=False,
         ))
 
-    fig = plotly_layout(fig, 315, show_legend=False, margin_left=26, margin_right=26, margin_top=14, margin_bottom=14)
+    fig = plotly_layout(fig, 340, show_legend=False, margin_left=24, margin_right=24, margin_top=16, margin_bottom=16)
     fig.update_layout(title=dict(text=""))
     fig.update_xaxes(
         visible=False, showgrid=False, zeroline=False, showticklabels=False,
@@ -4114,59 +4114,112 @@ def main():
         else 0.0
     )
 
-    # Executive full-width layout:
-    # Row 1 = compact horizontal KPI
-    # Row 2 = Workload by Segment chart full width
-    # Row 3 = Segment Workload Summary full width
-    st.markdown(
-        f"""
-        <div style="
-            min-height:88px;
-            box-sizing:border-box;
-            display:flex;
-            align-items:center;
-            justify-content:space-between;
-            background:#FFFFFF;
-            border:1px solid #D8E1EA;
-            border-radius:12px;
-            box-shadow:0 1px 4px rgba(16,24,40,0.045);
-            padding:14px 24px;
-            margin-bottom:10px;">
-            <div style="display:flex;flex-direction:column;gap:5px;">
+    # Executive one-row layout:
+    # Left = compact Segment Summary panel
+    # Right = Workload by Segment chart
+    # Detail table remains full width below.
+    if not segment_summary.empty:
+        _seg_rank = segment_summary.sort_values(
+            "Workload Share", ascending=False
+        ).reset_index(drop=True)
+        top_segment = str(_seg_rank.iloc[0]["Segment"])
+        top_share = float(_seg_rank.iloc[0]["Workload Share"])
+    else:
+        top_segment = "N/A"
+        top_share = 0.0
+
+    seg_summary_col, seg_chart_col = st.columns([0.32, 0.68], gap="medium")
+
+    with seg_summary_col:
+        st.markdown(
+            f"""
+            <div style="
+                height:340px;
+                min-height:340px;
+                box-sizing:border-box;
+                display:flex;
+                flex-direction:column;
+                justify-content:center;
+                background:#FFFFFF;
+                border:1px solid #D8E1EA;
+                border-radius:12px;
+                box-shadow:0 1px 4px rgba(16,24,40,0.045);
+                padding:24px 26px;">
+
                 <div style="
-                    color:#5F6B7A;
-                    font-size:13px;
+                    color:#003B70;
+                    font-size:17px;
+                    line-height:1.2;
+                    font-weight:700;
+                    margin-bottom:26px;">
+                    Segment Summary
+                </div>
+
+                <div style="
+                    color:#667085;
+                    font-size:12px;
                     line-height:1.25;
                     font-weight:600;
                     letter-spacing:0.025em;
                     text-transform:uppercase;">
                     TOTAL WORKLOAD HOURS
                 </div>
+
+                <div style="
+                    color:#003B70;
+                    font-size:34px;
+                    line-height:1.05;
+                    font-weight:700;
+                    letter-spacing:-0.02em;
+                    margin-top:8px;">
+                    {fmt_num(segment_total_hours, 1)}
+                </div>
+
                 <div style="
                     color:#667085;
                     font-size:11px;
-                    line-height:1.4;">
+                    margin-top:6px;">
+                    Unit: Hours
+                </div>
+
+                <div style="
+                    height:1px;
+                    background:#E6ECF2;
+                    margin:24px 0 18px 0;">
+                </div>
+
+                <div style="
+                    display:flex;
+                    justify-content:space-between;
+                    align-items:center;
+                    margin-bottom:12px;">
+                    <span style="color:#667085;font-size:12px;">Top Segment</span>
+                    <span style="color:#003B70;font-size:14px;font-weight:700;">{top_segment}</span>
+                </div>
+
+                <div style="
+                    display:flex;
+                    justify-content:space-between;
+                    align-items:center;">
+                    <span style="color:#667085;font-size:12px;">Highest Workload Share</span>
+                    <span style="color:#003B70;font-size:14px;font-weight:700;">{top_share:.1f}%</span>
+                </div>
+
+                <div style="
+                    color:#98A2B3;
+                    font-size:10px;
+                    margin-top:22px;">
                     Source: BU allocation
                 </div>
             </div>
-            <div style="
-                color:#003B70;
-                font-size:30px;
-                line-height:1;
-                font-weight:700;
-                letter-spacing:-0.02em;
-                white-space:nowrap;">
-                {fmt_num(segment_total_hours, 1, " hrs")}
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+            """,
+            unsafe_allow_html=True,
+        )
 
-    # Full-width chart.
-    chart_service_matrix(f_workload, f_mode)
+    with seg_chart_col:
+        chart_service_matrix(f_workload, f_mode)
 
-    # Full-width detail table.
+    # Full-width detail table below the executive row.
     segment_workload_table(f_workload, f_mode)
 
     st.markdown(
