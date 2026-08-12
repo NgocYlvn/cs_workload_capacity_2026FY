@@ -2197,7 +2197,7 @@ def chart_case_allocation(df: pd.DataFrame):
         fig.add_trace(go.Bar(y=plot_df["Segment"], x=plot_df[col], name=label, orientation="h", marker_color=color,
             customdata=np.column_stack([plot_df["Total Workload (min)"], plot_df["Ratio"]]),
             hovertemplate=f"<b>{label}</b><br>Segment: %{{y}}<br>Workload: %{{x:,.0f}} min<br>Segment Total: %{{customdata[0]:,.0f}} min<br>Share of Total: %{{customdata[1]:.1%}}<extra></extra>"))
-    fig.update_layout(barmode="stack", title=None, xaxis_title="Workload (min)", yaxis_title="")
+    fig.update_layout(barmode="stack", title=dict(text=""), xaxis_title="Workload (min)", yaxis_title="")
     fig = plotly_layout(fig, 390, show_legend=True, legend_position="top", margin_left=50, margin_right=35, margin_top=38, margin_bottom=48)
     fig.update_xaxes(rangemode="tozero")
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
@@ -3152,7 +3152,7 @@ def chart_service_matrix(
         ))
 
     fig = plotly_layout(fig, 390, show_legend=False, margin_left=20, margin_right=20, margin_top=18, margin_bottom=18)
-    fig.update_layout(title=None)
+    fig.update_layout(title=dict(text=""))
     fig.update_xaxes(visible=False, showgrid=False, zeroline=False, showticklabels=False, title_text="", range=[-2.8, 2.8], fixedrange=True)
     fig.update_yaxes(visible=False, showgrid=False, zeroline=False, showticklabels=False, title_text="", range=[-2.55, 2.65], scaleanchor="x", scaleratio=1, fixedrange=True)
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
