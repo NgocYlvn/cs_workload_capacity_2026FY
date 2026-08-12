@@ -3888,41 +3888,44 @@ def main():
     )
     active_customers = calculate_active_customers(f_shipment)
 
-    # Two equal KPI cards similar to Section 1.
+    # KPI order requested:
+    # 1) Active Customers
+    # 2) Total Shipment Volume
+    # Keep 2 empty columns so KPI widths remain consistent with Section 1.
     sk1, sk2, sk3, sk4 = st.columns(4, gap="medium")
     with sk1:
-        shipment_kpi_card(
-            "TOTAL SHIPMENT VOLUME",
-            fmt_int(shipment_total),
-            "",
-        )
-    with sk2:
         shipment_kpi_card(
             "ACTIVE CUSTOMERS",
             fmt_int(active_customers),
             "",
         )
-    # Keep 2 empty columns so the two KPI cards retain the same visual width as Section 1.
+    with sk2:
+        shipment_kpi_card(
+            "TOTAL SHIPMENT VOLUME",
+            fmt_int(shipment_total),
+            "",
+        )
     with sk3:
         st.empty()
     with sk4:
         st.empty()
 
-    # Executive paired layout:
-    # Block 1 = Transportation Mode chart (left) + matching detail table (right).
-    mode_chart_col, mode_detail_col = st.columns([1.25, 0.75], gap="medium")
+    # Row 1: both charts on the same row.
+    # Customer chart gets slightly more width because customer names are longer.
+    mode_chart_col, customer_chart_col = st.columns([0.48, 0.52], gap="medium")
 
     with mode_chart_col:
         chart_shipment_modes(f_mode)
 
-    with mode_detail_col:
-        mode_detail_table(f_mode)
-
-    # Block 2 = Top 10 Customers chart (left) + full Customer Detail Volume table (right).
-    customer_chart_col, customer_detail_col = st.columns([1.15, 0.85], gap="medium")
-
     with customer_chart_col:
         chart_top_customers(f_customer_ns)
+
+    # Row 2: both detail tables on the same row.
+    # Customer detail gets more width for long customer names.
+    mode_detail_col, customer_detail_col = st.columns([0.42, 0.58], gap="medium")
+
+    with mode_detail_col:
+        mode_detail_table(f_mode)
 
     with customer_detail_col:
         customer_detail_volume_table(f_customer_ns)
