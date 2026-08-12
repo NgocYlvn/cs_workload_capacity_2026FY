@@ -3138,14 +3138,21 @@ def chart_service_matrix(
     plot_df = seg[seg["Allocation Time (h)"] > 0].copy()
     plot_df = plot_df.sort_values("Workload Share", ascending=False).reset_index(drop=True)
     flower_positions = [
-        (0.00, 0.00), (-1.55, 0.30), (1.55, 0.30), (-0.85, 1.35),
-        (0.85, 1.35), (-0.75, -1.30), (0.75, -1.30), (0.00, 2.20),
-        (0.00, -2.20), (2.25, -0.75),
+        (0.00, 0.00),    # largest / center
+        (-2.05, 0.15),   # left
+        (2.05, 0.15),    # right
+        (-1.35, 1.75),   # upper-left
+        (1.35, 1.75),    # upper-right
+        (-1.35, -1.75),  # lower-left
+        (1.35, -1.75),   # lower-right
+        (0.00, 2.65),
+        (0.00, -2.65),
+        (2.75, -1.20),
     ]
     plot_df["x"] = [flower_positions[i][0] for i in range(len(plot_df))]
     plot_df["y"] = [flower_positions[i][1] for i in range(len(plot_df))]
     max_share = float(plot_df["Workload Share"].max())
-    plot_df["Bubble Size"] = 54 + (plot_df["Workload Share"] / max_share) * 76 if max_share > 0 else 70
+    plot_df["Bubble Size"] = 46 + (plot_df["Workload Share"] / max_share) * 66 if max_share > 0 else 64
     segment_color_map = {svc: CORPORATE_PALETTE[i % len(CORPORATE_PALETTE)] for i, svc in enumerate(SERVICE_ORDER)}
 
     fig = go.Figure()
@@ -3162,10 +3169,16 @@ def chart_service_matrix(
             showlegend=False,
         ))
 
-    fig = plotly_layout(fig, 390, show_legend=False, margin_left=20, margin_right=20, margin_top=18, margin_bottom=18)
+    fig = plotly_layout(fig, 420, show_legend=False, margin_left=28, margin_right=28, margin_top=22, margin_bottom=22)
     fig.update_layout(title=dict(text=""))
-    fig.update_xaxes(visible=False, showgrid=False, zeroline=False, showticklabels=False, title_text="", range=[-2.8, 2.8], fixedrange=True)
-    fig.update_yaxes(visible=False, showgrid=False, zeroline=False, showticklabels=False, title_text="", range=[-2.55, 2.65], scaleanchor="x", scaleratio=1, fixedrange=True)
+    fig.update_xaxes(
+        visible=False, showgrid=False, zeroline=False, showticklabels=False,
+        title_text="", range=[-3.35, 3.35], fixedrange=True
+    )
+    fig.update_yaxes(
+        visible=False, showgrid=False, zeroline=False, showticklabels=False,
+        title_text="", range=[-3.10, 3.10], scaleanchor="x", scaleratio=1, fixedrange=True
+    )
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
 def segment_workload_table(df: pd.DataFrame, mode_df: pd.DataFrame):
@@ -4104,15 +4117,15 @@ def main():
     # Executive layout requested:
     # Row 1 = KPI card (left) + Workload by Segment chart (right)
     # Row 2 = Segment Workload Summary full width
-    seg_kpi, seg_chart = st.columns([0.24, 0.76], gap="medium")
+    seg_kpi, seg_chart = st.columns([0.28, 0.72], gap="medium")
 
     with seg_kpi:
         # Tall KPI card to visually align with the chart height.
         st.markdown(
             f"""
             <div style="
-                height:390px;
-                min-height:390px;
+                height:420px;
+                min-height:420px;
                 box-sizing:border-box;
                 display:flex;
                 flex-direction:column;
