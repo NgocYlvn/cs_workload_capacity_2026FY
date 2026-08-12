@@ -2629,7 +2629,7 @@ def chart_office_capacity_trend(df: pd.DataFrame):
             y=trend["Total Required HC"],
             mode="lines+markers",
             name="Required HC",
-            line=dict(color=BUSINESS_COLORS["required"], width=3, dash="dot"),
+            line=dict(color=BUSINESS_COLORS["required"], width=3, dash="solid",),
             marker=dict(size=7),
             fill="tonexty",
             fillcolor="rgba(245, 158, 11, 0.14)",
@@ -3254,8 +3254,8 @@ def chart_top_customers(df: pd.DataFrame):
         st.info("No customer volume data available for selected filters.")
         return
     ranking = build_customer_ranking(df)
-    top = ranking.head(10).sort_values("Shipment Volume", ascending=True)
-    pair_panel_title("Top 10 Customers by Shipment Volume")
+    top = ranking.head(20).sort_values("Shipment Volume", ascending=True)
+    pair_panel_title("Top 20 Customers by Shipment Volume")
     fig = px.bar(top, x="Shipment Volume", y="Customer", orientation="h", text="Shipment Volume", color_discrete_sequence=[COLORS["blue"]])
     fig.update_traces(texttemplate="%{text:,.0f}", textposition="outside", cliponaxis=False, hovertemplate="%{y}<br>Shipment Volume: %{x:,.0f}<extra></extra>")
     fig.update_layout(title_text="", yaxis_title="", xaxis_title="Shipment Volume", bargap=0.18)
@@ -3265,7 +3265,7 @@ def chart_top_customers(df: pd.DataFrame):
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
 def customer_detail_volume_table(df: pd.DataFrame):
-    """Full customer ranking paired with the Top 10 chart; scrollable and no TOTAL row."""
+    """Full customer ranking paired with the Top 20 chart; scrollable and no TOTAL row."""
     ranking = build_customer_ranking(df)
     if ranking.empty:
         st.info("No customer detail data available for selected filters.")
@@ -3805,7 +3805,7 @@ def main():
     required_mng = weighted_period_avg(f_hc, "Required HC MNG") if not f_hc.empty else 0.0
     required_pic = weighted_period_avg(f_hc, "Required HC PIC") if not f_hc.empty else 0.0
 
-    hc_variance = approved_hc - actual_hc
+    hc_variance = required_hc - actual_hc
     if hc_variance > 0.05:
         variance_status = ("VACANCY GAP", COLORS["amber"], "#FEF3C7")
     elif hc_variance < -0.05:
@@ -3843,7 +3843,7 @@ def main():
         hc_variance_card(
             "HC VARIANCE",
             hc_variance,
-            "Approved HC − Actual HC",
+            "Required HC − Actual HC",
             variance_status[0],
             variance_status[1],
             variance_status[2],
