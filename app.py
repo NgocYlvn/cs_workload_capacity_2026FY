@@ -3133,7 +3133,6 @@ def chart_service_matrix(
         st.info("No segment workload data available for selected filters.")
         return
 
-    pair_panel_title("Workload by Segment")
 
     plot_df = seg[seg["Allocation Time (h)"] > 0].copy()
     plot_df = plot_df.sort_values("Workload Share", ascending=False).reset_index(drop=True)
@@ -3169,7 +3168,7 @@ def chart_service_matrix(
             showlegend=False,
         ))
 
-    fig = plotly_layout(fig, 340, show_legend=False, margin_left=24, margin_right=24, margin_top=16, margin_bottom=16)
+    fig = plotly_layout(fig, 340, show_legend=False, margin_left=24, margin_right=24, margin_top=8, margin_bottom=8)
     fig.update_layout(title=dict(text=""))
     fig.update_xaxes(
         visible=False, showgrid=False, zeroline=False, showticklabels=False,
