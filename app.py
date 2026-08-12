@@ -4204,13 +4204,13 @@ def main():
             kpi_card(
                 "TOTAL ABNORMALITIES",
                 fmt_int(total_abn),
-                "Source: CS Resolutions Rate",
+                "",
             )
         with cs2:
             kpi_card(
                 "RESOLVED BY CS",
                 fmt_int(resolved),
-                "Cases resolved by CS",
+                "",
             )
         with cs3:
             kpi_card(
