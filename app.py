@@ -3169,11 +3169,11 @@ def chart_service_matrix(
             showlegend=False,
         ))
 
-    fig = plotly_layout(fig, 420, show_legend=False, margin_left=28, margin_right=28, margin_top=22, margin_bottom=22)
+    fig = plotly_layout(fig, 360, show_legend=False, margin_left=32, margin_right=32, margin_top=18, margin_bottom=18)
     fig.update_layout(title=dict(text=""))
     fig.update_xaxes(
         visible=False, showgrid=False, zeroline=False, showticklabels=False,
-        title_text="", range=[-3.35, 3.35], fixedrange=True
+        title_text="", range=[-2.95, 2.95], fixedrange=True
     )
     fig.update_yaxes(
         visible=False, showgrid=False, zeroline=False, showticklabels=False,
@@ -4114,47 +4114,33 @@ def main():
         else 0.0
     )
 
-    # Executive layout requested:
-    # Row 1 = KPI card (left) + Workload by Segment chart (right)
-    # Row 2 = Segment Workload Summary full width
-    seg_kpi, seg_chart = st.columns([0.28, 0.72], gap="medium")
-
-    with seg_kpi:
-        # Tall KPI card to visually align with the chart height.
-        st.markdown(
-            f"""
-            <div style="
-                height:420px;
-                min-height:420px;
-                box-sizing:border-box;
-                display:flex;
-                flex-direction:column;
-                justify-content:center;
-                align-items:center;
-                text-align:center;
-                background:#FFFFFF;
-                border:1px solid #D8E1EA;
-                border-radius:12px;
-                box-shadow:0 1px 4px rgba(16,24,40,0.045);
-                padding:18px;">
+    # Executive full-width layout:
+    # Row 1 = compact horizontal KPI
+    # Row 2 = Workload by Segment chart full width
+    # Row 3 = Segment Workload Summary full width
+    st.markdown(
+        f"""
+        <div style="
+            min-height:112px;
+            box-sizing:border-box;
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            background:#FFFFFF;
+            border:1px solid #D8E1EA;
+            border-radius:12px;
+            box-shadow:0 1px 4px rgba(16,24,40,0.045);
+            padding:18px 28px;
+            margin-bottom:14px;">
+            <div style="display:flex;flex-direction:column;gap:5px;">
                 <div style="
                     color:#5F6B7A;
                     font-size:13px;
                     line-height:1.25;
                     font-weight:600;
                     letter-spacing:0.025em;
-                    text-transform:uppercase;
-                    margin-bottom:14px;">
+                    text-transform:uppercase;">
                     TOTAL WORKLOAD HOURS
-                </div>
-                <div style="
-                    color:#003B70;
-                    font-size:32px;
-                    line-height:1.05;
-                    font-weight:700;
-                    letter-spacing:-0.02em;
-                    margin-bottom:10px;">
-                    {fmt_num(segment_total_hours, 1, " hrs")}
                 </div>
                 <div style="
                     color:#667085;
@@ -4163,14 +4149,24 @@ def main():
                     Source: BU allocation
                 </div>
             </div>
-            """,
-            unsafe_allow_html=True,
-        )
+            <div style="
+                color:#003B70;
+                font-size:32px;
+                line-height:1;
+                font-weight:700;
+                letter-spacing:-0.02em;
+                white-space:nowrap;">
+                {fmt_num(segment_total_hours, 1, " hrs")}
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
-    with seg_chart:
-        chart_service_matrix(f_workload, f_mode)
+    # Full-width chart.
+    chart_service_matrix(f_workload, f_mode)
 
-    # Full-width detail table below the KPI + chart row.
+    # Full-width detail table.
     segment_workload_table(f_workload, f_mode)
 
     st.markdown(
