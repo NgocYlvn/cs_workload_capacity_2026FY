@@ -3383,7 +3383,7 @@ def render_cover_page() -> None:
         }}
 
         .cover-shell {{
-            min-height: 66vh;
+            min-height: 58vh;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -3446,24 +3446,57 @@ def render_cover_page() -> None:
             line-height: 1.55;
             max-width: 830px;
             margin-top: 20px;
-            margin-bottom: 28px;
+            margin-bottom: 22px;
         }}
 
-        .cover-scope {{
-            display: flex;
-            flex-wrap: wrap;
+        .cover-contents-label {{
+            color: {COLORS['muted']};
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.07em;
+            text-transform: uppercase;
+            margin: 0 0 10px 1px;
+        }}
+
+        .cover-module-grid {{
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
             gap: 10px;
-            margin: 0 0 30px 0;
+            margin: 0 0 24px 0;
         }}
 
-        .cover-pill {{
-            color: {COLORS['navy']};
-            background: rgba(255,255,255,0.82);
+        .cover-module {{
+            min-height: 76px;
+            display: flex;
+            align-items: center;
+            gap: 11px;
+            padding: 12px 13px;
+            box-sizing: border-box;
+            background: rgba(255,255,255,0.86);
             border: 1px solid {COLORS['border']};
-            border-radius: 10px;
-            padding: 9px 13px;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(16,24,40,0.025);
+        }}
+
+        .cover-module-number {{
+            flex: 0 0 31px;
+            width: 31px;
+            height: 31px;
+            border-radius: 9px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: {COLORS['light_blue']};
+            color: {COLORS['navy']};
+            font-size: 13px;
+            font-weight: 800;
+        }}
+
+        .cover-module-title {{
+            color: {COLORS['navy']};
             font-size: 12px;
-            font-weight: 650;
+            line-height: 1.3;
+            font-weight: 700;
         }}
 
         .cover-divider {{
@@ -3507,9 +3540,17 @@ def render_cover_page() -> None:
             transform: translateY(-1px);
         }}
 
+        @media (max-width: 1100px) {{
+            .cover-module-grid {{ grid-template-columns: repeat(2, minmax(0, 1fr)); }}
+        }}
+
         @media (max-width: 900px) {{
             .cover-card {{ padding: 34px 26px; border-radius: 18px; }}
             .cover-footer {{ flex-direction: column; align-items: flex-start; }}
+        }}
+
+        @media (max-width: 620px) {{
+            .cover-module-grid {{ grid-template-columns: 1fr; }}
         }}
         </style>
         """,
@@ -3527,12 +3568,36 @@ def render_cover_page() -> None:
                     Executive dashboard for workforce capacity, workload allocation,
                     shipment volume and productivity visibility.
                 </div>
-                <div class="cover-scope">
-                    <span class="cover-pill">Capacity</span>
-                    <span class="cover-pill">Workload</span>
-                    <span class="cover-pill">Shipment Volume</span>
-                    <span class="cover-pill">Productivity</span>
-                    <span class="cover-pill">Office Performance</span>
+                <div class="cover-contents-label">Dashboard Contents</div>
+                <div class="cover-module-grid">
+                    <div class="cover-module">
+                        <div class="cover-module-number">1</div>
+                        <div class="cover-module-title">Office Capacity Snapshot</div>
+                    </div>
+                    <div class="cover-module">
+                        <div class="cover-module-number">2</div>
+                        <div class="cover-module-title">Shipment Volume</div>
+                    </div>
+                    <div class="cover-module">
+                        <div class="cover-module-number">3</div>
+                        <div class="cover-module-title">Workload by PIC</div>
+                    </div>
+                    <div class="cover-module">
+                        <div class="cover-module-number">4</div>
+                        <div class="cover-module-title">Workload by Segment</div>
+                    </div>
+                    <div class="cover-module">
+                        <div class="cover-module-number">5</div>
+                        <div class="cover-module-title">Workload Breakdown by Service Type and Activity</div>
+                    </div>
+                    <div class="cover-module">
+                        <div class="cover-module-number">6</div>
+                        <div class="cover-module-title">CS Solution</div>
+                    </div>
+                    <div class="cover-module">
+                        <div class="cover-module-number">7</div>
+                        <div class="cover-module-title">YVF Promoter Effectiveness</div>
+                    </div>
                 </div>
                 <div class="cover-divider"></div>
                 <div class="cover-footer">
