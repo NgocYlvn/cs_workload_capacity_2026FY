@@ -2211,21 +2211,16 @@ def render_workload_breakdown_table(df: pd.DataFrame):
         return
     pair_panel_title("Workload Breakdown Detail")
     display = summary.copy()
-
-    # Ratio in summary is stored as a decimal ratio (e.g. 0.0798 = 7.98%).
-    # Convert to percentage-point value for display so %.1f%% renders correctly.
-    display["Ratio"] = pd.to_numeric(display["Ratio"], errors="coerce") * 100
-
     st.dataframe(
         display, use_container_width=True, hide_index=True, height=390,
         column_config={
-            "Segment": st.column_config.TextColumn("Segment", width=65),
-            "Core Service (min)": st.column_config.NumberColumn("Core Service (min)", format="%,.0f", width=115),
-            "Ancillary Service (min)": st.column_config.NumberColumn("Ancillary Service (min)", format="%,.0f", width=125),
-            "Supporting Activity (min)": st.column_config.NumberColumn("Supporting Activity (min)", format="%,.0f", width=135),
-            "Exception Handling (min)": st.column_config.NumberColumn("Exception Handling (min)", format="%,.0f", width=135),
-            "Total Workload (min)": st.column_config.NumberColumn("Total Workload (min)", format="%,.0f", width=120),
-            "Ratio": st.column_config.NumberColumn("Ratio", format="%.1f%%", width=70),
+            "Segment": st.column_config.TextColumn("Segment", width="small"),
+            "Core Service (min)": st.column_config.NumberColumn("Core Service (min)", format="%,.0f", width="medium"),
+            "Ancillary Service (min)": st.column_config.NumberColumn("Ancillary Service (min)", format="%,.0f", width="medium"),
+            "Supporting Activity (min)": st.column_config.NumberColumn("Supporting Activity (min)", format="%,.0f", width="medium"),
+            "Exception Handling (min)": st.column_config.NumberColumn("Exception Handling (min)", format="%,.0f", width="medium"),
+            "Total Workload (min)": st.column_config.NumberColumn("Total Workload (min)", format="%,.0f", width="medium"),
+            "Ratio": st.column_config.NumberColumn("Ratio", format="percent", width="small"),
         },
     )
 
@@ -2282,14 +2277,14 @@ def render_activity_detail_table(
 
     # Compact detail table: keep the four operational fields narrow and balanced.
     compact_config = {
-        "Office": st.column_config.TextColumn("Office", width=75),
-        "Month": st.column_config.TextColumn("Month", width=80),
-        "Code": st.column_config.TextColumn("Code", width=125),
+        "Office": st.column_config.TextColumn("Office", width="small"),
+        "Month": st.column_config.TextColumn("Month", width="small"),
+        "Code": st.column_config.TextColumn("Code", width="medium"),
         "Code Description": st.column_config.TextColumn(
-            "Code Description", width=180
+            "Code Description", width="large"
         ),
         "Volume": st.column_config.NumberColumn(
-            "Volume", format="%,.0f", width=80
+            "Volume", format="%,.0f", width="small"
         ),
     }
 
@@ -3132,133 +3127,58 @@ def chart_service_matrix(
     df: pd.DataFrame,
     mode_df: Optional[pd.DataFrame] = None,
 ):
-    summary = build_segment_workload(df, mode_df)
-    if summary.empty:
-        st.info("No segment workload data available.")
+    """Workload by Segment — flower-style packed bubble chart."""
+    seg = build_segment_workload(df, mode_df)
+    if seg.empty or float(seg["Allocation Time (h)"].sum()) <= 0:
+        st.info("No segment workload data available for selected filters.")
         return
 
-    plot_df = summary.copy()
-    plot_df["Workload Share"] = pd.to_numeric(
-        plot_df["Workload Share"], errors="coerce"
-    ).fillna(0.0)
+
+    plot_df = seg[seg["Allocation Time (h)"] > 0].copy()
     plot_df = plot_df.sort_values("Workload Share", ascending=False).reset_index(drop=True)
-
-    max_share = float(plot_df["Workload Share"].max()) if not plot_df.empty else 0.0
-    plot_df["Bubble Size"] = (
-        52 + (plot_df["Workload Share"] / max_share) * 86
-        if max_share > 0 else 66.0
-    )
-
-    # Largest bubble in the center; smaller bubbles orbit around it.
-    plot_df["x"] = 0.0
-    plot_df["y"] = 0.0
-
-    if len(plot_df) > 1:
-        center_r = float(plot_df.loc[0, "Bubble Size"]) / 2.0
-        outer_r = plot_df.loc[1:, "Bubble Size"].astype(float).to_numpy() / 2.0
-        n_outer = len(outer_r)
-
-        # Top start, clockwise arrangement.
-        angles = np.linspace(
-            np.pi / 2,
-            np.pi / 2 - 2 * np.pi,
-            n_outer,
-            endpoint=False,
-        )
-
-        gap_px = 18.0
-        center_clearance = center_r + float(outer_r.max()) + gap_px
-
-        if n_outer > 1:
-            step = 2 * np.pi / n_outer
-            neighbor_clearance = max(
-                outer_r[i] + outer_r[(i + 1) % n_outer] + gap_px
-                for i in range(n_outer)
-            ) / (2 * np.sin(step / 2))
-        else:
-            neighbor_clearance = 0.0
-
-        orbit_px = max(center_clearance, neighbor_clearance)
-        orbit = orbit_px * 0.0125
-
-        plot_df.loc[1:, "x"] = orbit * np.cos(angles)
-        plot_df.loc[1:, "y"] = orbit * np.sin(angles)
+    flower_positions = [
+        (0.00, 0.00),    # largest / center
+        (-1.72, 0.10),   # left
+        (1.72, 0.10),    # right
+        (-1.15, 1.42),   # upper-left
+        (1.15, 1.42),    # upper-right
+        (-1.15, -1.42),  # lower-left
+        (1.15, -1.42),   # lower-right
+        (0.00, 2.05),
+        (0.00, -2.05),
+        (2.25, -0.95),
+    ]
+    plot_df["x"] = [flower_positions[i][0] for i in range(len(plot_df))]
+    plot_df["y"] = [flower_positions[i][1] for i in range(len(plot_df))]
+    max_share = float(plot_df["Workload Share"].max())
+    plot_df["Bubble Size"] = 52 + (plot_df["Workload Share"] / max_share) * 74 if max_share > 0 else 68
+    segment_color_map = {svc: CORPORATE_PALETTE[i % len(CORPORATE_PALETTE)] for i, svc in enumerate(SERVICE_ORDER)}
 
     fig = go.Figure()
+    for _, r in plot_df.iterrows():
+        svc = r["Segment"]
+        fig.add_trace(go.Scatter(
+            x=[r["x"]], y=[r["y"]], mode="markers+text", name=svc,
+            text=[f"<b>{svc}</b><br>{r['Workload Share']:.1%}"],
+            textposition="middle center",
+            textfont=dict(family=UI["font_family"], size=11, color="#FFFFFF" if r["Workload Share"] >= 0.06 else COLORS["navy"]),
+            marker=dict(size=[r["Bubble Size"]], color=segment_color_map.get(svc, COLORS["blue"]), opacity=0.94, line=dict(color="#FFFFFF", width=2.5)),
+            customdata=[[r["Shipment Volume"], r["Allocation Time (h)"], r["Required FTE"], r["Workload Share"]]],
+            hovertemplate=(f"<b>{svc}</b><br>Shipment Volume: %{{customdata[0]:,.0f}}<br>Allocation Time: %{{customdata[1]:,.1f}} hrs<br>Required FTE: %{{customdata[2]:,.2f}}<br>Workload Share: %{{customdata[3]:.1%}}<extra></extra>"),
+            showlegend=False,
+        ))
 
-    for _, row in plot_df.iterrows():
-        seg = str(row["Segment"])
-        share = float(row["Workload Share"])
-        segment_color_map = {
-            svc: CORPORATE_PALETTE[i % len(CORPORATE_PALETTE)]
-            for i, svc in enumerate(SERVICE_ORDER)
-        }
-        fill_color = segment_color_map.get(seg, COLORS["blue"])
-
-        fig.add_trace(
-            go.Scatter(
-                x=[float(row["x"])],
-                y=[float(row["y"])],
-                mode="markers+text",
-                marker=dict(
-                    size=float(row["Bubble Size"]),
-                    sizemode="diameter",
-                    color=fill_color,
-                    line=dict(color="#FFFFFF", width=2.5),
-                    opacity=0.98,
-                ),
-                text=[f"<b>{seg}</b><br>{share:.1%}"],
-                textposition="middle center",
-                textfont=dict(
-                    family=FONT_FAMILY,
-                    size=12,
-                    color="#FFFFFF",
-                ),
-                customdata=[[
-                    float(row.get("Allocation Time (h)", 0.0)),
-                    float(row.get("Required FTE", 0.0)),
-                ]],
-                hovertemplate=(
-                    "<b>%{text}</b><br>"
-                    "Allocation Time: %{customdata[0]:,.1f} hrs<br>"
-                    "Required FTE: %{customdata[1]:.2f}"
-                    "<extra></extra>"
-                ),
-                showlegend=False,
-            )
-        )
-
-    max_x = float(plot_df["x"].abs().max()) if len(plot_df) > 1 else 1.8
-    max_y = float(plot_df["y"].abs().max()) if len(plot_df) > 1 else 1.8
-    x_lim = max(2.65, max_x + 0.95)
-    y_lim = max(2.45, max_y + 0.95)
-
-    fig = plotly_layout(
-        fig, 340,
-        show_legend=False,
-        margin_left=22,
-        margin_right=22,
-        margin_top=8,
-        margin_bottom=8,
-    )
+    fig = plotly_layout(fig, 340, show_legend=False, margin_left=24, margin_right=24, margin_top=8, margin_bottom=8)
     fig.update_layout(title=dict(text=""))
     fig.update_xaxes(
-        visible=False, showgrid=False, zeroline=False,
-        showticklabels=False, title_text="",
-        range=[-x_lim, x_lim], fixedrange=True,
+        visible=False, showgrid=False, zeroline=False, showticklabels=False,
+        title_text="", range=[-2.45, 2.45], fixedrange=True
     )
     fig.update_yaxes(
-        visible=False, showgrid=False, zeroline=False,
-        showticklabels=False, title_text="",
-        range=[-y_lim, y_lim],
-        scaleanchor="x", scaleratio=1, fixedrange=True,
+        visible=False, showgrid=False, zeroline=False, showticklabels=False,
+        title_text="", range=[-2.65, 2.65], scaleanchor="x", scaleratio=1, fixedrange=True
     )
-
-    st.plotly_chart(
-        fig,
-        use_container_width=True,
-        config={"displayModeBar": False, "responsive": True},
-    )
+    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
 def segment_workload_table(df: pd.DataFrame, mode_df: pd.DataFrame):
     """Executive summary table for Section 4; no TOTAL row in detail tables."""
@@ -3275,11 +3195,11 @@ def segment_workload_table(df: pd.DataFrame, mode_df: pd.DataFrame):
     st.dataframe(
         display, use_container_width=True, hide_index=True, height=390,
         column_config={
-            "Segment": st.column_config.TextColumn("Segment", width=70),
-            "Shipment Volume": st.column_config.NumberColumn("Shipment Volume", width=125, format="%,.0f"),
-            "Allocation Time (h)": st.column_config.NumberColumn("Allocation Time (hrs)", width=125, format="%,.1f"),
-            "Required FTE": st.column_config.NumberColumn("Required FTE", width=80, format="%.2f"),
-            "Workload Share (%)": st.column_config.NumberColumn("Workload Share (%)", width=125, format="%.1f%%"),
+            "Segment": st.column_config.TextColumn("Segment", width="small"),
+            "Shipment Volume": st.column_config.NumberColumn("Shipment Volume", width="medium", format="%,.0f"),
+            "Allocation Time (h)": st.column_config.NumberColumn("Allocation Time (hrs)", width="medium", format="%,.1f"),
+            "Required FTE": st.column_config.NumberColumn("Required FTE", width="small", format="%.2f"),
+            "Workload Share (%)": st.column_config.NumberColumn("Workload Share (%)", width="medium", format="%.1f%%"),
         },
     )
 
@@ -3329,10 +3249,10 @@ def mode_detail_table(mode_df: pd.DataFrame):
     st.dataframe(
         display, use_container_width=True, hide_index=True, height=SHIPMENT_PAIR_HEIGHT,
         column_config={
-            "Rank": st.column_config.NumberColumn("Rank", width=80, format="%d"),
-            "Mode": st.column_config.TextColumn("Mode", width=75),
-            "Shipment Volume": st.column_config.NumberColumn("Shipment Volume", width=125, format="%,.0f"),
-            "Share": st.column_config.NumberColumn("Share", width=80, format="percent"),
+            "Rank": st.column_config.NumberColumn("Rank", width="small", format="%d"),
+            "Mode": st.column_config.TextColumn("Mode", width="small"),
+            "Shipment Volume": st.column_config.NumberColumn("Shipment Volume", width="medium", format="%,.0f"),
+            "Share": st.column_config.NumberColumn("Share", width="small", format="percent"),
         },
     )
 
@@ -3381,9 +3301,9 @@ def customer_detail_volume_table(df: pd.DataFrame):
         hide_index=True,
         height=SHIPMENT_PAIR_HEIGHT,  # same height as paired Top 10 chart; vertical scroll keeps the full list accessible
         column_config={
-            "Rank": st.column_config.NumberColumn("Rank", width=80, format="%d"),
-            "Customer": st.column_config.TextColumn("Customer", width=180),
-            "Shipment Volume": st.column_config.NumberColumn("Shipment Volume", width=125, format="%,.0f"),
+            "Rank": st.column_config.NumberColumn("Rank", width="small", format="%d"),
+            "Customer": st.column_config.TextColumn("Customer", width="large"),
+            "Shipment Volume": st.column_config.NumberColumn("Shipment Volume", width="medium", format="%,.0f"),
         },
     )
 
@@ -3418,11 +3338,11 @@ def render_cs_solution_table(df: pd.DataFrame):
     st.dataframe(
         display, use_container_width=True, hide_index=True, height=390,
         column_config={
-            "Office": st.column_config.TextColumn("Office", width=75),
-            "Month": st.column_config.TextColumn("Month", width=80),
-            "Total Abnormality": st.column_config.NumberColumn("Total Abnormalities", width=125, format="%,.0f"),
-            "Resolved": st.column_config.NumberColumn("Resolved by CS", width=125, format="%,.0f"),
-            "Resolution Rate": st.column_config.NumberColumn("CS Resolution Rate", width=125, format="percent"),
+            "Office": st.column_config.TextColumn("Office", width="small"),
+            "Month": st.column_config.TextColumn("Month", width="small"),
+            "Total Abnormality": st.column_config.NumberColumn("Total Abnormalities", width="medium", format="%,.0f"),
+            "Resolved": st.column_config.NumberColumn("Resolved by CS", width="medium", format="%,.0f"),
+            "Resolution Rate": st.column_config.NumberColumn("CS Resolution Rate", width="medium", format="percent"),
         },
     )
 
@@ -3464,13 +3384,13 @@ def render_yvf_table(df: pd.DataFrame):
     else:
         display = d[["Office", "YVF Booking", "IFF Shipment", "YVF Booking Ratio"]].copy().sort_values(["Office"])
     column_cfg = {
-        "Office": st.column_config.TextColumn("Office", width=75),
-        "YVF Booking": st.column_config.NumberColumn("Total YVF Bookings", width=125, format="%,.0f"),
-        "IFF Shipment": st.column_config.NumberColumn("Total IFF Shipments", width=125, format="%,.0f"),
-        "YVF Booking Ratio": st.column_config.NumberColumn("YVF Booking Ratio", width=125, format="percent"),
+        "Office": st.column_config.TextColumn("Office", width="small"),
+        "YVF Booking": st.column_config.NumberColumn("Total YVF Bookings", width="medium", format="%,.0f"),
+        "IFF Shipment": st.column_config.NumberColumn("Total IFF Shipments", width="medium", format="%,.0f"),
+        "YVF Booking Ratio": st.column_config.NumberColumn("YVF Booking Ratio", width="medium", format="percent"),
     }
     if has_month:
-        column_cfg["Month"] = st.column_config.TextColumn("Month", width=80)
+        column_cfg["Month"] = st.column_config.TextColumn("Month", width="small")
     st.dataframe(display, use_container_width=True, hide_index=True, height=390, column_config=column_cfg)
 
 # ============================================================
@@ -3972,14 +3892,14 @@ def main():
     sk1, sk2, sk3, sk4 = st.columns(4, gap="medium")
     with sk1:
         shipment_kpi_card(
-            "ACTIVE CUSTOMERS",
-            fmt_int(active_customers),
+            "TOTAL SHIPMENT VOLUME",
+            fmt_int(shipment_total),
             "",
         )
     with sk2:
         shipment_kpi_card(
-            "TOTAL SHIPMENT VOLUME",
-            fmt_int(shipment_total),
+            "ACTIVE CUSTOMERS",
+            fmt_int(active_customers),
             "",
         )
     # Keep 2 empty columns so the two KPI cards retain the same visual width as Section 1.
@@ -3988,24 +3908,21 @@ def main():
     with sk4:
         st.empty()
 
-    # Section 2 balanced layout:
-    # Row 1 = both charts on the same row.
-    # Customer chart gets slightly more width because customer names are longer.
-    mode_chart_col, customer_chart_col = st.columns([0.48, 0.52], gap="medium")
+    # Executive paired layout:
+    # Block 1 = Transportation Mode chart (left) + matching detail table (right).
+    mode_chart_col, mode_detail_col = st.columns([1.25, 0.75], gap="medium")
 
     with mode_chart_col:
         chart_shipment_modes(f_mode)
 
-    with customer_chart_col:
-        chart_top_customers(f_customer_ns)
-
-    # Row 2 = both detail tables on the same row.
-    # Customer detail gets more width to accommodate long customer names,
-    # while Transportation Mode Detail remains compact.
-    mode_detail_col, customer_detail_col = st.columns([0.42, 0.58], gap="medium")
-
     with mode_detail_col:
         mode_detail_table(f_mode)
+
+    # Block 2 = Top 10 Customers chart (left) + full Customer Detail Volume table (right).
+    customer_chart_col, customer_detail_col = st.columns([1.15, 0.85], gap="medium")
+
+    with customer_chart_col:
+        chart_top_customers(f_customer_ns)
 
     with customer_detail_col:
         customer_detail_volume_table(f_customer_ns)
