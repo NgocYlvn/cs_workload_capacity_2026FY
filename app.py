@@ -3189,7 +3189,11 @@ def chart_service_matrix(
     for _, row in plot_df.iterrows():
         seg = str(row["Segment"])
         share = float(row["Workload Share"])
-        fill_color = SEGMENT_COLORS.get(seg, COLORS["blue"])
+        segment_color_map = {
+            svc: CORPORATE_PALETTE[i % len(CORPORATE_PALETTE)]
+            for i, svc in enumerate(SERVICE_ORDER)
+        }
+        fill_color = segment_color_map.get(seg, COLORS["blue"])
 
         fig.add_trace(
             go.Scatter(
