@@ -1207,12 +1207,13 @@ def fmt_pct(value: float) -> str:
 
 
 def status_from_util(util: float) -> Tuple[str, str, str]:
+    """Standard workload status rule used across KPI/status displays."""
     if util <= 0:
         return "NO DATA", COLORS["muted"], COLORS["light_blue"]
     if util < 0.90:
-        return "LESS LOAD", COLORS["blue"], "#DBEAFE"
+        return "LESS LOAD", COLORS["green"], "#DCFCE7"
     if util <= 0.95:
-        return "BALANCED", COLORS["green"], "#DCFCE7"
+        return "BALANCED", COLORS["blue"], "#DBEAFE"
     if util <= 1.00:
         return "HIGH LOAD", COLORS["amber"], "#FEF3C7"
     return "OVERLOAD", COLORS["red"], "#FEE2E2"
@@ -2661,9 +2662,10 @@ def chart_workload_by_pic(fte_df: pd.DataFrame, selected_office: str):
     - Specific Office: show all PICs with data in that office.
     - All Offices: show Top 10 PICs by Utilization across all offices.
     - Colors:
-        >100%   = Red (Overload)
-        90–100% = Orange (Attention)
-        <90%    = Blue (Available Capacity)
+        >100%      = Red (Overload)
+        >95%–100%  = Orange (High Load)
+        90%–95%    = Blue (Balanced)
+        <90%       = Green (Less Load)
     """
     if fte_df is None or fte_df.empty:
         st.info("No CS FTE data available for selected filters.")
@@ -2687,11 +2689,18 @@ def chart_workload_by_pic(fte_df: pd.DataFrame, selected_office: str):
     pic_data["Utilization"] = pic_data["Actual FTE"]
 
     def _status(util):
-        if util > 1.0:
+        # Standard workload color rule:
+        # >100% = Overload / Red
+        # >95%–100% = High Load / Orange
+        # 90%–95% = Balanced / Blue
+        # <90% = Less Load / Green
+        if util > 1.00:
             return "Overload", COLORS["red"]
+        if util > 0.95:
+            return "High Load", COLORS["amber"]
         if util >= 0.90:
-            return "Attention", COLORS["amber"]
-        return "Available", COLORS["blue"]
+            return "Balanced", COLORS["blue"]
+        return "Less Load", COLORS["green"]
 
     mapped = pic_data["Utilization"].apply(_status)
     pic_data["Status"] = mapped.map(lambda x: x[0])
