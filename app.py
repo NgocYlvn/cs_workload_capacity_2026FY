@@ -919,6 +919,15 @@ st.markdown(
         display: flex !important;
         flex-direction: column !important;
         justify-content: center !important;
+        align-items: center !important;
+        text-align: center !important;
+    }}
+
+    .kpi-card .kpi-label,
+    .kpi-card .kpi-value,
+    .kpi-card .kpi-note {{
+        width: 100% !important;
+        text-align: center !important;
     }}
 
     .kpi-label {{
