@@ -2736,7 +2736,7 @@ def chart_workload_by_pic(fte_df: pd.DataFrame, selected_office: str):
     )
 
     display["Label"] = display.apply(
-        lambda r: f"{r['Actual Workload Hours']:,.1f} hrs | {r['Utilization']*100:.0f}%",
+        lambda r: f"{r['Actual Workload Hours']:,.1f} | {r['Utilization']*100:.0f}%",
         axis=1,
     )
 
@@ -2875,7 +2875,7 @@ def chart_workload_by_service(df: pd.DataFrame):
     agg = df.groupby(["Segment", "Service Label"], as_index=False)["Workload Hours"].sum()
     total = agg["Workload Hours"].sum()
     agg["% of Total"] = agg["Workload Hours"].apply(lambda x: safe_div(x, total))
-    agg["Label"] = agg.apply(lambda r: f"{r['Workload Hours']:,.1f} hrs | {r['% of Total']*100:.1f}%", axis=1)
+    agg["Label"] = agg.apply(lambda r: f"{r['Workload Hours']:,.1f} | {r['% of Total']*100:.1f}%", axis=1)
     agg["SortOrder"] = agg["Segment"].apply(lambda x: SERVICE_ORDER.index(x) if x in SERVICE_ORDER else 999)
     agg = agg.sort_values(["Workload Hours"], ascending=True)
     fig = px.bar(
