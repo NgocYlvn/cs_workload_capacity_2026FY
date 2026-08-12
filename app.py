@@ -2219,13 +2219,13 @@ def render_workload_breakdown_table(df: pd.DataFrame):
     st.dataframe(
         display, use_container_width=True, hide_index=True, height=390,
         column_config={
-            "Segment": st.column_config.TextColumn("Segment", width="small"),
-            "Core Service (min)": st.column_config.NumberColumn("Core Service (min)", format="%,.0f", width="medium"),
-            "Ancillary Service (min)": st.column_config.NumberColumn("Ancillary Service (min)", format="%,.0f", width="medium"),
-            "Supporting Activity (min)": st.column_config.NumberColumn("Supporting Activity (min)", format="%,.0f", width="medium"),
-            "Exception Handling (min)": st.column_config.NumberColumn("Exception Handling (min)", format="%,.0f", width="medium"),
-            "Total Workload (min)": st.column_config.NumberColumn("Total Workload (min)", format="%,.0f", width="medium"),
-            "Ratio": st.column_config.NumberColumn("Ratio", format="%.1f%%", width="small"),
+            "Segment": st.column_config.TextColumn("Segment", width=65),
+            "Core Service (min)": st.column_config.NumberColumn("Core Service (min)", format="%,.0f", width=115),
+            "Ancillary Service (min)": st.column_config.NumberColumn("Ancillary Service (min)", format="%,.0f", width=125),
+            "Supporting Activity (min)": st.column_config.NumberColumn("Supporting Activity (min)", format="%,.0f", width=135),
+            "Exception Handling (min)": st.column_config.NumberColumn("Exception Handling (min)", format="%,.0f", width=135),
+            "Total Workload (min)": st.column_config.NumberColumn("Total Workload (min)", format="%,.0f", width=120),
+            "Ratio": st.column_config.NumberColumn("Ratio", format="%.1f%%", width=70),
         },
     )
 
@@ -2282,14 +2282,14 @@ def render_activity_detail_table(
 
     # Compact detail table: keep the four operational fields narrow and balanced.
     compact_config = {
-        "Office": st.column_config.TextColumn("Office", width="small"),
-        "Month": st.column_config.TextColumn("Month", width="small"),
-        "Code": st.column_config.TextColumn("Code", width="medium"),
+        "Office": st.column_config.TextColumn("Office", width=75),
+        "Month": st.column_config.TextColumn("Month", width=80),
+        "Code": st.column_config.TextColumn("Code", width=125),
         "Code Description": st.column_config.TextColumn(
-            "Code Description", width="large"
+            "Code Description", width=180
         ),
         "Volume": st.column_config.NumberColumn(
-            "Volume", format="%,.0f", width="small"
+            "Volume", format="%,.0f", width=80
         ),
     }
 
@@ -3200,11 +3200,11 @@ def segment_workload_table(df: pd.DataFrame, mode_df: pd.DataFrame):
     st.dataframe(
         display, use_container_width=True, hide_index=True, height=390,
         column_config={
-            "Segment": st.column_config.TextColumn("Segment", width="small"),
-            "Shipment Volume": st.column_config.NumberColumn("Shipment Volume", width="medium", format="%,.0f"),
-            "Allocation Time (h)": st.column_config.NumberColumn("Allocation Time (hrs)", width="medium", format="%,.1f"),
-            "Required FTE": st.column_config.NumberColumn("Required FTE", width="small", format="%.2f"),
-            "Workload Share (%)": st.column_config.NumberColumn("Workload Share (%)", width="medium", format="%.1f%%"),
+            "Segment": st.column_config.TextColumn("Segment", width=70),
+            "Shipment Volume": st.column_config.NumberColumn("Shipment Volume", width=125, format="%,.0f"),
+            "Allocation Time (h)": st.column_config.NumberColumn("Allocation Time (hrs)", width=125, format="%,.1f"),
+            "Required FTE": st.column_config.NumberColumn("Required FTE", width=80, format="%.2f"),
+            "Workload Share (%)": st.column_config.NumberColumn("Workload Share (%)", width=125, format="%.1f%%"),
         },
     )
 
@@ -3254,10 +3254,10 @@ def mode_detail_table(mode_df: pd.DataFrame):
     st.dataframe(
         display, use_container_width=True, hide_index=True, height=SHIPMENT_PAIR_HEIGHT,
         column_config={
-            "Rank": st.column_config.NumberColumn("Rank", width="small", format="%d"),
-            "Mode": st.column_config.TextColumn("Mode", width="small"),
-            "Shipment Volume": st.column_config.NumberColumn("Shipment Volume", width="medium", format="%,.0f"),
-            "Share": st.column_config.NumberColumn("Share", width="small", format="percent"),
+            "Rank": st.column_config.NumberColumn("Rank", width=80, format="%d"),
+            "Mode": st.column_config.TextColumn("Mode", width=75),
+            "Shipment Volume": st.column_config.NumberColumn("Shipment Volume", width=125, format="%,.0f"),
+            "Share": st.column_config.NumberColumn("Share", width=80, format="percent"),
         },
     )
 
@@ -3306,9 +3306,9 @@ def customer_detail_volume_table(df: pd.DataFrame):
         hide_index=True,
         height=SHIPMENT_PAIR_HEIGHT,  # same height as paired Top 10 chart; vertical scroll keeps the full list accessible
         column_config={
-            "Rank": st.column_config.NumberColumn("Rank", width="small", format="%d"),
-            "Customer": st.column_config.TextColumn("Customer", width="large"),
-            "Shipment Volume": st.column_config.NumberColumn("Shipment Volume", width="medium", format="%,.0f"),
+            "Rank": st.column_config.NumberColumn("Rank", width=80, format="%d"),
+            "Customer": st.column_config.TextColumn("Customer", width=180),
+            "Shipment Volume": st.column_config.NumberColumn("Shipment Volume", width=125, format="%,.0f"),
         },
     )
 
@@ -3343,11 +3343,11 @@ def render_cs_solution_table(df: pd.DataFrame):
     st.dataframe(
         display, use_container_width=True, hide_index=True, height=390,
         column_config={
-            "Office": st.column_config.TextColumn("Office", width="small"),
-            "Month": st.column_config.TextColumn("Month", width="small"),
-            "Total Abnormality": st.column_config.NumberColumn("Total Abnormalities", width="medium", format="%,.0f"),
-            "Resolved": st.column_config.NumberColumn("Resolved by CS", width="medium", format="%,.0f"),
-            "Resolution Rate": st.column_config.NumberColumn("CS Resolution Rate", width="medium", format="percent"),
+            "Office": st.column_config.TextColumn("Office", width=75),
+            "Month": st.column_config.TextColumn("Month", width=80),
+            "Total Abnormality": st.column_config.NumberColumn("Total Abnormalities", width=125, format="%,.0f"),
+            "Resolved": st.column_config.NumberColumn("Resolved by CS", width=125, format="%,.0f"),
+            "Resolution Rate": st.column_config.NumberColumn("CS Resolution Rate", width=125, format="percent"),
         },
     )
 
@@ -3389,13 +3389,13 @@ def render_yvf_table(df: pd.DataFrame):
     else:
         display = d[["Office", "YVF Booking", "IFF Shipment", "YVF Booking Ratio"]].copy().sort_values(["Office"])
     column_cfg = {
-        "Office": st.column_config.TextColumn("Office", width="small"),
-        "YVF Booking": st.column_config.NumberColumn("Total YVF Bookings", width="medium", format="%,.0f"),
-        "IFF Shipment": st.column_config.NumberColumn("Total IFF Shipments", width="medium", format="%,.0f"),
-        "YVF Booking Ratio": st.column_config.NumberColumn("YVF Booking Ratio", width="medium", format="percent"),
+        "Office": st.column_config.TextColumn("Office", width=75),
+        "YVF Booking": st.column_config.NumberColumn("Total YVF Bookings", width=125, format="%,.0f"),
+        "IFF Shipment": st.column_config.NumberColumn("Total IFF Shipments", width=125, format="%,.0f"),
+        "YVF Booking Ratio": st.column_config.NumberColumn("YVF Booking Ratio", width=125, format="percent"),
     }
     if has_month:
-        column_cfg["Month"] = st.column_config.TextColumn("Month", width="small")
+        column_cfg["Month"] = st.column_config.TextColumn("Month", width=80)
     st.dataframe(display, use_container_width=True, hide_index=True, height=390, column_config=column_cfg)
 
 # ============================================================
