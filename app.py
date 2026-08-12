@@ -3132,58 +3132,129 @@ def chart_service_matrix(
     df: pd.DataFrame,
     mode_df: Optional[pd.DataFrame] = None,
 ):
-    """Workload by Segment — flower-style packed bubble chart."""
-    seg = build_segment_workload(df, mode_df)
-    if seg.empty or float(seg["Allocation Time (h)"].sum()) <= 0:
-        st.info("No segment workload data available for selected filters.")
+    summary = build_segment_workload(df_workload, df_mode)
+    if summary.empty:
+        st.info("No segment workload data available.")
         return
 
-
-    plot_df = seg[seg["Allocation Time (h)"] > 0].copy()
+    plot_df = summary.copy()
+    plot_df["Workload Share"] = pd.to_numeric(
+        plot_df["Workload Share"], errors="coerce"
+    ).fillna(0.0)
     plot_df = plot_df.sort_values("Workload Share", ascending=False).reset_index(drop=True)
-    flower_positions = [
-        (0.00, 0.00),    # largest / center
-        (-1.72, 0.10),   # left
-        (1.72, 0.10),    # right
-        (-1.15, 1.42),   # upper-left
-        (1.15, 1.42),    # upper-right
-        (-1.15, -1.42),  # lower-left
-        (1.15, -1.42),   # lower-right
-        (0.00, 2.05),
-        (0.00, -2.05),
-        (2.25, -0.95),
-    ]
-    plot_df["x"] = [flower_positions[i][0] for i in range(len(plot_df))]
-    plot_df["y"] = [flower_positions[i][1] for i in range(len(plot_df))]
-    max_share = float(plot_df["Workload Share"].max())
-    plot_df["Bubble Size"] = 52 + (plot_df["Workload Share"] / max_share) * 74 if max_share > 0 else 68
-    segment_color_map = {svc: CORPORATE_PALETTE[i % len(CORPORATE_PALETTE)] for i, svc in enumerate(SERVICE_ORDER)}
+
+    max_share = float(plot_df["Workload Share"].max()) if not plot_df.empty else 0.0
+    plot_df["Bubble Size"] = (
+        52 + (plot_df["Workload Share"] / max_share) * 86
+        if max_share > 0 else 66.0
+    )
+
+    # Largest bubble in the center; smaller bubbles orbit around it.
+    plot_df["x"] = 0.0
+    plot_df["y"] = 0.0
+
+    if len(plot_df) > 1:
+        center_r = float(plot_df.loc[0, "Bubble Size"]) / 2.0
+        outer_r = plot_df.loc[1:, "Bubble Size"].astype(float).to_numpy() / 2.0
+        n_outer = len(outer_r)
+
+        # Top start, clockwise arrangement.
+        angles = np.linspace(
+            np.pi / 2,
+            np.pi / 2 - 2 * np.pi,
+            n_outer,
+            endpoint=False,
+        )
+
+        gap_px = 18.0
+        center_clearance = center_r + float(outer_r.max()) + gap_px
+
+        if n_outer > 1:
+            step = 2 * np.pi / n_outer
+            neighbor_clearance = max(
+                outer_r[i] + outer_r[(i + 1) % n_outer] + gap_px
+                for i in range(n_outer)
+            ) / (2 * np.sin(step / 2))
+        else:
+            neighbor_clearance = 0.0
+
+        orbit_px = max(center_clearance, neighbor_clearance)
+        orbit = orbit_px * 0.0125
+
+        plot_df.loc[1:, "x"] = orbit * np.cos(angles)
+        plot_df.loc[1:, "y"] = orbit * np.sin(angles)
 
     fig = go.Figure()
-    for _, r in plot_df.iterrows():
-        svc = r["Segment"]
-        fig.add_trace(go.Scatter(
-            x=[r["x"]], y=[r["y"]], mode="markers+text", name=svc,
-            text=[f"<b>{svc}</b><br>{r['Workload Share']:.1%}"],
-            textposition="middle center",
-            textfont=dict(family=UI["font_family"], size=11, color="#FFFFFF" if r["Workload Share"] >= 0.06 else COLORS["navy"]),
-            marker=dict(size=[r["Bubble Size"]], color=segment_color_map.get(svc, COLORS["blue"]), opacity=0.94, line=dict(color="#FFFFFF", width=2.5)),
-            customdata=[[r["Shipment Volume"], r["Allocation Time (h)"], r["Required FTE"], r["Workload Share"]]],
-            hovertemplate=(f"<b>{svc}</b><br>Shipment Volume: %{{customdata[0]:,.0f}}<br>Allocation Time: %{{customdata[1]:,.1f}} hrs<br>Required FTE: %{{customdata[2]:,.2f}}<br>Workload Share: %{{customdata[3]:.1%}}<extra></extra>"),
-            showlegend=False,
-        ))
 
-    fig = plotly_layout(fig, 340, show_legend=False, margin_left=24, margin_right=24, margin_top=8, margin_bottom=8)
+    for _, row in plot_df.iterrows():
+        seg = str(row["Segment"])
+        share = float(row["Workload Share"])
+        fill_color = SEGMENT_COLORS.get(seg, COLORS["blue"])
+
+        fig.add_trace(
+            go.Scatter(
+                x=[float(row["x"])],
+                y=[float(row["y"])],
+                mode="markers+text",
+                marker=dict(
+                    size=float(row["Bubble Size"]),
+                    sizemode="diameter",
+                    color=fill_color,
+                    line=dict(color="#FFFFFF", width=2.5),
+                    opacity=0.98,
+                ),
+                text=[f"<b>{seg}</b><br>{share:.1%}"],
+                textposition="middle center",
+                textfont=dict(
+                    family=FONT_FAMILY,
+                    size=12,
+                    color="#FFFFFF",
+                ),
+                customdata=[[
+                    float(row.get("Allocation Time (h)", 0.0)),
+                    float(row.get("Required FTE", 0.0)),
+                ]],
+                hovertemplate=(
+                    "<b>%{text}</b><br>"
+                    "Allocation Time: %{customdata[0]:,.1f} hrs<br>"
+                    "Required FTE: %{customdata[1]:.2f}"
+                    "<extra></extra>"
+                ),
+                showlegend=False,
+            )
+        )
+
+    max_x = float(plot_df["x"].abs().max()) if len(plot_df) > 1 else 1.8
+    max_y = float(plot_df["y"].abs().max()) if len(plot_df) > 1 else 1.8
+    x_lim = max(2.65, max_x + 0.95)
+    y_lim = max(2.45, max_y + 0.95)
+
+    fig = plotly_layout(
+        fig, 340,
+        show_legend=False,
+        margin_left=22,
+        margin_right=22,
+        margin_top=8,
+        margin_bottom=8,
+    )
     fig.update_layout(title=dict(text=""))
     fig.update_xaxes(
-        visible=False, showgrid=False, zeroline=False, showticklabels=False,
-        title_text="", range=[-2.45, 2.45], fixedrange=True
+        visible=False, showgrid=False, zeroline=False,
+        showticklabels=False, title_text="",
+        range=[-x_lim, x_lim], fixedrange=True,
     )
     fig.update_yaxes(
-        visible=False, showgrid=False, zeroline=False, showticklabels=False,
-        title_text="", range=[-2.65, 2.65], scaleanchor="x", scaleratio=1, fixedrange=True
+        visible=False, showgrid=False, zeroline=False,
+        showticklabels=False, title_text="",
+        range=[-y_lim, y_lim],
+        scaleanchor="x", scaleratio=1, fixedrange=True,
     )
-    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+
+    st.plotly_chart(
+        fig,
+        use_container_width=True,
+        config={"displayModeBar": False, "responsive": True},
+    )
 
 def segment_workload_table(df: pd.DataFrame, mode_df: pd.DataFrame):
     """Executive summary table for Section 4; no TOTAL row in detail tables."""
