@@ -3623,7 +3623,7 @@ def render_cover_page() -> None:
     c1, c2, c3 = st.columns([1, 1.15, 1])
     with c2:
         if st.button(
-            "ENTER DASHBOARD  →",
+            "VIEW DASHBOARD  →",
             type="primary",
             use_container_width=True,
             key="enter_dashboard_btn",
