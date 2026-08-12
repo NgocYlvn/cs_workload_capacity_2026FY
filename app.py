@@ -4237,13 +4237,13 @@ def main():
             kpi_card(
                 "TOTAL YVF BOOKINGS",
                 fmt_int(yvf_booking),
-                "Source: YVF",
+                "",
             )
         with y2:
             kpi_card(
                 "TOTAL IFF SHIPMENTS",
                 fmt_int(iff),
-                "Source: YVF",
+                "",
             )
         with y3:
             kpi_card(
