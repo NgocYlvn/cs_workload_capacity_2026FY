@@ -4133,8 +4133,7 @@ def main():
     with seg_summary_col:
         summary_html = f"""
 <div style="height:340px;min-height:340px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;background:#FFFFFF;border:1px solid #D8E1EA;border-radius:12px;box-shadow:0 1px 4px rgba(16,24,40,0.045);padding:24px 26px;">
-  <div style="color:#003B70;font-size:17px;line-height:1.2;font-weight:700;margin-bottom:26px;">Segment Summary</div>
-  <div style="color:#667085;font-size:12px;line-height:1.25;font-weight:600;letter-spacing:0.025em;text-transform:uppercase;">TOTAL WORKLOAD HOURS</div>
+    <div style="color:#667085;font-size:12px;line-height:1.25;font-weight:600;letter-spacing:0.025em;text-transform:uppercase;">TOTAL WORKLOAD HOURS</div>
   <div style="color:#003B70;font-size:34px;line-height:1.05;font-weight:700;letter-spacing:-0.02em;margin-top:8px;">{fmt_num(segment_total_hours, 1)}</div>
   <div style="color:#667085;font-size:11px;margin-top:6px;">Unit: Hours</div>
   <div style="height:1px;background:#E6ECF2;margin:24px 0 18px 0;"></div>
@@ -4144,10 +4143,9 @@ def main():
   </div>
   <div style="display:flex;justify-content:space-between;align-items:center;">
     <span style="color:#667085;font-size:12px;">Highest Workload Share</span>
-    <span style="color:#003B70;font-size:14px;font-weight:700;">{top_share:.1f}%</span>
+    <span style="color:#003B70;font-size:14px;font-weight:700;">{top_share:.1%}</span>
   </div>
-  <div style="color:#98A2B3;font-size:10px;margin-top:22px;">Source: BU allocation</div>
-</div>
+  </div>
 """
         st.markdown(summary_html.strip(), unsafe_allow_html=True)
 
