@@ -3139,20 +3139,20 @@ def chart_service_matrix(
     plot_df = plot_df.sort_values("Workload Share", ascending=False).reset_index(drop=True)
     flower_positions = [
         (0.00, 0.00),    # largest / center
-        (-2.05, 0.15),   # left
-        (2.05, 0.15),    # right
-        (-1.35, 1.75),   # upper-left
-        (1.35, 1.75),    # upper-right
-        (-1.35, -1.75),  # lower-left
-        (1.35, -1.75),   # lower-right
-        (0.00, 2.65),
-        (0.00, -2.65),
-        (2.75, -1.20),
+        (-1.72, 0.10),   # left
+        (1.72, 0.10),    # right
+        (-1.15, 1.42),   # upper-left
+        (1.15, 1.42),    # upper-right
+        (-1.15, -1.42),  # lower-left
+        (1.15, -1.42),   # lower-right
+        (0.00, 2.05),
+        (0.00, -2.05),
+        (2.25, -0.95),
     ]
     plot_df["x"] = [flower_positions[i][0] for i in range(len(plot_df))]
     plot_df["y"] = [flower_positions[i][1] for i in range(len(plot_df))]
     max_share = float(plot_df["Workload Share"].max())
-    plot_df["Bubble Size"] = 46 + (plot_df["Workload Share"] / max_share) * 66 if max_share > 0 else 64
+    plot_df["Bubble Size"] = 58 + (plot_df["Workload Share"] / max_share) * 82 if max_share > 0 else 74
     segment_color_map = {svc: CORPORATE_PALETTE[i % len(CORPORATE_PALETTE)] for i, svc in enumerate(SERVICE_ORDER)}
 
     fig = go.Figure()
@@ -3169,15 +3169,15 @@ def chart_service_matrix(
             showlegend=False,
         ))
 
-    fig = plotly_layout(fig, 360, show_legend=False, margin_left=32, margin_right=32, margin_top=18, margin_bottom=18)
+    fig = plotly_layout(fig, 315, show_legend=False, margin_left=26, margin_right=26, margin_top=14, margin_bottom=14)
     fig.update_layout(title=dict(text=""))
     fig.update_xaxes(
         visible=False, showgrid=False, zeroline=False, showticklabels=False,
-        title_text="", range=[-2.95, 2.95], fixedrange=True
+        title_text="", range=[-2.45, 2.45], fixedrange=True
     )
     fig.update_yaxes(
         visible=False, showgrid=False, zeroline=False, showticklabels=False,
-        title_text="", range=[-3.10, 3.10], scaleanchor="x", scaleratio=1, fixedrange=True
+        title_text="", range=[-2.65, 2.65], scaleanchor="x", scaleratio=1, fixedrange=True
     )
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
@@ -4121,7 +4121,7 @@ def main():
     st.markdown(
         f"""
         <div style="
-            min-height:112px;
+            min-height:88px;
             box-sizing:border-box;
             display:flex;
             align-items:center;
@@ -4130,8 +4130,8 @@ def main():
             border:1px solid #D8E1EA;
             border-radius:12px;
             box-shadow:0 1px 4px rgba(16,24,40,0.045);
-            padding:18px 28px;
-            margin-bottom:14px;">
+            padding:14px 24px;
+            margin-bottom:10px;">
             <div style="display:flex;flex-direction:column;gap:5px;">
                 <div style="
                     color:#5F6B7A;
@@ -4151,7 +4151,7 @@ def main():
             </div>
             <div style="
                 color:#003B70;
-                font-size:32px;
+                font-size:30px;
                 line-height:1;
                 font-weight:700;
                 letter-spacing:-0.02em;
