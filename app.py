@@ -4181,7 +4181,7 @@ def main():
     with casetab_e:
         render_activity_detail_table(f_exception_detail, "Exception Handling")
 
-    section_title("6. CS Solution")
+    section_title("6. CS Resolution")
 
     # Executive KPIs sourced from sheet "CS Resolutions Rate".
     if not f_resolution.empty:
