@@ -3968,14 +3968,14 @@ def main():
     sk1, sk2, sk3, sk4 = st.columns(4, gap="medium")
     with sk1:
         shipment_kpi_card(
-            "TOTAL SHIPMENT VOLUME",
-            fmt_int(shipment_total),
+            "ACTIVE CUSTOMERS",
+            fmt_int(active_customers),
             "",
         )
     with sk2:
         shipment_kpi_card(
-            "ACTIVE CUSTOMERS",
-            fmt_int(active_customers),
+            "TOTAL SHIPMENT VOLUME",
+            fmt_int(shipment_total),
             "",
         )
     # Keep 2 empty columns so the two KPI cards retain the same visual width as Section 1.
