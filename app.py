@@ -3132,7 +3132,7 @@ def chart_service_matrix(
     df: pd.DataFrame,
     mode_df: Optional[pd.DataFrame] = None,
 ):
-    summary = build_segment_workload(df_workload, df_mode)
+    summary = build_segment_workload(df, mode_df)
     if summary.empty:
         st.info("No segment workload data available.")
         return
