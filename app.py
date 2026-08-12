@@ -3913,21 +3913,24 @@ def main():
     with sk4:
         st.empty()
 
-    # Executive paired layout:
-    # Block 1 = Transportation Mode chart (left) + matching detail table (right).
-    mode_chart_col, mode_detail_col = st.columns([1.25, 0.75], gap="medium")
+    # Section 2 balanced layout:
+    # Row 1 = both charts on the same row.
+    # Customer chart gets slightly more width because customer names are longer.
+    mode_chart_col, customer_chart_col = st.columns([0.48, 0.52], gap="medium")
 
     with mode_chart_col:
         chart_shipment_modes(f_mode)
 
-    with mode_detail_col:
-        mode_detail_table(f_mode)
-
-    # Block 2 = Top 10 Customers chart (left) + full Customer Detail Volume table (right).
-    customer_chart_col, customer_detail_col = st.columns([1.15, 0.85], gap="medium")
-
     with customer_chart_col:
         chart_top_customers(f_customer_ns)
+
+    # Row 2 = both detail tables on the same row.
+    # Customer detail gets more width to accommodate long customer names,
+    # while Transportation Mode Detail remains compact.
+    mode_detail_col, customer_detail_col = st.columns([0.42, 0.58], gap="medium")
+
+    with mode_detail_col:
+        mode_detail_table(f_mode)
 
     with customer_detail_col:
         customer_detail_volume_table(f_customer_ns)
