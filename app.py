@@ -2220,7 +2220,7 @@ def render_workload_breakdown_table(df: pd.DataFrame):
             "Supporting Activity (min)": st.column_config.NumberColumn("Supporting Activity (min)", format="%,.0f", width="medium"),
             "Exception Handling (min)": st.column_config.NumberColumn("Exception Handling (min)", format="%,.0f", width="medium"),
             "Total Workload (min)": st.column_config.NumberColumn("Total Workload (min)", format="%,.0f", width="medium"),
-            "Ratio": st.column_config.NumberColumn("Ratio", format="percent", width="small"),
+            "Ratio": st.column_config.NumberColumn("Ratio", format="%.1f%%", width="small"),
         },
     )
 
