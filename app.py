@@ -3187,7 +3187,7 @@ def segment_workload_table(df: pd.DataFrame, mode_df: pd.DataFrame):
         st.info("No segment workload data available for selected filters.")
         return
 
-    pair_panel_title("Segment Workload Summary")
+    pair_panel_title("Segment volume")
     display = seg.copy().rename(columns={"Workload Share": "Workload Share (%)"})
     display["Workload Share (%)"] = pd.to_numeric(display["Workload Share (%)"], errors="coerce").fillna(0) * 100
     display = display[["Segment", "Shipment Volume", "Allocation Time (h)", "Required FTE", "Workload Share (%)"]]
