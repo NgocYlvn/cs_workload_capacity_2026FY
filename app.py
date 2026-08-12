@@ -2211,6 +2211,11 @@ def render_workload_breakdown_table(df: pd.DataFrame):
         return
     pair_panel_title("Workload Breakdown Detail")
     display = summary.copy()
+
+    # Ratio in summary is stored as a decimal ratio (e.g. 0.0798 = 7.98%).
+    # Convert to percentage-point value for display so %.1f%% renders correctly.
+    display["Ratio"] = pd.to_numeric(display["Ratio"], errors="coerce") * 100
+
     st.dataframe(
         display, use_container_width=True, hide_index=True, height=390,
         column_config={
