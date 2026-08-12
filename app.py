@@ -3739,8 +3739,6 @@ def main():
                 st.session_state["dashboard_uploaded_sig"] = new_sig
                 st.session_state["dashboard_uploaded_path"] = str(tmp_path)
                 st.rerun()
-        st.caption(f"Source file: {Path(file_path).name}")
-        st.caption("Capacity standard: 167.2 hrs/FTE/month")
 
     # Year is intentionally not exposed as a filter.
     year = "All"
