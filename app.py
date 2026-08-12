@@ -2868,7 +2868,7 @@ def chart_workload_by_pic(fte_df: pd.DataFrame, selected_office: str):
             line-height:1.2;
             white-space:nowrap;">
             <span><span style="display:inline-block;width:9px;height:9px;background:{COLORS['red']};margin-right:5px;border-radius:2px;"></span>Overload &gt;100%</span>
-            <span><span style="display:inline-block;width:9px;height:9px;background:{COLORS['amber']};margin-right:5px;border-radius:2px;"></span>Attention 90–100%</span>
+            <span><span style="display:inline-block;width:9px;height:9px;background:{COLORS['amber']};margin-right:5px;border-radius:2px;"></span>High Load >95–100%</span>
             <span><span style="display:inline-block;width:9px;height:9px;background:{COLORS['blue']};margin-right:5px;border-radius:2px;"></span>Available &lt;90%</span>
         </div>
         """,
