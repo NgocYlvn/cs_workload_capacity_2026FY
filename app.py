@@ -2629,7 +2629,7 @@ def chart_office_capacity_trend(df: pd.DataFrame):
             y=trend["Total Required HC"],
             mode="lines+markers",
             name="Required HC",
-            line=dict(color=BUSINESS_COLORS["required"], width=3, dash="solid",),
+            line=dict(color=BUSINESS_COLORS["required"], width=3, dash="solid"),
             marker=dict(size=7),
             fill="tonexty",
             fillcolor="rgba(245, 158, 11, 0.14)",
