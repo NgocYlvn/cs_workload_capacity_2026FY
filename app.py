@@ -1315,7 +1315,7 @@ def hc_variance_card(
         f"""
         <div class="hc-kpi-card hc-variance-card">
             <div class="kpi-label">{label}</div>
-            <div class="hc-kpi-total" style="color:{status_color} !important;">{fmt_num(value, 0)}</div>
+            <div class="hc-kpi-total" style="color:{status_color} !important;">{fmt_num(value, 1)}</div>
             <div class="hc-variance-formula">{formula_text}</div>
             <span class="status-badge hc-variance-status"
                   style="color:{status_color};background:{status_bg};">
