@@ -4154,26 +4154,7 @@ def main():
     # Full-width detail table below the executive row.
     segment_workload_table(f_workload, f_mode)
 
-    st.markdown(
-        """
-        <div style="
-            margin-top:7px;
-            padding:10px 14px;
-            background:#FFFFFF;
-            border:1px solid #D8E1EA;
-            border-radius:12px;
-            color:#667085;
-            font-size:11px;
-            line-height:1.45;">
-            <b style="color:#003B70;">Note:</b>
-            Bubbles are clustered for easy comparison; bubble size = Workload Share (%).
-            Required FTE uses the HC/FTE allocation source when available and falls back to Workload ÷ 167.2 hrs/FTE.
-            Shipment Volume is sourced from the Shipment volume sheet and mapped to the corresponding Service.
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
+    
     section_title("5. Workload Breakdown by Service Type and Activity")
 
     st.markdown(
