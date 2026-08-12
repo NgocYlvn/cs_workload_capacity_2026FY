@@ -4089,25 +4089,8 @@ def main():
         else 0.0
     )
 
-    # Compact Section 4 header: description and KPI aligned on one balanced row.
-    seg_intro, seg_kpi = st.columns([0.76, 0.24], gap="medium")
-    with seg_intro:
-        st.markdown(
-            """
-            <div style="
-                min-height:92px;
-                display:flex;
-                align-items:center;
-                color:#667085;
-                font-size:12px;
-                line-height:1.55;
-                padding:0 8px 0 2px;">
-                Compare workload concentration across Segments using Shipment Volume,
-                Allocation Time, Required FTE and Workload Share.
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+    # Compact Section 4 header: KPI only; descriptive text removed.
+    seg_kpi, seg_space = st.columns([0.24, 0.76], gap="medium")
     with seg_kpi:
         kpi_card(
             "TOTAL WORKLOAD HOURS",
