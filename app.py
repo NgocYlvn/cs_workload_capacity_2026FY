@@ -4006,7 +4006,8 @@ def main():
         else "TOTAL ACTUAL WORKING TIME"
     )
 
-    # Row 1: 4 compact numeric cards to avoid an overly dense 6-card row.
+    # Row 1: group the two total/monthly KPIs next to each other,
+    # followed by the two per-PIC KPIs for easier visual comparison.
     p1, p2, p3, p4 = st.columns(4, gap="medium")
 
     with p1:
@@ -4021,14 +4022,6 @@ def main():
 
     with p2:
         pic_kpi_card(
-            "AVAILABLE STANDARD TIME / PIC",
-            fmt_num(standard_per_pic, 1),
-            "95% × 8 × 22",
-            unit="Hours / PIC",
-        )
-
-    with p3:
-        pic_kpi_card(
             actual_working_time_label,
             fmt_num(total_actual_working, 1)
             if not pd.isna(total_actual_working) else "N/A",
@@ -4036,6 +4029,14 @@ def main():
             if not is_all_months
             else "Average monthly PIC workload",
             unit="Hours",
+        )
+
+    with p3:
+        pic_kpi_card(
+            "AVAILABLE STANDARD TIME / PIC",
+            fmt_num(standard_per_pic, 1),
+            "95% × 8 × 22",
+            unit="Hours / PIC",
         )
 
     with p4:
