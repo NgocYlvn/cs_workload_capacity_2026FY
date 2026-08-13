@@ -178,7 +178,7 @@ st.markdown(
 
     /* Reduce top whitespace and move dashboard content upward */
     .block-container {{
-        padding-top: 1.4rem !important;
+        padding-top: 0.15rem !important;
     }}
 
     .main-header {{
@@ -1397,7 +1397,8 @@ st.markdown(
     <style>
     header[data-testid="stHeader"] {{
         background:transparent !important;
-        height:2.2rem !important;
+        height:0.35rem !important;
+        min-height:0.35rem !important;
     }}
 
     [data-testid="stToolbar"] {{
@@ -1409,7 +1410,7 @@ st.markdown(
        ------------------------------------------------------------ */
     .block-container {{
         max-width: 1680px !important;
-        padding-top: 0.35rem !important;
+        padding-top: 0.10rem !important;
         padding-left: 1.05rem !important;
         padding-right: 1.05rem !important;
         padding-bottom: 1.5rem !important;
@@ -1623,7 +1624,7 @@ st.markdown(
        This avoids clipping/stacking issues on Streamlit Cloud. */
     div[data-testid="stVerticalBlock"] > div:has(.main-header) {{
         position:sticky !important;
-        top:0.35rem !important;
+        top:0.10rem !important;
         z-index:1000 !important;
         background:{COLORS['bg']} !important;
         padding-top:0.15rem !important;
@@ -1964,7 +1965,7 @@ st.markdown(
             padding:8px 12px 7px 12px !important;
         }}
         div[data-testid="stVerticalBlock"] > div:has(.main-header) {{
-            top:0.20rem !important;
+            top:0.05rem !important;
         }}
 
         .main-title {{
