@@ -4606,11 +4606,25 @@ def main():
         )
 
     with p3:
-        section3_kpi_card(
-            "FTE Workload (%)",
+        fte_value = (
             f"{fte_workload * 100:,.1f}%"
-            if not pd.isna(fte_workload) else "N/A",
-            "Actual Time ÷ Available Time",
+            if not pd.isna(fte_workload) else "N/A"
+        )
+        st.markdown(
+            f"""
+            <div class="pic-kpi-card">
+                <div class="pic-kpi-label">FTE Workload (%)</div>
+                <div class="pic-kpi-value" style="
+                    font-size:38px !important;
+                    font-weight:800 !important;
+                    line-height:1.05 !important;
+                ">
+                    {fte_value}
+                </div>
+                <div class="pic-kpi-note">Actual Time ÷ Available Time</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
         )
 
     with p4:
@@ -4629,9 +4643,10 @@ def main():
                           style="
                               color:{status_color};
                               background:{status_bg};
-                              font-size:14px !important;
-                              padding:8px 18px !important;
-                              min-width:150px;
+                              font-size:16px !important;
+                              font-weight:800 !important;
+                              padding:10px 24px !important;
+                              min-width:180px;
                               text-align:center;
                           ">
                         {status_text}
