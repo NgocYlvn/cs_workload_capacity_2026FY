@@ -1716,6 +1716,91 @@ st.markdown(
         margin:18px 0 9px 0 !important;
     }}
 
+
+    /* ------------------------------------------------------------
+       KPI ICON SYSTEM — reference-style corporate layout
+       Label top -> Icon + Value center -> Detail bottom
+       ------------------------------------------------------------ */
+    .kpi-icon-circle {{
+        width:44px;
+        height:44px;
+        min-width:44px;
+        border-radius:50%;
+        display:inline-flex;
+        align-items:center;
+        justify-content:center;
+        flex:0 0 44px;
+    }}
+
+    .kpi-icon-circle svg {{
+        width:23px;
+        height:23px;
+        fill:none;
+        stroke:currentColor;
+        stroke-width:1.8;
+        stroke-linecap:round;
+        stroke-linejoin:round;
+    }}
+
+    .hc-main-row {{
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        gap:10px;
+        width:100%;
+        margin:7px 0 5px 0;
+    }}
+
+    .hc-main-row .hc-kpi-total {{
+        width:auto !important;
+        margin:0 !important;
+        text-align:left !important;
+    }}
+
+    .shipment-main-row,
+    .pic-main-row {{
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        gap:9px;
+        width:100%;
+        margin:5px 0 2px 0;
+    }}
+
+    .shipment-main-row .shipment-kpi-value,
+    .pic-main-row .pic-kpi-value {{
+        margin:0 !important;
+    }}
+
+    .status-icon-circle {{
+        width:38px;
+        height:38px;
+        min-width:38px;
+        border-radius:50%;
+        display:inline-flex;
+        align-items:center;
+        justify-content:center;
+        flex:0 0 38px;
+    }}
+
+    .status-icon-circle svg {{
+        width:20px;
+        height:20px;
+        fill:none;
+        stroke:currentColor;
+        stroke-width:1.8;
+        stroke-linecap:round;
+        stroke-linejoin:round;
+    }}
+
+    .status-head-inline {{
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        gap:8px;
+        width:100%;
+    }}
+
     /* ------------------------------------------------------------
        KPI / CARD HIERARCHY
        ------------------------------------------------------------ */
@@ -1865,6 +1950,21 @@ st.markdown(
        Reduce whitespace, not core readability.
        ------------------------------------------------------------ */
     @media (max-width:1366px) {{
+        .kpi-icon-circle {{
+            width:42px;
+            height:42px;
+            min-width:42px;
+            flex-basis:42px;
+        }}
+        .kpi-icon-circle svg {{
+            width:22px;
+            height:22px;
+        }}
+        .hc-main-row {{
+            gap:8px;
+            margin:5px 0 4px 0;
+        }}
+
         section[data-testid="stSidebar"],
         section[data-testid="stSidebar"] > div:first-child {{
             width:260px !important;
@@ -2116,6 +2216,89 @@ def status_from_util(util: float) -> Tuple[str, str, str]:
     return "OVERLOAD", COLORS["red"], "#FEE2E2"
 
 
+
+def ui_icon_svg(kind: str, color: str, bg: str, circle_class: str = "kpi-icon-circle") -> str:
+    """Inline corporate SVG icon - UI only, no external dependency."""
+    icons = {
+        "people": """
+            <circle cx="12" cy="8" r="3"></circle>
+            <circle cx="5.5" cy="10" r="2.2"></circle>
+            <circle cx="18.5" cy="10" r="2.2"></circle>
+            <path d="M7.5 20v-2.2c0-3 2-5.3 4.5-5.3s4.5 2.3 4.5 5.3V20"></path>
+            <path d="M2 19v-1.4c0-2.3 1.5-4 3.6-4"></path>
+            <path d="M22 19v-1.4c0-2.3-1.5-4-3.6-4"></path>
+        """,
+        "people_active": """
+            <circle cx="10" cy="8" r="3"></circle>
+            <path d="M4.5 20v-2.3c0-3.1 2.4-5.4 5.5-5.4s5.5 2.3 5.5 5.4V20"></path>
+            <path d="M16 9l1.8 1.8L21 7"></path>
+        """,
+        "people_required": """
+            <circle cx="9" cy="8" r="3"></circle>
+            <path d="M3.5 20v-2.3c0-3.1 2.4-5.4 5.5-5.4s5.5 2.3 5.5 5.4V20"></path>
+            <path d="M18 8v7M14.5 11.5h7"></path>
+        """,
+        "balance": """
+            <path d="M12 4v16"></path>
+            <path d="M6 7h12"></path>
+            <path d="M6 7l-3 6h6L6 7z"></path>
+            <path d="M18 7l-3 6h6l-3-6z"></path>
+            <path d="M8 20h8"></path>
+        """,
+        "package": """
+            <path d="M4 8l8-4 8 4-8 4-8-4z"></path>
+            <path d="M4 8v8l8 4 8-4V8"></path>
+            <path d="M12 12v8"></path>
+        """,
+        "customers": """
+            <circle cx="9" cy="8" r="3"></circle>
+            <circle cx="17" cy="9" r="2.5"></circle>
+            <path d="M3.5 20v-2c0-3.1 2.4-5.3 5.5-5.3s5.5 2.2 5.5 5.3v2"></path>
+            <path d="M15 14c2.8 0 5 1.8 5 4.5V20"></path>
+        """,
+        "clipboard": """
+            <rect x="5" y="5" width="14" height="16" rx="2"></rect>
+            <path d="M9 5V3h6v2"></path>
+            <path d="M8.5 10h7M8.5 14h7M8.5 18h5"></path>
+        """,
+        "gauge": """
+            <path d="M4 17a8 8 0 0 1 16 0"></path>
+            <path d="M12 17l4-5"></path>
+            <circle cx="12" cy="17" r="1.4"></circle>
+        """,
+        "target": """
+            <circle cx="12" cy="12" r="8"></circle>
+            <circle cx="12" cy="12" r="4"></circle>
+            <path d="M12 12l6-6"></path>
+            <path d="M16 6h3v3"></path>
+        """,
+    }
+    path = icons.get(kind, icons["clipboard"])
+    return f'<span class="{circle_class}" style="color:{color};background:{bg};"><svg viewBox="0 0 24 24" aria-hidden="true">{path}</svg></span>'
+
+
+def hc_icon_for_label(label: str) -> str:
+    key = str(label).upper()
+    if "APPROVED" in key:
+        return ui_icon_svg("people", "#06183F", "#EEF3F8")
+    if "ACTUAL" in key:
+        return ui_icon_svg("people_active", "#0DBAEE", "#E8F8FD")
+    if "REQUIRED" in key:
+        return ui_icon_svg("people_required", "#E6761B", "#FFF2E8")
+    return ui_icon_svg("balance", "#6EA52B", "#F1F8E8")
+
+
+def general_kpi_icon(label: str) -> str:
+    key = str(label).lower()
+    if "shipment" in key:
+        return ui_icon_svg("package", "#0DBAEE", "#E8F8FD")
+    if "customer" in key:
+        return ui_icon_svg("customers", "#06183F", "#EEF3F8")
+    if "workload" in key or "working time" in key or "available time" in key:
+        return ui_icon_svg("clipboard", "#0DBAEE", "#E8F8FD")
+    return ui_icon_svg("clipboard", "#06183F", "#EEF3F8")
+
+
 def kpi_card(label: str, value: str, note: str = "", status: Optional[Tuple[str, str, str]] = None):
     badge = ""
     if status:
@@ -2189,7 +2372,10 @@ def hc_detail_card(
         f"""
         <div class="hc-kpi-card">
             <div class="kpi-label">{label}</div>
-            <div class="hc-kpi-total {total_color_class}">{fmt_num(total_value, 2 if "REQUIRED" in label.upper() else 0)}</div>
+            <div class="hc-main-row">
+                {hc_icon_for_label(label)}
+                <div class="hc-kpi-total {total_color_class}">{fmt_num(total_value, 2 if "REQUIRED" in label.upper() else 0)}</div>
+            </div>
             {status_html}
             {details_html}
         </div>
@@ -2212,7 +2398,10 @@ def hc_variance_card(
         f"""
         <div class="hc-kpi-card hc-variance-card">
             <div class="kpi-label">{label}</div>
-            <div class="hc-kpi-total" style="color:{status_color} !important;">{fmt_num(value, 2)}</div>
+            <div class="hc-main-row">
+                {ui_icon_svg("balance", "#6EA52B", "#F1F8E8")}
+                <div class="hc-kpi-total" style="color:{status_color} !important;">{fmt_num(value, 2)}</div>
+            </div>
             <div class="hc-variance-formula">{formula_text}</div>
             <span class="status-badge hc-variance-status"
                   style="color:{status_color};background:{status_bg};">
@@ -2231,7 +2420,10 @@ def shipment_kpi_card(label: str, value: str, note: str = ""):
         f"""
         <div class="shipment-kpi-card">
             <div class="shipment-kpi-label">{label}</div>
-            <div class="shipment-kpi-value">{value}</div>
+            <div class="shipment-main-row">
+                {general_kpi_icon(label)}
+                <div class="shipment-kpi-value">{value}</div>
+            </div>
             <div class="shipment-kpi-note">{note}</div>
         </div>
         """,
@@ -2248,7 +2440,10 @@ def pic_kpi_card(label: str, value: str, note: str = "", unit: str = ""):
         <div class="pic-kpi-card">
             <div class="pic-kpi-label">{label}</div>
             {unit_html}
-            <div class="pic-kpi-value">{value}</div>
+            <div class="pic-main-row">
+                {general_kpi_icon(label)}
+                <div class="pic-kpi-value">{value}</div>
+            </div>
             <div class="pic-kpi-note">{note}</div>
         </div>
         """,
@@ -2360,7 +2555,10 @@ def pic_utilization_card(util: float):
         f"""
         <div class="pic-status-card">
             <div class="pic-status-left">
-                <div class="pic-status-title">CAPACITY UTILIZATION</div>
+                <div class="status-head-inline" style="justify-content:flex-start;">
+                    {ui_icon_svg("gauge", "#0DBAEE", "#E8F8FD", circle_class="status-icon-circle")}
+                    <div class="pic-status-title">CAPACITY UTILIZATION</div>
+                </div>
                 <div class="pic-status-value">{value}</div>
             </div>
             <div class="pic-progress-track">
@@ -2382,7 +2580,10 @@ def overall_workload_status_card(util: float):
     st.markdown(
         f"""
         <div class="workload-status-panel">
-            <div class="pic-status-title">OVERALL WORKLOAD STATUS</div>
+            <div class="status-head-inline">
+                {ui_icon_svg("target", color, bg, circle_class="status-icon-circle")}
+                <div class="pic-status-title">OVERALL WORKLOAD STATUS</div>
+            </div>
             <div class="workload-status-text"
                  style="color:{color};background:{bg};
                         border-radius:999px;padding:8px 14px;">
@@ -5208,16 +5409,16 @@ def main():
             '<div class="sidebar-brand"><span class="sidebar-brand-mark"></span><span>Yusen Logistics</span></div>',
             unsafe_allow_html=True,
         )
-        if st.button("← HOME", use_container_width=True, key="back_to_cover_btn"):
+        if st.button("🏠  HOME", use_container_width=True, key="back_to_cover_btn"):
             st.session_state["dashboard_entered"] = False
             st.rerun()
-        st.markdown('<div class="sidebar-filter-title">FILTERS</div>', unsafe_allow_html=True)
+        st.markdown('<div class="sidebar-filter-title">⚙ FILTERS</div>', unsafe_allow_html=True)
         st.markdown('<div class="sidebar-filter-caption">Month / Office</div>', unsafe_allow_html=True)
-        month = st.selectbox("MONTH", month_options, key="month_filter")
-        office = st.selectbox("OFFICE", office_options, key="office_filter")
+        month = st.selectbox("📅  MONTH", month_options, key="month_filter")
+        office = st.selectbox("🏢  OFFICE", office_options, key="office_filter")
         st.markdown("---")
         uploaded = st.file_uploader(
-            "UPLOAD EXCEL FILE",
+            "☁️  UPLOAD EXCEL FILE",
             type=["xlsx", "xlsm", "xls"],
             help="Nếu không upload, Dashboard sẽ đọc file mặc định trong cùng thư mục app.py.",
             key="excel_uploader",
