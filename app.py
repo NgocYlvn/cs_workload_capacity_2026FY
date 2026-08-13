@@ -55,21 +55,21 @@ SERVICE_LABELS = {
 # are NOT asserted here as official corporate-brand specifications.
 # ============================================================
 YUSEN_THEME = {
-    "primary": "#003B70",          # deep corporate navy
-    "primary_dark": "#002B55",
-    "secondary": "#005BAC",        # corporate blue
-    "secondary_mid": "#3F7FB5",
-    "secondary_light": "#8EB7D8",
-    "secondary_pale": "#EAF3F8",
-    "accent": "#F58220",           # warm corporate accent
-    "accent_pale": "#FFF3E8",
-    "background": "#F5F7FA",
+    "primary": "#06183F",          # Yusen Navy - primary
+    "primary_dark": "#041532",     # deeper navy for sidebar gradient
+    "secondary": "#0DBAEE",        # Yusen Cyan - supporting/data series
+    "secondary_mid": "#3F5B81",    # Mid Blue
+    "secondary_light": "#D5EAF8",  # Light Blue
+    "secondary_pale": "#EEF7FC",
+    "accent": "#E6761B",           # Yusen Orange - accent/attention
+    "accent_pale": "#FFF2E8",
+    "background": "#F6F8FB",
     "surface": "#FFFFFF",
-    "text_primary": "#1D2A36",
-    "text_secondary": "#5B6876",
-    "border": "#D7E0E8",
-    "grid": "#E9EEF3",
-    "hover": "#EEF4F8",
+    "text_primary": "#06183F",
+    "text_secondary": "#5B6575",
+    "border": "#D5E1EA",
+    "grid": "#E8EEF3",
+    "hover": "#F3F7FA",
 }
 
 COLORS = {
@@ -77,7 +77,7 @@ COLORS = {
     "blue": YUSEN_THEME["secondary"],
     "light_blue": YUSEN_THEME["secondary_pale"],
     "red": "#D92D20",
-    "green": "#16834B",
+    "green": "#95C947",
     "amber": YUSEN_THEME["accent"],
     "gray": "#98A2B3",
     "gray_dark": YUSEN_THEME["text_secondary"],
@@ -1381,6 +1381,234 @@ st.markdown(
 
     .pic-kpi-note {{
         margin-top: 8px !important;
+    }}
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+# ============================================================
+# HOME / SIDEBAR / HEADER POLISH — YUSEN EXECUTIVE FORMAT
+# UI only — keeps all existing text, filters, business logic and calculations unchanged
+# ============================================================
+st.markdown(
+    f"""
+    <style>
+    /* Wider, cleaner sidebar inspired by the approved HOME format */
+    section[data-testid="stSidebar"] {{
+        background: linear-gradient(180deg, #041532 0%, #06183F 100%) !important;
+        border-right: 1px solid rgba(255,255,255,0.06) !important;
+    }}
+    section[data-testid="stSidebar"] > div:first-child {{
+        padding-top: 1.0rem !important;
+        padding-left: 1.15rem !important;
+        padding-right: 1.15rem !important;
+    }}
+    .sidebar-brand {{
+        display:flex;
+        align-items:center;
+        gap:10px;
+        color:#FFFFFF;
+        font-weight:800;
+        font-size:22px;
+        line-height:1;
+        margin:2px 0 18px 2px;
+        letter-spacing:-0.02em;
+    }}
+    .sidebar-brand-mark {{
+        width:36px;
+        height:22px;
+        position:relative;
+        display:inline-block;
+    }}
+    .sidebar-brand-mark::before,
+    .sidebar-brand-mark::after {{
+        content:"";
+        position:absolute;
+        left:0;
+        height:3px;
+        border-radius:999px;
+        background:#FFFFFF;
+        transform:skewX(-28deg);
+    }}
+    .sidebar-brand-mark::before {{ width:34px; top:4px; }}
+    .sidebar-brand-mark::after {{ width:27px; top:13px; left:6px; }}
+
+    /* HOME action */
+    section[data-testid="stSidebar"] div[data-testid="stButton"] > button {{
+        min-height:48px !important;
+        background:#FFFFFF !important;
+        color:#06183F !important;
+        border:1px solid #D5E1EA !important;
+        border-radius:10px !important;
+        font-size:13px !important;
+        font-weight:700 !important;
+        box-shadow:0 4px 14px rgba(0,0,0,0.10) !important;
+        margin-bottom:14px !important;
+    }}
+    section[data-testid="stSidebar"] div[data-testid="stButton"] > button:hover {{
+        color:#E6761B !important;
+        border-color:#E6761B !important;
+        background:#FFFFFF !important;
+    }}
+
+    /* Sidebar section heading */
+    .sidebar-filter-title {{
+        display:flex;
+        align-items:center;
+        gap:10px;
+        color:#FFFFFF;
+        font-size:16px;
+        font-weight:800;
+        margin:6px 0 2px 0;
+        letter-spacing:0.01em;
+    }}
+    .sidebar-filter-title::after {{
+        content:"";
+        width:26px;
+        height:3px;
+        border-radius:999px;
+        background:#E6761B;
+        display:block;
+    }}
+    .sidebar-filter-caption {{
+        color:#D5EAF8;
+        font-size:10px;
+        font-weight:600;
+        margin-bottom:14px;
+    }}
+
+    section[data-testid="stSidebar"] label {{
+        color:#FFFFFF !important;
+        font-size:11px !important;
+        font-weight:750 !important;
+        letter-spacing:0.015em !important;
+        margin-bottom:5px !important;
+    }}
+    section[data-testid="stSidebar"] div[data-baseweb="select"] > div {{
+        min-height:44px !important;
+        background:#FFFFFF !important;
+        border:1px solid #D5E1EA !important;
+        border-radius:9px !important;
+        box-shadow:none !important;
+    }}
+    section[data-testid="stSidebar"] div[data-baseweb="select"] span,
+    section[data-testid="stSidebar"] div[data-baseweb="select"] input,
+    section[data-testid="stSidebar"] div[data-baseweb="select"] svg {{
+        color:#06183F !important;
+        fill:#06183F !important;
+    }}
+
+    section[data-testid="stSidebar"] hr {{
+        border:0 !important;
+        border-top:1px solid rgba(213,234,248,0.20) !important;
+        margin:16px 0 !important;
+    }}
+
+    /* Upload area as a premium white card */
+    section[data-testid="stSidebar"] [data-testid="stFileUploader"] {{
+        margin-top:2px !important;
+    }}
+    section[data-testid="stSidebar"] [data-testid="stFileUploader"] section {{
+        background:#FFFFFF !important;
+        border:1px solid #D5E1EA !important;
+        border-radius:10px !important;
+        padding:10px 10px !important;
+        box-shadow:0 3px 12px rgba(0,0,0,0.08) !important;
+    }}
+    section[data-testid="stSidebar"] [data-testid="stFileUploader"] section * {{
+        color:#06183F !important;
+    }}
+    section[data-testid="stSidebar"] [data-testid="stFileUploader"] button {{
+        background:#FFFFFF !important;
+        color:#06183F !important;
+        border:1px solid #B9CAD8 !important;
+        border-radius:8px !important;
+        font-weight:650 !important;
+    }}
+
+    /* Main page: cleaner executive header */
+    .main-header {{
+        position:relative !important;
+        overflow:hidden !important;
+        background:#FFFFFF !important;
+        border:1px solid #D5E1EA !important;
+        border-left:5px solid #0DBAEE !important;
+        border-radius:12px !important;
+        padding:17px 22px !important;
+        margin-bottom:12px !important;
+        box-shadow:0 4px 14px rgba(6,24,63,0.055) !important;
+    }}
+    .main-header::after {{
+        content:"↗";
+        position:absolute;
+        right:24px;
+        top:18px;
+        width:44px;
+        height:44px;
+        border-radius:12px;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        color:#E6761B;
+        background:#FFF2E8;
+        font-size:25px;
+        font-weight:700;
+    }}
+    .main-title {{
+        color:#06183F !important;
+        font-size:30px !important;
+        font-weight:800 !important;
+        letter-spacing:-0.025em !important;
+        padding-right:70px !important;
+    }}
+
+    .filter-summary-card {{
+        display:flex;
+        align-items:center;
+        gap:0;
+        background:#FFFFFF;
+        border:1px solid #D5E1EA;
+        border-radius:12px;
+        box-shadow:0 2px 8px rgba(6,24,63,0.035);
+        margin:0 0 14px 0;
+        padding:11px 18px;
+    }}
+    .filter-summary-item {{
+        min-width:190px;
+        padding:0 24px 0 0;
+        margin-right:24px;
+        border-right:1px solid #E8EEF3;
+    }}
+    .filter-summary-item:last-child {{ border-right:0; }}
+    .filter-summary-label {{
+        color:#5B6575;
+        font-size:11px;
+        font-weight:650;
+        margin-bottom:2px;
+    }}
+    .filter-summary-value {{
+        color:#06183F;
+        font-size:14px;
+        font-weight:750;
+    }}
+
+    /* Section title and cards */
+    .section-title {{
+        color:#06183F !important;
+        border-left:4px solid #E6761B !important;
+        font-weight:800 !important;
+    }}
+    .kpi-card,.hc-kpi-card,.shipment-kpi-card,.pic-kpi-card,
+    .pic-status-card,.workload-status-panel,[data-testid="stPlotlyChart"],[data-testid="stDataFrame"] {{
+        border-color:#D5E1EA !important;
+        box-shadow:0 3px 10px rgba(6,24,63,0.04) !important;
+    }}
+
+    @media (max-width: 1100px) {{
+        .main-header::after {{ display:none; }}
+        .filter-summary-card {{ flex-wrap:wrap; gap:8px 0; }}
+        .filter-summary-item {{ min-width:150px; }}
     }}
     </style>
     """,
@@ -4194,17 +4422,15 @@ footer{display:none!important}
 
 .cover-panel{
     position:absolute;
-    top:26px;
-    bottom:26px;
+    top:18px;
+    bottom:18px;
     left:2.2vw;
-    width:min(48vw,730px);
-    min-width:560px;
+    width:min(50.5vw,760px);
+    min-width:570px;
     height:auto;
     min-height:0;
     box-sizing:border-box;
-    padding:22px 34px 20px;
-    display:flex;
-    flex-direction:column;
+    padding:24px 36px 22px;
     border-radius:24px;
     background:linear-gradient(145deg,#FFFFFF 0%,#FCFDFE 100%);
     border:1px solid rgba(255,255,255,.72);
@@ -4216,14 +4442,14 @@ footer{display:none!important}
     width:180px;
     height:auto;
     display:block;
-    margin:0 0 clamp(18px,2.5vh,28px) 0;
+    margin:0 0 clamp(24px,3.6vh,38px) 0;
 }
 
 .cover-title{
     margin:0;
     max-width:650px;
     color:#06183F;
-    font-size:clamp(48px,3.8vw,68px);
+    font-size:clamp(46px,3.65vw,66px);
     line-height:.98;
     letter-spacing:-.035em;
     font-weight:850;
@@ -4257,7 +4483,7 @@ footer{display:none!important}
     display:grid;
     grid-template-columns:repeat(4,minmax(0,1fr));
     gap:0;
-    margin-top:6px;
+    margin-top:2px;
 }
 
 .cover-pillar{
@@ -4320,14 +4546,13 @@ footer{display:none!important}
 }
 
 .cover-cta{
-    position:relative;
-    left:auto;
-    bottom:auto;
+    position:absolute;
+    left:36px;
+    bottom:22px;
     display:inline-flex;
     align-items:center;
     justify-content:space-between;
     gap:18px;
-    width:max-content;
     min-width:300px;
     height:52px;
     padding:0 20px;
@@ -4339,8 +4564,6 @@ footer{display:none!important}
     font-size:20px;
     font-weight:800;
     box-shadow:0 8px 18px rgba(230,118,27,.28);
-    margin-top:auto;
-    align-self:flex-start;
 }
 
 .cover-cta-icon{
@@ -4376,7 +4599,7 @@ footer{display:none!important}
 .cover-right-footer{
     position:absolute;
     right:4vw;
-    bottom:4.4vh;
+    bottom:3.2vh;
     display:flex;
     align-items:center;
     gap:18px;
@@ -4443,19 +4666,19 @@ footer{display:none!important}
 
 
 @media(max-height:820px) and (min-width:901px){
-    .cover-panel{top:18px;bottom:18px;padding:18px 32px 16px;width:min(47vw,700px)}
-    .cover-logo-real{width:155px;margin-bottom:16px}
-    .cover-title{font-size:clamp(42px,3.1vw,58px)}
-    .cover-title-accent{margin:12px 0 9px 2px}
-    .cover-subtitle{font-size:18px;margin-bottom:10px}
-    .cover-separator{margin-bottom:10px}
-    .cover-icon{width:48px;height:48px}
-    .cover-icon svg{width:26px;height:26px}
-    .cover-pillar-title{font-size:10.5px;margin-bottom:4px}
-    .cover-pillar-note{font-size:8.8px;line-height:1.22}
-    .cover-pillar:not(:last-child)::after{top:28px;height:72px}
-    .cover-cta{height:48px;min-width:290px;font-size:18px}
-    .cover-right-footer{bottom:3.2vh;font-size:15px}
+    .cover-panel{top:14px;bottom:14px;padding:20px 34px 18px}
+    .cover-logo-real{width:165px;margin-bottom:22px}
+    .cover-title{font-size:clamp(44px,3.3vw,60px)}
+    .cover-title-accent{margin:14px 0 11px 2px}
+    .cover-subtitle{font-size:19px;margin-bottom:12px}
+    .cover-separator{margin-bottom:12px}
+    .cover-icon{width:50px;height:50px}
+    .cover-icon svg{width:27px;height:27px}
+    .cover-pillar-title{font-size:11px;margin-bottom:5px}
+    .cover-pillar-note{font-size:9px;line-height:1.25}
+    .cover-pillar:not(:last-child)::after{top:30px;height:78px}
+    .cover-cta{bottom:18px;height:50px;min-width:300px;font-size:19px}
+    .cover-right-footer{bottom:2.4vh;font-size:16px}
 }
 
 @media(max-width:900px){
@@ -4474,7 +4697,7 @@ footer{display:none!important}
     .cover-title{font-size:46px}
     .cover-pillars{grid-template-columns:repeat(2,1fr);row-gap:20px}
     .cover-pillar:nth-child(2)::after{display:none}
-    .cover-cta{width:100%;min-width:0;margin-top:24px;align-self:stretch}
+    .cover-cta{left:24px;right:24px;width:auto;bottom:28px}
     .cover-arc-svg,.cover-right-footer,.cover-wave-1,.cover-wave-2,.cover-wave-3{display:none}
 }
 </style>
@@ -4630,12 +4853,17 @@ def main():
     office_options = ["All Offices"] + sorted(set(STANDARD_OFFICES + [o for o in offices_from_data if o]))
 
     # Sidebar order: Month -> Office -> Upload file. No Year and no Reset button.
+    # UI only: styled to match the approved Yusen executive HOME format.
     with st.sidebar:
+        st.markdown(
+            '<div class="sidebar-brand"><span class="sidebar-brand-mark"></span><span>Yusen Logistics</span></div>',
+            unsafe_allow_html=True,
+        )
         if st.button("← HOME", use_container_width=True, key="back_to_cover_btn"):
             st.session_state["dashboard_entered"] = False
             st.rerun()
-        st.markdown("## FILTERS")
-        st.caption("Month / Office")
+        st.markdown('<div class="sidebar-filter-title">FILTERS</div>', unsafe_allow_html=True)
+        st.markdown('<div class="sidebar-filter-caption">Month / Office</div>', unsafe_allow_html=True)
         month = st.selectbox("MONTH", month_options, key="month_filter")
         office = st.selectbox("OFFICE", office_options, key="office_filter")
         st.markdown("---")
@@ -4691,7 +4919,16 @@ def main():
         <div class="main-header">
             <div class="main-title">{APP_TITLE}</div>
             <div class="subtitle">{APP_SUBTITLE}</div>
-            <div class="subtitle"><b>Selected Month:</b> {month} &nbsp; | &nbsp; <b>Selected Office:</b> {office}</div>
+        </div>
+        <div class="filter-summary-card">
+            <div class="filter-summary-item">
+                <div class="filter-summary-label">Selected Month</div>
+                <div class="filter-summary-value">{month}</div>
+            </div>
+            <div class="filter-summary-item">
+                <div class="filter-summary-label">Selected Office</div>
+                <div class="filter-summary-value">{office}</div>
+            </div>
         </div>
         """,
         unsafe_allow_html=True,
