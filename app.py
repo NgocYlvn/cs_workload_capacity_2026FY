@@ -5783,18 +5783,24 @@ def main():
                     justify-content:center;
                     align-items:center;
                 ">
-                    <span class="status-badge"
-                          style="
-                              color:{status_color};
-                              background:{status_bg};
-                              font-size:30px !important;
-                              font-weight:800 !important;
-                              padding:10px 32px !important;
-                              min-width:220px;
-                              text-align:center;
-                          ">
-                        {status_text}
-                    </span>
+            <span class="status-badge"
+                style="
+                    color:{status_color};
+                    background:{status_bg};
+                    font-size:30px !important;
+                    line-height:1.05 !important;
+                    font-weight:800 !important;
+                    padding:10px 32px !important;
+                    min-width:220px;
+                    min-height:44px;
+                    display:inline-flex;
+                    align-items:center;
+                    justify-content:center;
+                    text-align:center;
+                    border-radius:999px;
+                ">
+                {status_text}
+            </span>
                 </div>
             </div>
             """,
