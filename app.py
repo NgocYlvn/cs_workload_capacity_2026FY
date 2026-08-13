@@ -12,6 +12,7 @@ import re
 import html
 import hashlib
 from pathlib import Path
+import textwrap
 from typing import Dict, Iterable, List, Optional, Tuple
 
 import numpy as np
@@ -4170,8 +4171,9 @@ def render_yvf_table(df: pd.DataFrame):
 def render_cover_page() -> None:
     """Corporate landing page inspired by the approved cover reference."""
     st.markdown(
-        f"""
-        <style>
+        textwrap.dedent(
+            f"""
+            <style>
         /* ---------------- COVER ONLY ---------------- */
         section[data-testid="stSidebar"] {{ display: none !important; }}
         [data-testid="stSidebarCollapsedControl"] {{ display: none !important; }}
@@ -4559,14 +4561,16 @@ def render_cover_page() -> None:
                 display: none;
             }}
         }}
-        </style>
-        """,
+            </style>
+            """
+        ),
         unsafe_allow_html=True,
     )
 
     st.markdown(
-        """
-        <div class="cover-stage">
+        textwrap.dedent(
+            """
+            <div class="cover-stage">
 
             <div class="cover-orbits">
                 <div class="orbit o1"></div>
@@ -4689,8 +4693,9 @@ def render_cover_page() -> None:
                 <span>FY2026</span>
             </div>
 
-        </div>
-        """,
+            </div>
+            """
+        ),
         unsafe_allow_html=True,
     )
 
