@@ -4573,28 +4573,44 @@ def main():
     # Four management KPIs in one row.
     p1, p2, p3, p4 = st.columns(4, gap="medium")
 
+    def section3_kpi_card(label: str, value: str, note: str = ""):
+        note_html = (
+            f'<div class="pic-kpi-note">{note}</div>'
+            if note else ""
+        )
+        st.markdown(
+            f"""
+            <div class="pic-kpi-card">
+                <div class="pic-kpi-label">{label}</div>
+                <div class="pic-kpi-value">{value}</div>
+                {note_html}
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
     with p1:
-        pic_kpi_card(
+        section3_kpi_card(
             "Total Available Time",
             fmt_num(total_available, 1)
             if not pd.isna(total_available) else "N/A",
-            note="95% × 8 × 22 × PIC",
+            "95% × 8 × 22 × PIC",
         )
 
     with p2:
-        pic_kpi_card(
+        section3_kpi_card(
             "Total Actual Working Time",
             fmt_num(total_actual_working, 1)
             if not pd.isna(total_actual_working) else "N/A",
-            note="C + A + S + E",
+            "C + A + S + E",
         )
 
     with p3:
-        pic_kpi_card(
+        section3_kpi_card(
             "FTE Workload (%)",
             f"{fte_workload * 100:,.1f}%"
             if not pd.isna(fte_workload) else "N/A",
-            note="Actual Time ÷ Available Time",
+            "Actual Time ÷ Available Time",
         )
 
     with p4:
