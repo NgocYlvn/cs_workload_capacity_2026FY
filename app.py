@@ -4256,7 +4256,7 @@ def main():
             unsafe_allow_html=True,
         )
 
-    section_title("1. WORKLOAD & CAPACITY UTILIZATION")
+    section_title("1. Workload & Capacity Utilization")
 
     # Section 1 uses the HC sheet as the single source of truth.
     approved_hc = weighted_period_avg(f_hc, "Total Approved HC") if not f_hc.empty else 0.0
