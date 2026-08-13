@@ -2142,45 +2142,147 @@ def prepare_workload(df: pd.DataFrame) -> pd.DataFrame:
 @st.cache_data(show_spinner=False)
 def prepare_fte(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Normalize CS PIC workload into the original canonical output:
-        Office | CS PIC | MonthDate | Actual FTE
+    Normalize PIC workload while preserving the new source fields from
+    sheet "2. FTE Workload".
 
-    Old workbook:
-        OFFICE | CS PIC | Apr-26 | May-26 | ...
-        (cell value = FTE workload factor)
+    Canonical output:
+        Office
+        CS PIC
+        MonthDate
+        Available Time
+        Actual Working Time
+        Actual FTE
+        FTE Workload Status
 
     New MASTER DATA SOURCE:
-        Office | Month | CS PIC Name | ... | FTE Workload (%)
-        (FTE Workload % is the same workload factor used by downstream logic)
+        Office
+        Month
+        CS PIC Name
+        Total Available Time (95%x8x22x1) (i)
+        Total Actual Working Time (=C+A+S+E) (ii)
+        FTE Workload (%) (ii /i)
+        FTE Workload Status
+
+    Legacy wide-format input remains supported as a fallback.
     """
-    base = ["Office", "CS PIC", "MonthDate", "Actual FTE"]
+    base = [
+        "Office",
+        "CS PIC",
+        "MonthDate",
+        "Available Time",
+        "Actual Working Time",
+        "Actual FTE",
+        "FTE Workload Status",
+    ]
+
     if df.empty:
         return pd.DataFrame(columns=base)
 
     df = df.copy()
+
     office_col = first_existing(df, ["OFFICE", "Office"])
     pic_col = first_existing(df, ["CS PIC", "PIC", "CS PIC Name"])
 
     if not office_col or not pic_col:
         return pd.DataFrame(columns=base)
 
+    # --------------------------------------------------------
     # New long-format source
+    # --------------------------------------------------------
     month_col = first_existing(df, ["Month"])
+
+    available_col = first_existing(
+        df,
+        [
+            "Total Available Time (95%x8x22x1) (i)",
+            "Total Available Time",
+            "Available Time",
+        ],
+    )
+
+    actual_time_col = first_existing(
+        df,
+        [
+            "Total Actual Working Time (=C+A+S+E) (ii)",
+            "Total Actual Working Time",
+            "Actual Working Time",
+        ],
+    )
+
     factor_col = first_existing(
         df,
         [
             "FTE Workload (%) (ii /i)",
+            "FTE Workload (%) (ii / i)",
             "FTE Workload (%)",
             "FTE Workload",
         ],
     )
 
-    if month_col and factor_col:
-        long = df[[office_col, month_col, pic_col, factor_col]].copy()
+    status_col = first_existing(
+        df,
+        [
+            "FTE Workload Status",
+            "Workload Status",
+        ],
+    )
+
+    if month_col and (factor_col or actual_time_col):
+        keep_cols = [office_col, month_col, pic_col]
+        for c in [available_col, actual_time_col, factor_col, status_col]:
+            if c and c not in keep_cols:
+                keep_cols.append(c)
+
+        long = df[keep_cols].copy()
+
         long["Office"] = long[office_col].map(normalize_office)
         long["CS PIC"] = long[pic_col].astype(str).str.strip()
         long["MonthDate"] = long[month_col].map(parse_month)
-        long["Actual FTE"] = pd.to_numeric(long[factor_col], errors="coerce")
+
+        # Use source values directly whenever available.
+        if available_col:
+            long["Available Time"] = pd.to_numeric(
+                long[available_col], errors="coerce"
+            )
+        else:
+            long["Available Time"] = CAPACITY_HOURS_PER_FTE
+
+        if actual_time_col:
+            long["Actual Working Time"] = pd.to_numeric(
+                long[actual_time_col], errors="coerce"
+            )
+        else:
+            long["Actual Working Time"] = np.nan
+
+        if factor_col:
+            long["Actual FTE"] = pd.to_numeric(
+                long[factor_col], errors="coerce"
+            )
+        else:
+            long["Actual FTE"] = np.nan
+
+        # Fallback only when a source field is missing.
+        missing_fte = long["Actual FTE"].isna()
+        long.loc[missing_fte, "Actual FTE"] = (
+            long.loc[missing_fte, "Actual Working Time"]
+            / long.loc[missing_fte, "Available Time"].replace(0, np.nan)
+        )
+
+        missing_actual = long["Actual Working Time"].isna()
+        long.loc[missing_actual, "Actual Working Time"] = (
+            long.loc[missing_actual, "Actual FTE"]
+            * long.loc[missing_actual, "Available Time"]
+        )
+
+        if status_col:
+            long["FTE Workload Status"] = (
+                long[status_col].astype(str).str.strip()
+            )
+        else:
+            long["FTE Workload Status"] = long["Actual FTE"].apply(
+                lambda x: status_from_util(float(x))[0]
+                if pd.notna(x) else "NO DATA"
+            )
 
         long = long[
             (long["Office"] != "")
@@ -2188,13 +2290,17 @@ def prepare_fte(df: pd.DataFrame) -> pd.DataFrame:
             & (~long["MonthDate"].isna())
             & (long["Actual FTE"].notna())
         ]
+
         return long[base].reset_index(drop=True)
 
+    # --------------------------------------------------------
     # Legacy wide-format source
+    # --------------------------------------------------------
     month_cols = [
         c for c in df.columns
         if not pd.isna(parse_month(c))
     ]
+
     if not month_cols:
         return pd.DataFrame(columns=base)
 
@@ -2204,17 +2310,29 @@ def prepare_fte(df: pd.DataFrame) -> pd.DataFrame:
         var_name="Month",
         value_name="Actual FTE",
     )
+
     long["Office"] = long[office_col].map(normalize_office)
     long["CS PIC"] = long[pic_col].astype(str).str.strip()
     long["MonthDate"] = long["Month"].map(parse_month)
     long["Actual FTE"] = pd.to_numeric(long["Actual FTE"], errors="coerce")
+
+    long["Available Time"] = CAPACITY_HOURS_PER_FTE
+    long["Actual Working Time"] = (
+        long["Actual FTE"] * long["Available Time"]
+    )
+    long["FTE Workload Status"] = long["Actual FTE"].apply(
+        lambda x: status_from_util(float(x))[0]
+        if pd.notna(x) else "NO DATA"
+    )
 
     long = long[
         (long["Office"] != "")
         & (~long["MonthDate"].isna())
         & (long["Actual FTE"].notna())
     ]
+
     return long[base].reset_index(drop=True)
+
 
 
 @st.cache_data(show_spinner=False)
@@ -4383,156 +4501,133 @@ def main():
 
     section_title("3. Workload by PIC")
 
-    # KPI source: HC — PIC-only logic.
-    # IMPORTANT: all KPIs in Section 3 use the same population: Actual HC – PIC.
-    # Available Standard Time / PIC = 8 hrs/day × 22 days/month × 95% = 167.2 hrs.
-    # Total PIC Available Standard Time = Actual HC PIC × 167.2.
-    # Total Actual PIC Workload = HC source Actual workload/PIC × Actual HC PIC.
-    # Actual Workload / PIC = Total Actual PIC Workload ÷ Actual HC PIC.
-    # Capacity Utilization = Total Actual PIC Workload ÷ Total PIC Available Standard Time.
-    hc_for_pic = f_hc.copy()
+    # KPI source: sheet "2. FTE Workload".
+    # Single source of truth for Section 3:
+    #   (i)  Total Available Time
+    #   (ii) Total Actual Working Time
+    #        FTE Workload (%) = ii / i
+    #        FTE Workload Status
+    #
+    # Month = All:
+    #   Calculate monthly office/PIC totals first, then show the average
+    #   monthly Total Available Time and Total Actual Working Time.
+    # Selected month:
+    #   Show the actual total of that selected month.
 
-    standard_per_pic = CAPACITY_HOURS_PER_FTE
+    if f_fte is not None and not f_fte.empty:
+        fte_kpi = f_fte.copy()
 
-    if not hc_for_pic.empty:
-        hc_for_pic["Actual HC PIC"] = pd.to_numeric(
-            hc_for_pic.get("Actual HC PIC"), errors="coerce"
+        fte_kpi["Available Time"] = pd.to_numeric(
+            fte_kpi["Available Time"], errors="coerce"
         )
-        hc_for_pic["HC Actual Workload per PIC"] = pd.to_numeric(
-            hc_for_pic.get("HC Actual Workload per PIC"), errors="coerce"
-        )
-
-        # PIC capacity only — Managers are excluded from this section.
-        hc_for_pic["PIC Available Hours"] = (
-            hc_for_pic["Actual HC PIC"] * standard_per_pic
-        )
-
-        # Reconstruct PIC total workload from the HC source per-PIC workload.
-        # This keeps the HC sheet as the source while ensuring all KPIs use the same PIC population.
-        hc_for_pic["PIC Actual Workload Hours"] = (
-            hc_for_pic["HC Actual Workload per PIC"] * hc_for_pic["Actual HC PIC"]
+        fte_kpi["Actual Working Time"] = pd.to_numeric(
+            fte_kpi["Actual Working Time"], errors="coerce"
         )
 
-        # Monthly PIC totals are the common source for all displayed Section 3 KPIs.
-        pic_monthly = (
-            hc_for_pic.groupby("MonthDate", dropna=True)
+        monthly_fte = (
+            fte_kpi.dropna(
+                subset=["MonthDate", "Available Time", "Actual Working Time"]
+            )
+            .groupby("MonthDate", as_index=False)
             .agg(
-                Actual_HC_PIC=("Actual HC PIC", "sum"),
-                PIC_Available_Hours=("PIC Available Hours", "sum"),
-                PIC_Actual_Workload_Hours=("PIC Actual Workload Hours", "sum"),
+                Total_Available_Time=("Available Time", "sum"),
+                Total_Actual_Working_Time=("Actual Working Time", "sum"),
             )
-            .reset_index()
-        )
-        pic_monthly = pic_monthly[pic_monthly["Actual_HC_PIC"] > 0].copy()
-    else:
-        pic_monthly = pd.DataFrame()
-
-    if not pic_monthly.empty:
-        # Build each month's KPI first so "All" means the average of monthly KPI values,
-        # while a selected month shows that month's actual value.
-        pic_monthly["Actual_Workload_per_PIC"] = np.where(
-            pic_monthly["Actual_HC_PIC"] > 0,
-            pic_monthly["PIC_Actual_Workload_Hours"] / pic_monthly["Actual_HC_PIC"],
-            np.nan,
-        )
-        pic_monthly["Capacity_Utilization"] = np.where(
-            pic_monthly["PIC_Available_Hours"] > 0,
-            pic_monthly["PIC_Actual_Workload_Hours"] / pic_monthly["PIC_Available_Hours"],
-            np.nan,
         )
 
-        if str(month).strip().lower() == "all":
-            # ALL MONTHS = average of each valid month's KPI.
-            total_available = float(pic_monthly["PIC_Available_Hours"].mean())
-            total_actual_working = float(pic_monthly["PIC_Actual_Workload_Hours"].mean())
-            actual_pic_hc = float(pic_monthly["Actual_HC_PIC"].mean())
-            actual_workload_per_pic = float(
-                pic_monthly["Actual_Workload_per_PIC"].dropna().mean()
+        if not monthly_fte.empty:
+            if str(month).strip().lower() == "all":
+                total_available = float(
+                    monthly_fte["Total_Available_Time"].mean()
+                )
+                total_actual_working = float(
+                    monthly_fte["Total_Actual_Working_Time"].mean()
+                )
+            else:
+                selected_month_row = monthly_fte.sort_values(
+                    "MonthDate"
+                ).iloc[-1]
+                total_available = float(
+                    selected_month_row["Total_Available_Time"]
+                )
+                total_actual_working = float(
+                    selected_month_row["Total_Actual_Working_Time"]
+                )
+
+            fte_workload = safe_div(
+                total_actual_working,
+                total_available,
             )
-            capacity_util = float(
-                pic_monthly["Capacity_Utilization"].dropna().mean()
-            )
+            fte_status = status_from_util(fte_workload)
         else:
-            # SELECTED MONTH = actual KPI of that month after current filters.
-            selected_month_row = pic_monthly.sort_values("MonthDate").iloc[-1]
-            total_available = float(selected_month_row["PIC_Available_Hours"])
-            total_actual_working = float(selected_month_row["PIC_Actual_Workload_Hours"])
-            actual_pic_hc = float(selected_month_row["Actual_HC_PIC"])
-            actual_workload_per_pic = float(selected_month_row["Actual_Workload_per_PIC"])
-            capacity_util = float(selected_month_row["Capacity_Utilization"])
+            total_available = float("nan")
+            total_actual_working = float("nan")
+            fte_workload = float("nan")
+            fte_status = ("NO DATA", COLORS["muted"], COLORS["light_blue"])
     else:
         total_available = float("nan")
         total_actual_working = float("nan")
-        actual_pic_hc = float("nan")
-        actual_workload_per_pic = float("nan")
-        capacity_util = float("nan")
+        fte_workload = float("nan")
+        fte_status = ("NO DATA", COLORS["muted"], COLORS["light_blue"])
 
-    # Dynamic KPI labels:
-    # Month = All -> clarify that displayed totals are average monthly values.
-    # Selected month -> keep "Total" because values represent the actual selected month.
-    is_all_months = str(month).strip().lower() == "all"
-    available_time_label = (
-        "AVG. MONTHLY AVAILABLE STANDARD TIME"
-        if is_all_months
-        else "TOTAL AVAILABLE STANDARD TIME"
-    )
-    actual_working_time_label = (
-        "AVG. MONTHLY ACTUAL WORKING TIME"
-        if is_all_months
-        else "TOTAL ACTUAL WORKING TIME"
-    )
-
-    # Row 1: group the two total/monthly KPIs next to each other,
-    # followed by the two per-PIC KPIs for easier visual comparison.
+    # Four management KPIs in one row.
     p1, p2, p3, p4 = st.columns(4, gap="medium")
 
     with p1:
         pic_kpi_card(
-            available_time_label,
-            fmt_num(total_available, 1) if not pd.isna(total_available) else "N/A",
-            "Actual HC – PIC × 167.2 hrs"
-            if not is_all_months
-            else "Average monthly PIC capacity",
-            unit="Hours",
+            "Total Available Time",
+            fmt_num(total_available, 1)
+            if not pd.isna(total_available) else "N/A",
+            note="95% × 8 × 22 × PIC",
         )
 
     with p2:
         pic_kpi_card(
-            actual_working_time_label,
+            "Total Actual Working Time",
             fmt_num(total_actual_working, 1)
             if not pd.isna(total_actual_working) else "N/A",
-            "Actual workload/PIC × Actual HC – PIC"
-            if not is_all_months
-            else "Average monthly PIC workload",
-            unit="Hours",
+            note="C + A + S + E",
         )
 
     with p3:
         pic_kpi_card(
-            "AVAILABLE STANDARD TIME / PIC",
-            fmt_num(standard_per_pic, 1),
-            "95% × 8 × 22",
-            unit="Hours / PIC",
+            "FTE Workload (%)",
+            f"{fte_workload * 100:,.1f}%"
+            if not pd.isna(fte_workload) else "N/A",
+            note="Actual Time ÷ Available Time",
         )
 
     with p4:
-        pic_kpi_card(
-            "ACTUAL WORKLOAD / PIC",
-            fmt_num(actual_workload_per_pic, 1)
-            if not pd.isna(actual_workload_per_pic) else "N/A",
-            "Total PIC workload ÷ Actual HC – PIC",
-            unit="Hours / PIC",
+        status_text, status_color, status_bg = fte_status
+        st.markdown(
+            f"""
+            <div class="pic-kpi-card">
+                <div class="pic-kpi-label">FTE Workload Status</div>
+                <div style="
+                    margin-top:14px;
+                    display:flex;
+                    justify-content:center;
+                    align-items:center;
+                ">
+                    <span class="status-badge"
+                          style="
+                              color:{status_color};
+                              background:{status_bg};
+                              font-size:14px !important;
+                              padding:8px 18px !important;
+                              min-width:150px;
+                              text-align:center;
+                          ">
+                        {status_text}
+                    </span>
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
         )
 
-    # Row 2: Utilization + Status as wider management indicators.
-    ps1, ps2 = st.columns([1.35, 0.65], gap="medium")
-    with ps1:
-        pic_utilization_card(capacity_util)
-    with ps2:
-        overall_workload_status_card(capacity_util)
-
-    # Chart source: CS FTE
-    # PIC Workload = coefficient in sheet "CS FTE" × Available Standard Time / PIC.
+    # Chart source: 2. FTE Workload
+    # PIC Workload = FTE Workload factor × Available Time / PIC.
     # Available Standard Time / PIC = 95% × 8 × 22 = 167.2 hours.
     # Therefore: PIC Workload = CS FTE coefficient × 167.2 hours.
     # When All Offices is selected, only overloaded PICs/offices are displayed.
@@ -4547,11 +4642,11 @@ def main():
             font-size:11px;
             line-height:1.45;
             font-family:Inter, 'Segoe UI', Arial, sans-serif;">
-            <b>Section KPI logic:</b> Actual HC – PIC only (Managers excluded).<br>
-            <b>Capacity Utilization</b> = Total Actual PIC Workload ÷ Total PIC Available Standard Time.<br>
-            <b>PIC chart logic:</b> PIC Workload (hrs) = CS FTE Factor × Available Standard Time / PIC;<br>
-            <b>Available Standard Time / PIC</b> = 8 hrs/day × 22 days/month × 95% efficiency = 167.2 hrs/month<br>
-            <b>Month logic:</b> Month = All → average of valid monthly KPI values; selected month → actual value of that month
+            <b>Section KPI source:</b> Sheet 2. FTE Workload.<br>
+            <b>Total Available Time (i)</b> = 95% × 8 hrs/day × 22 days × PIC.<br>
+            <b>Total Actual Working Time (ii)</b> = C + A + S + E.<br>
+            <b>FTE Workload (%)</b> = ii ÷ i.<br>
+            <b>Month logic:</b> Month = All → average monthly total; selected month → actual total of that month.
         </div>
         """,
         unsafe_allow_html=True,
