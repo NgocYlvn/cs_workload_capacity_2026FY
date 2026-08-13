@@ -3767,7 +3767,12 @@ def segment_workload_table(df: pd.DataFrame, mode_df: pd.DataFrame):
         return
 
     pair_panel_title("Segment Workload Summary")
-    display = seg.copy().rename(columns={"Workload Share": "Workload Share (%)"})
+    display = (
+        seg.copy()
+        .sort_values("Workload Share", ascending=False)
+        .reset_index(drop=True)
+        .rename(columns={"Workload Share": "Workload Share (%)"})
+    )
     display["Workload Share (%)"] = pd.to_numeric(display["Workload Share (%)"], errors="coerce").fillna(0) * 100
     display = display[["Segment", "Shipment Volume", "Allocation Time (h)", "Required FTE", "Workload Share (%)"]]
 
@@ -3776,7 +3781,7 @@ def segment_workload_table(df: pd.DataFrame, mode_df: pd.DataFrame):
         column_config={
             "Segment": st.column_config.TextColumn("Segment", width=70),
             "Shipment Volume": st.column_config.NumberColumn("Shipment Volume", width="medium", format="%,.0f"),
-            "Allocation Time (h)": st.column_config.NumberColumn("Allocation Time (hrs)", width="medium", format="%,.1f"),
+            "Allocation Time (h)": st.column_config.NumberColumn("Actual Workload (Hours)", width="medium", format="%,.1f"),
             "Required FTE": st.column_config.NumberColumn("Required FTE", width="small", format="%.2f"),
             "Workload Share (%)": st.column_config.NumberColumn("Workload Share (%)", width="medium", format="%.1f%%"),
         },
