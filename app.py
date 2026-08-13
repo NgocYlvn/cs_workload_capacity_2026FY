@@ -1350,6 +1350,38 @@ st.markdown(
     .pic-progress-track {{
         height: 10px !important;
     }}
+
+    /* Section 3 KPI alignment: equal title area and value baseline */
+    .pic-kpi-card {{
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        text-align: center !important;
+        padding-top: 18px !important;
+    }}
+
+    .pic-kpi-label {{
+        width: 100% !important;
+        min-height: 40px !important;
+        height: 40px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        text-align: center !important;
+        font-size: 14px !important;
+        font-weight: 600 !important;
+        line-height: 1.25 !important;
+        margin: 0 0 8px 0 !important;
+    }}
+
+    .pic-kpi-value {{
+        margin-top: 0 !important;
+    }}
+
+    .pic-kpi-note {{
+        margin-top: 8px !important;
+    }}
     </style>
     """,
     unsafe_allow_html=True,
@@ -4634,7 +4666,8 @@ def main():
             <div class="pic-kpi-card">
                 <div class="pic-kpi-label">FTE Workload Status</div>
                 <div style="
-                    margin-top:14px;
+                    margin-top:0;
+                    min-height:52px;
                     display:flex;
                     justify-content:center;
                     align-items:center;
