@@ -4402,35 +4402,41 @@ def render_cover_page() -> None:
 <style>
 section[data-testid="stSidebar"]{display:none!important}
 [data-testid="stSidebarCollapsedControl"]{display:none!important}
-header[data-testid="stHeader"]{background:transparent!important;height:0!important}
-[data-testid="stAppViewContainer"]{height:100dvh!important;overflow:hidden!important}
-[data-testid="stAppViewBlockContainer"]{height:100dvh!important;overflow:hidden!important}
-.main{height:100dvh!important;overflow:hidden!important}
+header[data-testid="stHeader"]{display:none!important;height:0!important}
+[data-testid="stToolbar"]{display:none!important}
+[data-testid="stDecoration"]{display:none!important}
+[data-testid="stStatusWidget"]{display:none!important}
+#MainMenu{visibility:hidden!important}
+[data-testid="stAppViewContainer"]{height:100dvh!important;overflow:hidden!important;padding:0!important;margin:0!important}
+[data-testid="stAppViewBlockContainer"]{height:100dvh!important;overflow:hidden!important;padding:0!important;margin:0!important}
+.main{height:100dvh!important;overflow:hidden!important;padding:0!important;margin:0!important}
 footer{display:none!important}
 .block-container{max-width:none!important;width:100%!important;padding:0!important;margin:0!important}
 .stApp{background:#06183F!important;height:100dvh!important;min-height:0!important;overflow:hidden!important}
 
 .cover-stage{
-    position:relative;
-    width:100%;
+    position:fixed;
+    inset:0;
+    width:100vw;
     height:100dvh;
     min-height:0;
     overflow:hidden;
+    z-index:999;
     background:linear-gradient(135deg,#031532 0%,#06183F 48%,#082759 100%);
     font-family:Inter,"Segoe UI",Arial,sans-serif;
 }
 
 .cover-panel{
     position:absolute;
-    top:18px;
-    bottom:18px;
+    top:10px;
+    bottom:14px;
     left:2.2vw;
     width:min(50.5vw,760px);
     min-width:570px;
     height:auto;
     min-height:0;
     box-sizing:border-box;
-    padding:24px 36px 22px;
+    padding:18px 36px 20px;
     border-radius:24px;
     background:linear-gradient(145deg,#FFFFFF 0%,#FCFDFE 100%);
     border:1px solid rgba(255,255,255,.72);
@@ -4442,7 +4448,7 @@ footer{display:none!important}
     width:180px;
     height:auto;
     display:block;
-    margin:0 0 clamp(24px,3.6vh,38px) 0;
+    margin:0 0 clamp(16px,2.2vh,26px) 0;
 }
 
 .cover-title{
@@ -4666,8 +4672,8 @@ footer{display:none!important}
 
 
 @media(max-height:820px) and (min-width:901px){
-    .cover-panel{top:14px;bottom:14px;padding:20px 34px 18px}
-    .cover-logo-real{width:165px;margin-bottom:22px}
+    .cover-panel{top:8px;bottom:10px;padding:16px 34px 16px}
+    .cover-logo-real{width:165px;margin-bottom:14px}
     .cover-title{font-size:clamp(44px,3.3vw,60px)}
     .cover-title-accent{margin:14px 0 11px 2px}
     .cover-subtitle{font-size:19px;margin-bottom:12px}
@@ -4678,7 +4684,7 @@ footer{display:none!important}
     .cover-pillar-note{font-size:9px;line-height:1.25}
     .cover-pillar:not(:last-child)::after{top:30px;height:78px}
     .cover-cta{bottom:18px;height:50px;min-width:300px;font-size:19px}
-    .cover-right-footer{bottom:2.4vh;font-size:16px}
+    .cover-right-footer{bottom:3.0vh;font-size:16px}
 }
 
 @media(max-width:900px){
