@@ -377,7 +377,7 @@ st.markdown(
         color: #64748B;
         font-size: 12px;
         font-weight: 700;
-        text-transform: uppercase;
+        text-transform: none;
         letter-spacing: 0.04em;
         margin-bottom: 14px;
     }}
@@ -416,7 +416,7 @@ st.markdown(
         color: #64748B;
         font-size: 11px;
         font-weight: 700;
-        text-transform: uppercase;
+        text-transform: none;
         letter-spacing: 0.035em;
         line-height: 1.25;
         min-height: 30px;
@@ -471,7 +471,7 @@ st.markdown(
         color: #64748B;
         font-size: 11px;
         font-weight: 700;
-        text-transform: uppercase;
+        text-transform: none;
         letter-spacing: 0.035em;
     }}
 
@@ -519,7 +519,7 @@ st.markdown(
         color: {COLORS['muted']};
         font-size: 12px;
         font-weight: 700;
-        text-transform: uppercase;
+        text-transform: none;
         letter-spacing: 0.04em;
         margin-bottom: 6px;
     }}
@@ -723,7 +723,7 @@ st.markdown(
         line-height: 1.25 !important;
         font-weight: 600 !important;
         letter-spacing: 0.025em !important;
-        text-transform: uppercase !important;
+        text-transform: none !important;
         margin-bottom: 7px !important;
     }}
 
@@ -3888,7 +3888,7 @@ def render_cover_page() -> None:
             line-height: 1;
             font-weight: 700;
             letter-spacing: 0.08em;
-            text-transform: uppercase;
+            text-transform: none;
             margin-bottom: 18px;
         }}
 
@@ -3917,7 +3917,7 @@ def render_cover_page() -> None:
             font-size: 11px;
             font-weight: 700;
             letter-spacing: 0.07em;
-            text-transform: uppercase;
+            text-transform: none;
             margin: 0 0 10px 1px;
         }}
 
@@ -4283,7 +4283,7 @@ def main():
 
     with hc1:
         hc_detail_card(
-            "APPROVED HC",
+            "Approved HC",
             approved_hc,
             approved_mng,
             approved_pic,
@@ -4291,7 +4291,7 @@ def main():
 
     with hc2:
         hc_detail_card(
-            "ACTUAL HC",
+            "Actual HC",
             actual_hc,
             actual_mng,
             actual_pic,
@@ -4299,7 +4299,7 @@ def main():
 
     with hc3:
         hc_detail_card(
-            "REQUIRED HC",
+            "Required HC",
             required_hc,
             required_mng,
             required_pic,
@@ -4307,7 +4307,7 @@ def main():
 
     with hc4:
         hc_variance_card(
-            "HC VARIANCE",
+            "HC Variance",
             hc_variance,
             "Required HC − Actual HC",
             variance_status[0],
