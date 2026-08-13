@@ -48,21 +48,45 @@ SERVICE_LABELS = {
     "WH": "Warehouse",
 }
 
+# ============================================================
+# YUSEN 3C-INSPIRED CORPORATE COLOR SYSTEM
+# Visual reference: Yusen Logistics corporate web presence.
+# These HEX values are used as a consistent dashboard design system and
+# are NOT asserted here as official corporate-brand specifications.
+# ============================================================
+YUSEN_THEME = {
+    "primary": "#003B70",          # deep corporate navy
+    "primary_dark": "#002B55",
+    "secondary": "#005BAC",        # corporate blue
+    "secondary_mid": "#3F7FB5",
+    "secondary_light": "#8EB7D8",
+    "secondary_pale": "#EAF3F8",
+    "accent": "#F58220",           # warm corporate accent
+    "accent_pale": "#FFF3E8",
+    "background": "#F5F7FA",
+    "surface": "#FFFFFF",
+    "text_primary": "#1D2A36",
+    "text_secondary": "#5B6876",
+    "border": "#D7E0E8",
+    "grid": "#E9EEF3",
+    "hover": "#EEF4F8",
+}
+
 COLORS = {
-    "navy": "#003B70",
-    "blue": "#005BAC",
-    "light_blue": "#EAF3F8",
-    "red": "#E60012",
-    "green": "#169B62",
-    "amber": "#F59E0B",
-    "gray": "#9AA3AD",
-    "gray_dark": "#5F6B7A",
-    "grid": "#E8EBEF",
-    "bg": "#F7F8FA",
-    "white": "#FFFFFF",
-    "text": "#1F2937",
-    "muted": "#64748B",
-    "border": "#D9E2EC",
+    "navy": YUSEN_THEME["primary"],
+    "blue": YUSEN_THEME["secondary"],
+    "light_blue": YUSEN_THEME["secondary_pale"],
+    "red": "#D92D20",
+    "green": "#16834B",
+    "amber": YUSEN_THEME["accent"],
+    "gray": "#98A2B3",
+    "gray_dark": YUSEN_THEME["text_secondary"],
+    "grid": YUSEN_THEME["grid"],
+    "bg": YUSEN_THEME["background"],
+    "white": YUSEN_THEME["surface"],
+    "text": YUSEN_THEME["text_primary"],
+    "muted": YUSEN_THEME["text_secondary"],
+    "border": YUSEN_THEME["border"],
 }
 
 # Business-meaning color map.
@@ -74,7 +98,7 @@ BUSINESS_COLORS = {
     "positive": COLORS["green"],
     "negative": COLORS["red"],
     "critical": COLORS["red"],
-    "supporting": COLORS["gray"],
+    "supporting": YUSEN_THEME["secondary_light"],
 }
 
 
@@ -104,13 +128,13 @@ UI = {
 SHIPMENT_PAIR_HEIGHT = 500
 
 CORPORATE_PALETTE = [
-    COLORS["blue"],
-    COLORS["navy"],
-    COLORS["amber"],
-    COLORS["green"],
-    "#6B8EAD",
-    "#A7B9C9",
-    COLORS["red"],
+    YUSEN_THEME["secondary"],
+    YUSEN_THEME["primary"],
+    "#2E73AA",
+    "#5D91BC",
+    "#8EB7D8",
+    "#B7D0E3",
+    YUSEN_THEME["accent"],
 ]
 
 SHEET_NAMES = {
@@ -1073,6 +1097,220 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+
+
+# ============================================================
+# YUSEN 3C-INSPIRED FINAL UI LAYER
+# UI-only overrides — business logic/data/calculations unchanged.
+# ============================================================
+
+st.markdown(
+    f"""
+    <style>
+    :root {{
+        --y-primary: {YUSEN_THEME['primary']};
+        --y-primary-dark: {YUSEN_THEME['primary_dark']};
+        --y-secondary: {YUSEN_THEME['secondary']};
+        --y-secondary-mid: {YUSEN_THEME['secondary_mid']};
+        --y-secondary-light: {YUSEN_THEME['secondary_light']};
+        --y-accent: {YUSEN_THEME['accent']};
+        --y-bg: {YUSEN_THEME['background']};
+        --y-surface: {YUSEN_THEME['surface']};
+        --y-text: {YUSEN_THEME['text_primary']};
+        --y-muted: {YUSEN_THEME['text_secondary']};
+        --y-border: {YUSEN_THEME['border']};
+        --y-grid: {YUSEN_THEME['grid']};
+    }}
+
+    html, body, .stApp, [class*="css"],
+    button, input, textarea, select {{
+        font-family: {UI['font_family']} !important;
+    }}
+
+    .stApp {{
+        background: var(--y-bg) !important;
+        color: var(--y-text) !important;
+    }}
+
+    .block-container {{
+        max-width: 1680px !important;
+        padding-top: 1rem !important;
+        padding-left: 1.35rem !important;
+        padding-right: 1.35rem !important;
+        padding-bottom: 1.8rem !important;
+    }}
+
+    /* Main header */
+    .main-header {{
+        background: var(--y-surface) !important;
+        border: 1px solid var(--y-border) !important;
+        border-left: 5px solid var(--y-secondary) !important;
+        border-radius: 12px !important;
+        box-shadow: 0 2px 8px rgba(0,59,112,0.055) !important;
+        padding: 15px 19px !important;
+        margin-bottom: 12px !important;
+    }}
+    .main-title {{
+        color: var(--y-primary) !important;
+        font-size: 30px !important;
+        font-weight: 750 !important;
+        line-height: 1.12 !important;
+        letter-spacing: -0.02em !important;
+    }}
+
+    /* Section hierarchy */
+    .section-title {{
+        color: var(--y-primary) !important;
+        font-size: 19px !important;
+        font-weight: 700 !important;
+        line-height: 1.25 !important;
+        border-left: 4px solid var(--y-accent) !important;
+        padding-left: 10px !important;
+        margin: 22px 0 11px 0 !important;
+    }}
+
+    /* Cards */
+    .kpi-card,
+    .hc-kpi-card,
+    .shipment-kpi-card,
+    .pic-kpi-card,
+    .pic-status-card,
+    .workload-status-panel,
+    [data-testid="stPlotlyChart"],
+    [data-testid="stDataFrame"] {{
+        background: var(--y-surface) !important;
+        border: 1px solid var(--y-border) !important;
+        border-radius: 12px !important;
+        box-shadow: 0 2px 7px rgba(0,59,112,0.045) !important;
+    }}
+
+    .kpi-label,
+    .shipment-kpi-label,
+    .pic-kpi-label,
+    .pic-status-title {{
+        color: var(--y-muted) !important;
+        font-weight: 650 !important;
+        letter-spacing: 0.025em !important;
+    }}
+
+    .kpi-value,
+    .hc-kpi-total,
+    .shipment-kpi-value,
+    .pic-kpi-value,
+    .pic-status-value {{
+        color: var(--y-primary) !important;
+        font-weight: 750 !important;
+    }}
+
+    .hc-total-approved {{ color: var(--y-primary) !important; }}
+    .hc-total-actual {{ color: var(--y-secondary) !important; }}
+    .hc-total-required {{ color: var(--y-accent) !important; }}
+
+    /* Plotly cards */
+    [data-testid="stPlotlyChart"] {{
+        padding: 7px 9px 3px 9px !important;
+        overflow: visible !important;
+    }}
+
+    /* Dataframes */
+    [data-testid="stDataFrame"] {{
+        overflow: hidden !important;
+    }}
+
+    /* Sidebar */
+    section[data-testid="stSidebar"] {{
+        background:
+            linear-gradient(180deg, var(--y-primary-dark) 0%, var(--y-primary) 100%) !important;
+    }}
+    section[data-testid="stSidebar"] h1,
+    section[data-testid="stSidebar"] h2,
+    section[data-testid="stSidebar"] h3,
+    section[data-testid="stSidebar"] label,
+    section[data-testid="stSidebar"] p,
+    section[data-testid="stSidebar"] small,
+    section[data-testid="stSidebar"] [data-testid="stCaptionContainer"],
+    section[data-testid="stSidebar"] [data-testid="stCaptionContainer"] p {{
+        color: #FFFFFF !important;
+        opacity: 1 !important;
+    }}
+
+    section[data-testid="stSidebar"] div[data-baseweb="select"] > div,
+    section[data-testid="stSidebar"] [data-testid="stFileUploader"] section {{
+        background: #FFFFFF !important;
+        color: var(--y-primary) !important;
+        border: 1px solid #C9D6E1 !important;
+        border-radius: 8px !important;
+    }}
+    section[data-testid="stSidebar"] div[data-baseweb="select"] span,
+    section[data-testid="stSidebar"] div[data-baseweb="select"] input,
+    section[data-testid="stSidebar"] div[data-baseweb="select"] svg {{
+        color: var(--y-primary) !important;
+        fill: var(--y-primary) !important;
+    }}
+
+    /* HOME button — guarantee contrast */
+    section[data-testid="stSidebar"] div[data-testid="stButton"] > button,
+    section[data-testid="stSidebar"] .stButton > button {{
+        background: #FFFFFF !important;
+        color: var(--y-primary) !important;
+        border: 1px solid #D2DEE8 !important;
+        border-radius: 8px !important;
+        font-weight: 700 !important;
+    }}
+    section[data-testid="stSidebar"] div[data-testid="stButton"] > button *,
+    section[data-testid="stSidebar"] .stButton > button * {{
+        color: var(--y-primary) !important;
+    }}
+    section[data-testid="stSidebar"] div[data-testid="stButton"] > button:hover {{
+        background: {YUSEN_THEME['hover']} !important;
+        border-color: var(--y-secondary-mid) !important;
+    }}
+
+    /* Primary action */
+    div[data-testid="stButton"] > button[kind="primary"] {{
+        background: var(--y-primary) !important;
+        color: #FFFFFF !important;
+        border: 1px solid var(--y-primary) !important;
+        border-radius: 9px !important;
+        font-weight: 700 !important;
+        box-shadow: 0 5px 14px rgba(0,59,112,0.14) !important;
+    }}
+    div[data-testid="stButton"] > button[kind="primary"]:hover {{
+        background: var(--y-secondary) !important;
+        border-color: var(--y-secondary) !important;
+    }}
+
+    /* Tabs */
+    .stTabs [data-baseweb="tab"] {{
+        color: var(--y-muted) !important;
+        font-weight: 600 !important;
+    }}
+    .stTabs [aria-selected="true"] {{
+        color: var(--y-primary) !important;
+    }}
+
+    /* Notes/captions */
+    .kpi-note,
+    .shipment-kpi-note,
+    .pic-kpi-note,
+    .hc-variance-formula,
+    [data-testid="stCaptionContainer"],
+    [data-testid="stCaptionContainer"] p {{
+        color: var(--y-muted) !important;
+    }}
+
+    @media (max-width: 1366px) {{
+        .block-container {{
+            padding-left: 0.9rem !important;
+            padding-right: 0.9rem !important;
+        }}
+        .main-title {{ font-size: 28px !important; }}
+        .section-title {{ font-size: 18px !important; }}
+    }}
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 
 # ============================================================
 # HELPER FUNCTIONS
@@ -3634,7 +3872,6 @@ def render_cover_page() -> None:
                 <div class="cover-divider"></div>
                 <div class="cover-footer">
                     <div><strong>Customer Service Division</strong><br>Management Dashboard • Internal Use Only</div>
-                    <div>Available Standard Time: <strong>167.2 hrs / FTE / month</strong></div>
                 </div>
             </div>
         </div>
