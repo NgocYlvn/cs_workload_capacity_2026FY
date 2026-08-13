@@ -4027,7 +4027,7 @@ def chart_resolution(df: pd.DataFrame):
     if df is None or df.empty:
         st.info("No CS Resolution data available for selected filters.")
         return
-    pair_panel_title("CS Resolution Performance by Month")
+    pair_panel_title("CS Resolution Trend by Month")
     agg = df.groupby("MonthDate", as_index=False).agg(**{"Total Abnormality": ("Total Abnormality", "sum"), "Resolved": ("Resolved", "sum")}).sort_values("MonthDate")
     agg["Resolution Rate"] = np.where(agg["Total Abnormality"] > 0, agg["Resolved"] / agg["Total Abnormality"], np.nan)
     agg["Month"] = agg["MonthDate"].dt.strftime("%b-%y")
@@ -4035,7 +4035,7 @@ def chart_resolution(df: pd.DataFrame):
     fig.add_trace(go.Bar(x=agg["Month"], y=agg["Total Abnormality"], name="Total Abnormalities", marker_color=BUSINESS_COLORS["supporting"], text=agg["Total Abnormality"], texttemplate="%{text:,.0f}", textposition="outside", cliponaxis=False))
     fig.add_trace(go.Bar(x=agg["Month"], y=agg["Resolved"], name="Resolved by CS", marker_color=BUSINESS_COLORS["actual"], text=agg["Resolved"], texttemplate="%{text:,.0f}", textposition="outside", cliponaxis=False))
     fig.add_trace(go.Scatter(x=agg["Month"], y=agg["Resolution Rate"], name="CS Resolution Rate", mode="lines+markers+text", line=dict(color=COLORS["green"], width=3), marker=dict(size=7), text=agg["Resolution Rate"], texttemplate="%{text:.1%}", textposition="top center", yaxis="y2"))
-    fig.update_layout(title_text="", barmode="group", yaxis=dict(title="Cases", rangemode="tozero"), yaxis2=dict(title="Resolution Rate", overlaying="y", side="right", tickformat=".0%", range=[0, 1.08], showgrid=False))
+    fig.update_layout(title_text="", barmode="group", yaxis=dict(title="Cases", rangemode="tozero"), yaxis2=dict(title="Resolution Rate", overlaying="y", side="right", tickformat=".0%", range=[0, 1.00], showgrid=False))
     fig = plotly_layout(fig, 390, show_legend=True, legend_position="top", margin_left=58, margin_right=68, margin_top=38, margin_bottom=44)
     fig.update_xaxes(type="category", categoryorder="array", categoryarray=agg["Month"].tolist())
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
@@ -4049,14 +4049,33 @@ def render_cs_solution_table(df: pd.DataFrame):
     d = df.copy().sort_values(["Office", "MonthDate"])
     d["Month"] = d["MonthDate"].dt.strftime("%b-%y")
     display = d[["Office", "Month", "Total Abnormality", "Resolved", "Resolution Rate"]].copy()
+    display["Resolution Rate (%)"] = (
+        pd.to_numeric(display["Resolution Rate"], errors="coerce") * 100
+    )
+    display = display.drop(columns=["Resolution Rate"])
+
+    resolution_table_height = min(
+        390,
+        max(160, 38 + len(display) * 34),
+    )
+
     st.dataframe(
-        display, use_container_width=True, hide_index=True, height=390,
+        display,
+        use_container_width=True,
+        hide_index=True,
+        height=resolution_table_height,
         column_config={
             "Office": st.column_config.TextColumn("Office", width=70),
             "Month": st.column_config.TextColumn("Month", width=80),
-            "Total Abnormality": st.column_config.NumberColumn("Total Abnormalities", width="medium", format="%,.0f"),
-            "Resolved": st.column_config.NumberColumn("Resolved by CS", width="medium", format="%,.0f"),
-            "Resolution Rate": st.column_config.NumberColumn("CS Resolution Rate", width=110, format="percent"),
+            "Total Abnormality": st.column_config.NumberColumn(
+                "Total Abnormalities", width="medium", format="%,.0f"
+            ),
+            "Resolved": st.column_config.NumberColumn(
+                "Resolved by CS", width="medium", format="%,.0f"
+            ),
+            "Resolution Rate (%)": st.column_config.NumberColumn(
+                "CS Resolution Rate", width=120, format="%.2f%%"
+            ),
         },
     )
 
@@ -4939,21 +4958,34 @@ def main():
         cs1, cs2, cs3 = st.columns(3, gap="medium")
         with cs1:
             kpi_card(
-                "TOTAL ABNORMALITIES",
+                "Total Abnormalities",
                 fmt_int(total_abn),
                 "",
             )
         with cs2:
             kpi_card(
-                "RESOLVED BY CS",
+                "Resolved by CS",
                 fmt_int(resolved),
                 "",
             )
         with cs3:
-            kpi_card(
-                "CS RESOLUTION RATE",
-                fmt_pct(rate),
-                f"{fmt_int(resolved)} / {fmt_int(total_abn)} cases",
+            st.markdown(
+                f"""
+                <div class="kpi-card">
+                    <div class="kpi-label">CS Resolution Rate</div>
+                    <div class="kpi-value" style="
+                        font-size:38px !important;
+                        font-weight:800 !important;
+                        line-height:1.05 !important;
+                    ">
+                        {fmt_pct(rate)}
+                    </div>
+                    <div class="kpi-note">
+                        {fmt_int(resolved)} / {fmt_int(total_abn)} cases
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True,
             )
 
     cs_chart, cs_table = st.columns([0.55, 0.45], gap="medium")
