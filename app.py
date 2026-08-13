@@ -5761,7 +5761,7 @@ def main():
                           style="
                               color:{status_color};
                               background:{status_bg};
-                              font-size:16px !important;
+                              font-size:26px !important;
                               font-weight:800 !important;
                               padding:10px 24px !important;
                               min-width:180px;
