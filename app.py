@@ -1607,7 +1607,7 @@ st.markdown(
     }}
 
     /* Sidebar footer — compact application metadata */
-    .sidebar-footer {
+    .sidebar-footer {{
         margin-top:14px;
         padding-top:10px;
         border-top:1px solid rgba(255,255,255,0.16);
@@ -1621,12 +1621,12 @@ st.markdown(
         line-height:1.25;
         font-weight:500;
         letter-spacing:-0.01em;
-    }
-    .sidebar-footer .footer-sep {
+    }}
+    .sidebar-footer .footer-sep {{
         color:#E6761B;
         opacity:0.95;
         font-weight:700;
-    }
+    }}
 
     /* ------------------------------------------------------------
        MAIN HEADER — compact executive card
