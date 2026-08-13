@@ -3042,7 +3042,11 @@ def chart_office_capacity_trend(df: pd.DataFrame):
         go.Scatter(
             x=trend["Month"],
             y=trend["Total Required HC"],
-            mode="lines+markers",
+            mode="lines+markers+text",
+            text=[f"{v:.2f}" for v in trend["Required HC"]],
+            textposition="top center",
+            textfont=dict(size=11),
+            cliponaxis=False,
             name="Required HC",
             line=dict(color=BUSINESS_COLORS["required"], width=3, dash="solid"),
             marker=dict(size=7),
@@ -3057,7 +3061,7 @@ def chart_office_capacity_trend(df: pd.DataFrame):
         yaxis_title="HC",
         hovermode="x unified",
     )
-    fig = plotly_layout(fig, UI["chart_height"], show_legend=True, legend_position="top", margin_left=56, margin_right=42, margin_top=66, margin_bottom=46)
+    fig = plotly_layout(fig, UI["chart_height"], show_legend=True, legend_position="top", margin_left=56, margin_right=42, margin_top=76, margin_bottom=46)
 
     # Keep the HC chart proportional: Y-axis always starts from zero.
     fig.update_yaxes(rangemode="tozero")
