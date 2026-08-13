@@ -4537,7 +4537,7 @@ footer{display:none!important}
 
 .cover-pillar-title{
     color:#06183F;
-    font-size:clamp(11px,.82vw,13px);
+    font-size:clamp(10px,.78vw,13px);
     font-weight:800;
     line-height:1.15;
     text-transform:uppercase;
@@ -4608,7 +4608,7 @@ footer{display:none!important}
     bottom:24px;
     display:flex;
     align-items:center;
-    gap:12px;
+    gap:11px;
     color:#06183F;
     font-size:13px;
     font-weight:700;
@@ -4685,6 +4685,7 @@ footer{display:none!important}
     .cover-pillar-note{font-size:9px;line-height:1.25}
     .cover-pillar:not(:last-child)::after{top:30px;height:78px}
     .cover-cta{bottom:18px;height:50px;min-width:300px;font-size:19px}
+    .cover-right-footer{right:24px;bottom:20px;font-size:12px}
 }
 
 @media(max-width:900px){
@@ -4704,7 +4705,7 @@ footer{display:none!important}
     .cover-pillars{grid-template-columns:repeat(2,1fr);row-gap:20px}
     .cover-pillar:nth-child(2)::after{display:none}
     .cover-cta{left:24px;right:24px;width:auto;bottom:28px}
-    .cover-arc-svg,.cover-wave-1,.cover-wave-2,.cover-wave-3{display:none}.cover-right-footer{right:24px;bottom:18px;font-size:11px}
+    .cover-arc-svg,.cover-wave-1,.cover-wave-2,.cover-wave-3{display:none}.cover-right-footer{right:20px;bottom:18px;font-size:11px;gap:8px}
 }
 </style>
 """
@@ -4731,10 +4732,10 @@ footer{display:none!important}
 <div class="cover-subtitle">Capacity, Workload &amp;<br>Productivity Insights</div>
 <div class="cover-separator"></div>
 <div class="cover-pillars">
-<div class="cover-pillar"><div class="cover-icon icon-capacity"><svg viewBox="0 0 32 32"><circle cx="16" cy="9" r="4"></circle><circle cx="7" cy="12" r="3"></circle><circle cx="25" cy="12" r="3"></circle><path d="M9 25v-3c0-4 3-7 7-7s7 3 7 7v3"></path><path d="M2 24v-2c0-3 2-5 5-5"></path><path d="M30 24v-2c0-3-2-5-5-5"></path></svg></div><div class="cover-pillar-title">Capacity</div><div class="cover-pillar-note">Right People,<br>Right Capacity</div></div>
-<div class="cover-pillar"><div class="cover-icon icon-workload"><svg viewBox="0 0 32 32"><rect x="7" y="6" width="18" height="22" rx="2"></rect><path d="M12 6V4h8v2"></path><path d="M11 12h10"></path><path d="M11 17h10"></path><path d="M11 22h7"></path></svg></div><div class="cover-pillar-title">Workload</div><div class="cover-pillar-note">Understand Work,<br>Drive Balance</div></div>
-<div class="cover-pillar"><div class="cover-icon icon-productivity"><svg viewBox="0 0 32 32"><path d="M5 25h22"></path><rect x="7" y="17" width="4" height="8"></rect><rect x="14" y="12" width="4" height="13"></rect><rect x="21" y="7" width="4" height="18"></rect><path d="M6 13l6-5 5 2 8-7"></path><path d="M22 3h4v4"></path></svg></div><div class="cover-pillar-title">Productivity</div><div class="cover-pillar-note">Measure Performance,<br>Maximize Impact</div></div>
-<div class="cover-pillar"><div class="cover-icon icon-insights"><svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="10"></circle><circle cx="16" cy="16" r="5"></circle><path d="M16 16l8-8"></path><path d="M22 8h4v4"></path></svg></div><div class="cover-pillar-title">Insights</div><div class="cover-pillar-note">Data-Driven Insights,<br>Better Decisions</div></div>
+<div class="cover-pillar"><div class="cover-icon icon-capacity"><svg viewBox="0 0 32 32"><circle cx="16" cy="9" r="4"></circle><circle cx="7" cy="12" r="3"></circle><circle cx="25" cy="12" r="3"></circle><path d="M9 25v-3c0-4 3-7 7-7s7 3 7 7v3"></path><path d="M2 24v-2c0-3 2-5 5-5"></path><path d="M30 24v-2c0-3-2-5-5-5"></path></svg></div><div class="cover-pillar-title">Capacity</div><div class="cover-pillar-note">HC Capacity,<br>Requirement & Gap</div></div>
+<div class="cover-pillar"><div class="cover-icon icon-workload"><svg viewBox="0 0 32 32"><rect x="7" y="6" width="18" height="22" rx="2"></rect><path d="M12 6V4h8v2"></path><path d="M11 12h10"></path><path d="M11 17h10"></path><path d="M11 22h7"></path></svg></div><div class="cover-pillar-title">Workload</div><div class="cover-pillar-note">Volume, PIC,<br>Segment & Activity</div></div>
+<div class="cover-pillar"><div class="cover-icon icon-productivity"><svg viewBox="0 0 32 32"><path d="M5 25h22"></path><rect x="7" y="17" width="4" height="8"></rect><rect x="14" y="12" width="4" height="13"></rect><rect x="21" y="7" width="4" height="18"></rect><path d="M6 13l6-5 5 2 8-7"></path><path d="M22 3h4v4"></path></svg></div><div class="cover-pillar-title">Performance</div><div class="cover-pillar-note">CS Resolution,<br>Service Effectiveness</div></div>
+<div class="cover-pillar"><div class="cover-icon icon-insights"><svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="10"></circle><circle cx="16" cy="16" r="5"></circle><path d="M16 16l8-8"></path><path d="M22 8h4v4"></path></svg></div><div class="cover-pillar-title">Digital Adoption</div><div class="cover-pillar-note">YVF Adoption,<br>Booking Performance</div></div>
 </div>
 <a href="?enter=1" target="_self" class="cover-cta"><span class="cover-cta-icon">↗</span><span>VIEW DASHBOARD</span><span class="cover-cta-arrow">→</span></a>
 <div class="cover-right-footer"><span class="cover-headset"><svg viewBox="0 0 32 32"><path d="M5 17v-2a11 11 0 0 1 22 0v2"></path><rect x="3" y="16" width="5" height="9" rx="2"></rect><rect x="24" y="16" width="5" height="9" rx="2"></rect><path d="M24 26c-2 3-5 3-8 3"></path></svg></span><span class="footer-divider"></span><span>CS DIVISION</span><span class="footer-divider"></span><span>FY2026</span></div>
