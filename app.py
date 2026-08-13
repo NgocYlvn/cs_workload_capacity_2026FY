@@ -4531,7 +4531,7 @@ def main():
         customer_detail_volume_table(f_customer_ns)
 
 
-    section_title("3. Workload by PIC")
+    section_title("3. Workload per FTE")
 
     # KPI source: sheet "2. FTE Workload".
     # Single source of truth for Section 3:
