@@ -354,8 +354,8 @@ st.markdown(
         border: 1px solid #D9E2EC;
         border-radius: 14px;
         padding: 18px 18px;
-        min-height: 170px;
-        height: 170px;
+        min-height: 148px;
+        height: 148px;
         box-sizing: border-box;
         box-shadow: 0 2px 10px rgba(0,0,0,0.035);
         display: flex;
@@ -476,7 +476,7 @@ st.markdown(
 
     .pic-progress-track {{
         flex: 1;
-        height: 13px;
+        height: 10px;
         background: #EAF3F8;
         border-radius: 999px;
         overflow: hidden;
@@ -783,8 +783,8 @@ st.markdown(
 
     /* Shipment KPI cards */
     .shipment-kpi-card {{
-        height: 154px !important;
-        min-height: 154px !important;
+        height: 132px !important;
+        min-height: 132px !important;
     }}
 
     /* PIC KPI cards */
@@ -1306,6 +1306,41 @@ st.markdown(
         }}
         .main-title {{ font-size: 28px !important; }}
         .section-title {{ font-size: 18px !important; }}
+    }}
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+
+# ============================================================
+# FINAL VISUAL POLISH OVERRIDES
+# ============================================================
+st.markdown(
+    f"""
+    <style>
+    .shipment-kpi-card {{
+        height: 132px !important;
+        min-height: 132px !important;
+    }}
+
+    [data-testid="stDataFrame"] {{
+        font-size: 12px !important;
+    }}
+
+    [data-testid="stDataFrame"] [role="columnheader"] {{
+        font-weight: 650 !important;
+        color: {YUSEN_THEME['primary']} !important;
+    }}
+
+    .paired-detail-title {{
+        font-size: 16px !important;
+        color: {YUSEN_THEME['primary']} !important;
+        font-weight: 700 !important;
+    }}
+
+    .pic-progress-track {{
+        height: 10px !important;
     }}
     </style>
     """,
@@ -2449,16 +2484,17 @@ def render_workload_breakdown_table(df: pd.DataFrame):
         return
     pair_panel_title("Workload Breakdown Detail")
     display = summary.copy()
+    display["Ratio"] = pd.to_numeric(display["Ratio"], errors="coerce") * 100
     st.dataframe(
         display, use_container_width=True, hide_index=True, height=390,
         column_config={
-            "Segment": st.column_config.TextColumn("Segment", width="small"),
-            "Core Service (min)": st.column_config.NumberColumn("Core Service (min)", format="%,.0f", width="medium"),
-            "Ancillary Service (min)": st.column_config.NumberColumn("Ancillary Service (min)", format="%,.0f", width="medium"),
-            "Supporting Activity (min)": st.column_config.NumberColumn("Supporting Activity (min)", format="%,.0f", width="medium"),
-            "Exception Handling (min)": st.column_config.NumberColumn("Exception Handling (min)", format="%,.0f", width="medium"),
-            "Total Workload (min)": st.column_config.NumberColumn("Total Workload (min)", format="%,.0f", width="medium"),
-            "Ratio": st.column_config.NumberColumn("Ratio", format="percent", width="small"),
+            "Segment": st.column_config.TextColumn("Segment", width=70),
+            "Core Service (min)": st.column_config.NumberColumn("Core Service (min)", format="%,.0f", width=115),
+            "Ancillary Service (min)": st.column_config.NumberColumn("Ancillary Service (min)", format="%,.0f", width=125),
+            "Supporting Activity (min)": st.column_config.NumberColumn("Supporting Activity (min)", format="%,.0f", width=135),
+            "Exception Handling (min)": st.column_config.NumberColumn("Exception Handling (min)", format="%,.0f", width=135),
+            "Total Workload (min)": st.column_config.NumberColumn("Total Workload (min)", format="%,.0f", width=120),
+            "Ratio": st.column_config.NumberColumn("Ratio", format="%.1f%%", width=72),
         },
     )
 
@@ -2515,8 +2551,8 @@ def render_activity_detail_table(
 
     # Compact detail table: keep the four operational fields narrow and balanced.
     compact_config = {
-        "Office": st.column_config.TextColumn("Office", width="small"),
-        "Month": st.column_config.TextColumn("Month", width="small"),
+        "Office": st.column_config.TextColumn("Office", width=70),
+        "Month": st.column_config.TextColumn("Month", width=80),
         "Code": st.column_config.TextColumn("Code", width="medium"),
         "Code Description": st.column_config.TextColumn(
             "Code Description", width="large"
@@ -3389,7 +3425,7 @@ def chart_service_matrix(
     plot_df["x"] = [flower_positions[i][0] for i in range(len(plot_df))]
     plot_df["y"] = [flower_positions[i][1] for i in range(len(plot_df))]
     max_share = float(plot_df["Workload Share"].max())
-    plot_df["Bubble Size"] = 52 + (plot_df["Workload Share"] / max_share) * 74 if max_share > 0 else 68
+    plot_df["Bubble Size"] = 66 + (plot_df["Workload Share"] / max_share) * 96 if max_share > 0 else 82
     segment_color_map = {svc: CORPORATE_PALETTE[i % len(CORPORATE_PALETTE)] for i, svc in enumerate(SERVICE_ORDER)}
 
     fig = go.Figure()
@@ -3410,11 +3446,11 @@ def chart_service_matrix(
     fig.update_layout(title=dict(text=""))
     fig.update_xaxes(
         visible=False, showgrid=False, zeroline=False, showticklabels=False,
-        title_text="", range=[-2.45, 2.45], fixedrange=True
+        title_text="", range=[-2.15, 2.15], fixedrange=True
     )
     fig.update_yaxes(
         visible=False, showgrid=False, zeroline=False, showticklabels=False,
-        title_text="", range=[-2.65, 2.65], scaleanchor="x", scaleratio=1, fixedrange=True
+        title_text="", range=[-2.25, 2.25], scaleanchor="x", scaleratio=1, fixedrange=True
     )
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
@@ -3425,7 +3461,7 @@ def segment_workload_table(df: pd.DataFrame, mode_df: pd.DataFrame):
         st.info("No segment workload data available for selected filters.")
         return
 
-    pair_panel_title("Segment volume")
+    pair_panel_title("Segment Workload Summary")
     display = seg.copy().rename(columns={"Workload Share": "Workload Share (%)"})
     display["Workload Share (%)"] = pd.to_numeric(display["Workload Share (%)"], errors="coerce").fillna(0) * 100
     display = display[["Segment", "Shipment Volume", "Allocation Time (h)", "Required FTE", "Workload Share (%)"]]
@@ -3433,7 +3469,7 @@ def segment_workload_table(df: pd.DataFrame, mode_df: pd.DataFrame):
     st.dataframe(
         display, use_container_width=True, hide_index=True, height=390,
         column_config={
-            "Segment": st.column_config.TextColumn("Segment", width="small"),
+            "Segment": st.column_config.TextColumn("Segment", width=70),
             "Shipment Volume": st.column_config.NumberColumn("Shipment Volume", width="medium", format="%,.0f"),
             "Allocation Time (h)": st.column_config.NumberColumn("Allocation Time (hrs)", width="medium", format="%,.1f"),
             "Required FTE": st.column_config.NumberColumn("Required FTE", width="small", format="%.2f"),
@@ -3576,11 +3612,11 @@ def render_cs_solution_table(df: pd.DataFrame):
     st.dataframe(
         display, use_container_width=True, hide_index=True, height=390,
         column_config={
-            "Office": st.column_config.TextColumn("Office", width="small"),
-            "Month": st.column_config.TextColumn("Month", width="small"),
+            "Office": st.column_config.TextColumn("Office", width=70),
+            "Month": st.column_config.TextColumn("Month", width=80),
             "Total Abnormality": st.column_config.NumberColumn("Total Abnormalities", width="medium", format="%,.0f"),
             "Resolved": st.column_config.NumberColumn("Resolved by CS", width="medium", format="%,.0f"),
-            "Resolution Rate": st.column_config.NumberColumn("CS Resolution Rate", width="medium", format="percent"),
+            "Resolution Rate": st.column_config.NumberColumn("CS Resolution Rate", width=110, format="percent"),
         },
     )
 
@@ -3622,13 +3658,14 @@ def render_yvf_table(df: pd.DataFrame):
     else:
         display = d[["Office", "YVF Booking", "IFF Shipment", "YVF Booking Ratio"]].copy().sort_values(["Office"])
     column_cfg = {
-        "Office": st.column_config.TextColumn("Office", width="small"),
+        "Office": st.column_config.TextColumn("Office", width=70),
         "YVF Booking": st.column_config.NumberColumn("Total YVF Bookings", width="medium", format="%,.0f"),
         "IFF Shipment": st.column_config.NumberColumn("Total IFF Shipments", width="medium", format="%,.0f"),
-        "YVF Booking Ratio": st.column_config.NumberColumn("YVF Booking Ratio", width="medium", format="percent"),
+        "YVF Booking Ratio": st.column_config.NumberColumn("YVF Booking Ratio", width=110, format="%.1f%%"),
     }
     if has_month:
         column_cfg["Month"] = st.column_config.TextColumn("Month", width="small")
+    display["YVF Booking Ratio"] = pd.to_numeric(display["YVF Booking Ratio"], errors="coerce") * 100
     st.dataframe(display, use_container_width=True, hide_index=True, height=390, column_config=column_cfg)
 
 # ============================================================
