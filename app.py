@@ -3055,7 +3055,7 @@ def chart_office_capacity_trend(df: pd.DataFrame):
             x=trend["Month"],
             y=required_values,
             mode="lines+markers+text",
-            text=[f"{v:.2f}" if pd.notna(v) else "" for v in required_values],
+            text=[f"{v:.0f}" if pd.notna(v) else "" for v in required_values],
             textposition="top center",
             textfont=dict(size=11),
             texttemplate="%{text}<br>",
