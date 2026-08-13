@@ -4701,7 +4701,7 @@ def main():
 
     segment_summary = build_segment_workload(f_workload, f_mode)
     segment_total_hours = (
-        float(segment_summary["Actual Workload (Hours)"].sum())
+        float(segment_summary["Allocation Time (h)"].sum())
         if not segment_summary.empty
         else 0.0
     )
