@@ -4094,9 +4094,30 @@ def chart_yvf(df: pd.DataFrame):
     pair_panel_title("YVF Booking Share of Total IFF Shipments")
     total_yvf = float(d["YVF Booking"].sum()); total_iff = float(d["IFF Shipment"].sum())
     remaining_iff = max(total_iff - total_yvf, 0.0); ratio = safe_div(total_yvf, total_iff)
-    fig = go.Figure(data=[go.Pie(labels=["YVF Bookings", "Non-YVF IFF Shipments"], values=[total_yvf, remaining_iff], hole=0.58, sort=False, direction="clockwise", marker=dict(colors=[BUSINESS_COLORS["actual"], COLORS["grid"]], line=dict(color="white", width=2)), textinfo="label+percent", texttemplate="<b>%{label}</b><br>%{value:,.0f} · %{percent:.1%}", textposition="outside")])
+    fig = go.Figure(
+        data=[
+            go.Pie(
+                labels=["YVF Bookings", "Non-YVF IFF Shipments"],
+                values=[total_yvf, remaining_iff],
+                hole=0.58,
+                sort=False,
+                direction="clockwise",
+                marker=dict(
+                    colors=[BUSINESS_COLORS["actual"], COLORS["grid"]],
+                    line=dict(color="white", width=2),
+                ),
+                textinfo="none",
+                hovertemplate=(
+                    "<b>%{label}</b>"
+                    "<br>Shipments: %{value:,.0f}"
+                    "<br>Share: %{percent:.1%}"
+                    "<extra></extra>"
+                ),
+            )
+        ]
+    )
     fig.update_layout(title_text="", annotations=[dict(text=f"<b>{ratio:.1%}</b><br><span style='font-size:12px'>YVF Adoption</span><br><span style='font-size:11px'>{total_yvf:,.0f} / {total_iff:,.0f}</span>", x=0.5, y=0.5, font=dict(size=22, color=COLORS["navy"], family=UI["font_family"]), showarrow=False, align="center")])
-    fig = plotly_layout(fig, 390, show_legend=True, legend_position="top", margin_left=44, margin_right=44, margin_top=38, margin_bottom=30)
+    fig = plotly_layout(fig, 340, show_legend=True, legend_position="top", margin_left=44, margin_right=44, margin_top=34, margin_bottom=24)
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
 def render_yvf_table(df: pd.DataFrame):
@@ -4124,8 +4145,22 @@ def render_yvf_table(df: pd.DataFrame):
     }
     if has_month:
         column_cfg["Month"] = st.column_config.TextColumn("Month", width="small")
-    display["YVF Booking Ratio"] = pd.to_numeric(display["YVF Booking Ratio"], errors="coerce") * 100
-    st.dataframe(display, use_container_width=True, hide_index=True, height=390, column_config=column_cfg)
+    display["YVF Booking Ratio"] = pd.to_numeric(
+        display["YVF Booking Ratio"], errors="coerce"
+    ) * 100
+
+    yvf_table_height = min(
+        390,
+        max(160, 38 + len(display) * 34),
+    )
+
+    st.dataframe(
+        display,
+        use_container_width=True,
+        hide_index=True,
+        height=yvf_table_height,
+        column_config=column_cfg,
+    )
 
 # ============================================================
 # COVER / WELCOME PAGE
@@ -4996,7 +5031,11 @@ def main():
 
     section_title("7. YVF Promoter Effectiveness")
 
-    if not f_yvf.empty:
+    # Show only one common message when no YVF data is available.
+    # Chart and detail table are rendered only when filtered YVF data exists.
+    if f_yvf.empty:
+        st.info("No YVF data available for selected filters.")
+    else:
         yvf_booking = float(f_yvf["YVF Booking"].sum())
         iff = float(f_yvf["IFF Shipment"].sum())
         yvf_rate = safe_div(yvf_booking, iff)
@@ -5004,28 +5043,41 @@ def main():
         y1, y2, y3 = st.columns(3, gap="medium")
         with y1:
             kpi_card(
-                "TOTAL YVF BOOKINGS",
+                "Total YVF Bookings",
                 fmt_int(yvf_booking),
                 "",
             )
         with y2:
             kpi_card(
-                "TOTAL IFF SHIPMENTS",
+                "Total IFF Shipments",
                 fmt_int(iff),
                 "",
             )
         with y3:
-            kpi_card(
-                "YVF BOOKING RATIO",
-                fmt_pct(yvf_rate),
-                f"{fmt_int(yvf_booking)} / {fmt_int(iff)}",
+            st.markdown(
+                f"""
+                <div class="kpi-card">
+                    <div class="kpi-label">YVF Booking Ratio</div>
+                    <div class="kpi-value" style="
+                        font-size:38px !important;
+                        font-weight:800 !important;
+                        line-height:1.05 !important;
+                    ">
+                        {fmt_pct(yvf_rate)}
+                    </div>
+                    <div class="kpi-note">
+                        {fmt_int(yvf_booking)} / {fmt_int(iff)}
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True,
             )
 
-    yvf_chart_col, yvf_table_col = st.columns([0.52, 0.48], gap="medium")
-    with yvf_chart_col:
-        chart_yvf(f_yvf)
-    with yvf_table_col:
-        render_yvf_table(f_yvf)
+        yvf_chart_col, yvf_table_col = st.columns([0.52, 0.48], gap="medium")
+        with yvf_chart_col:
+            chart_yvf(f_yvf)
+        with yvf_table_col:
+            render_yvf_table(f_yvf)
 
 
 if __name__ == "__main__":
