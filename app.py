@@ -2743,49 +2743,172 @@ def workload_breakdown_table(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def chart_case_allocation(df: pd.DataFrame):
-    """C/A/S/E allocation by Segment."""
+    """C/A/S/E workload composition by Segment, displayed in hours."""
     summary = workload_breakdown_table(df)
     if summary.empty or float(summary["Total Workload (min)"].sum()) <= 0:
         st.info("No C/A/S/E workload data available for selected filters.")
         return
-    pair_panel_title("C / A / S / E Workload Composition by Segment")
-    plot_df = summary[summary["Total Workload (min)"] > 0].copy().sort_values("Total Workload (min)", ascending=True)
+
+    pair_panel_title("Workload Composition by Activity")
+
+    plot_df = (
+        summary[summary["Total Workload (min)"] > 0]
+        .copy()
+        .sort_values("Total Workload (min)", ascending=True)
+    )
+
+    # Display layer only: convert minutes to hours.
+    for _col in [
+        "Core Service (min)",
+        "Ancillary Service (min)",
+        "Supporting Activity (min)",
+        "Exception Handling (min)",
+        "Total Workload (min)",
+    ]:
+        plot_df[_col] = pd.to_numeric(
+            plot_df[_col], errors="coerce"
+        ).fillna(0) / 60
+
     components = [
         ("Core Service (min)", "Core Service", COLORS["blue"]),
         ("Ancillary Service (min)", "Ancillary Service", COLORS["green"]),
         ("Supporting Activity (min)", "Supporting Activity", COLORS["amber"]),
         ("Exception Handling (min)", "Exception Handling", COLORS["red"]),
     ]
+
     fig = go.Figure()
+
     for col, label, color in components:
-        fig.add_trace(go.Bar(y=plot_df["Segment"], x=plot_df[col], name=label, orientation="h", marker_color=color,
-            customdata=np.column_stack([plot_df["Total Workload (min)"], plot_df["Ratio"]]),
-            hovertemplate=f"<b>{label}</b><br>Segment: %{{y}}<br>Workload: %{{x:,.0f}} min<br>Segment Total: %{{customdata[0]:,.0f}} min<br>Share of Total: %{{customdata[1]:.1%}}<extra></extra>"))
-    fig.update_layout(barmode="stack", title=dict(text=""), xaxis_title="Workload (min)", yaxis_title="")
-    fig = plotly_layout(fig, 390, show_legend=True, legend_position="top", margin_left=50, margin_right=35, margin_top=38, margin_bottom=48)
+        fig.add_trace(
+            go.Bar(
+                y=plot_df["Segment"],
+                x=plot_df[col],
+                name=label,
+                orientation="h",
+                marker_color=color,
+                customdata=np.column_stack(
+                    [
+                        plot_df["Total Workload (min)"],
+                        plot_df["Ratio"],
+                    ]
+                ),
+                hovertemplate=(
+                    f"<b>{label}</b>"
+                    "<br>Segment: %{y}"
+                    "<br>Workload: %{x:,.1f} hrs"
+                    "<br>Segment Total: %{customdata[0]:,.1f} hrs"
+                    "<br>Share of Total: %{customdata[1]:.1%}"
+                    "<extra></extra>"
+                ),
+            )
+        )
+
+    fig.update_layout(
+        barmode="stack",
+        title=dict(text=""),
+        xaxis_title="Workload (Hours)",
+        yaxis_title="",
+    )
+
+    fig = plotly_layout(
+        fig,
+        350,
+        show_legend=True,
+        legend_position="top",
+        margin_left=50,
+        margin_right=35,
+        margin_top=38,
+        margin_bottom=40,
+    )
+
     fig.update_xaxes(rangemode="tozero")
-    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+
+    st.plotly_chart(
+        fig,
+        use_container_width=True,
+        config={"displayModeBar": False},
+    )
+
+
 
 def render_workload_breakdown_table(df: pd.DataFrame):
-    """C/A/S/E workload detail; no TOTAL row."""
+    """C/A/S/E workload detail in hours; no TOTAL row and no Ratio column."""
     summary = workload_breakdown_table(df)
     if summary.empty:
         st.info("No workload breakdown data available for selected filters.")
         return
+
     pair_panel_title("Activity Breakdown Detail")
+
     display = summary.copy()
-    display["Ratio"] = pd.to_numeric(display["Ratio"], errors="coerce") * 100
+
+    # Display layer only: convert minutes to hours.
+    display["Core Service (Hours)"] = pd.to_numeric(
+        display["Core Service (min)"], errors="coerce"
+    ).fillna(0) / 60
+    display["Ancillary Service (Hours)"] = pd.to_numeric(
+        display["Ancillary Service (min)"], errors="coerce"
+    ).fillna(0) / 60
+    display["Supporting Activity (Hours)"] = pd.to_numeric(
+        display["Supporting Activity (min)"], errors="coerce"
+    ).fillna(0) / 60
+    display["Exception Handling (Hours)"] = pd.to_numeric(
+        display["Exception Handling (min)"], errors="coerce"
+    ).fillna(0) / 60
+    display["Total Workload (Hours)"] = pd.to_numeric(
+        display["Total Workload (min)"], errors="coerce"
+    ).fillna(0) / 60
+
+    display = display[
+        [
+            "Segment",
+            "Core Service (Hours)",
+            "Ancillary Service (Hours)",
+            "Supporting Activity (Hours)",
+            "Exception Handling (Hours)",
+            "Total Workload (Hours)",
+        ]
+    ]
+
     st.dataframe(
-        display, use_container_width=True, hide_index=True, height=390,
+        display,
+        use_container_width=True,
+        hide_index=True,
+        height=350,
         column_config={
-            "Segment": st.column_config.TextColumn("Segment", width=70),
-            "Core Service (min)": st.column_config.NumberColumn("Core Service (min)", format="%,.0f", width=115),
-            "Ancillary Service (min)": st.column_config.NumberColumn("Ancillary Service (min)", format="%,.0f", width=125),
-            "Supporting Activity (min)": st.column_config.NumberColumn("Supporting Activity (min)", format="%,.0f", width=135),
-            "Exception Handling (min)": st.column_config.NumberColumn("Exception Handling (min)", format="%,.0f", width=135),
-            "Total Workload (min)": st.column_config.NumberColumn("Total Workload (min)", format="%,.0f", width=120),
+            "Segment": st.column_config.TextColumn(
+                "Segment",
+                width=70,
+            ),
+            "Core Service (Hours)": st.column_config.NumberColumn(
+                "Core Service (Hours)",
+                format="%,.1f",
+                width=125,
+            ),
+            "Ancillary Service (Hours)": st.column_config.NumberColumn(
+                "Ancillary Service (Hours)",
+                format="%,.1f",
+                width=140,
+            ),
+            "Supporting Activity (Hours)": st.column_config.NumberColumn(
+                "Supporting Activity (Hours)",
+                format="%,.1f",
+                width=150,
+            ),
+            "Exception Handling (Hours)": st.column_config.NumberColumn(
+                "Exception Handling (Hours)",
+                format="%,.1f",
+                width=150,
+            ),
+            "Total Workload (Hours)": st.column_config.NumberColumn(
+                "Total Workload (Hours)",
+                format="%,.1f",
+                width=135,
+            ),
         },
     )
+
+
 
 def render_activity_detail_table(
     df: pd.DataFrame,
@@ -4762,7 +4885,7 @@ def main():
             font-size:12px;
             line-height:1.5;
             margin:0 0 10px 2px;">
-            Workload is broken down into Core Service (C), Ancillary Service (A),
+            Workload composition: Core Service (C), Ancillary Service (A),
             Supporting Activity (S) and Exception Handling (E).
         </div>
         """,
