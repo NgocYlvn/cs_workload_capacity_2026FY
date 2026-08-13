@@ -1400,7 +1400,7 @@ st.markdown(
        ------------------------------------------------------------ */
     .block-container {{
         max-width: 1680px !important;
-        padding-top: 0.85rem !important;
+        padding-top: 0.35rem !important;
         padding-left: 1.05rem !important;
         padding-right: 1.05rem !important;
         padding-bottom: 1.5rem !important;
@@ -1419,7 +1419,7 @@ st.markdown(
 
     section[data-testid="stSidebar"] > div:first-child {{
         width: 270px !important;
-        padding-top: 0.75rem !important;
+        padding-top: 0.45rem !important;
         padding-left: 0.95rem !important;
         padding-right: 0.95rem !important;
         padding-bottom: 1rem !important;
@@ -1428,22 +1428,23 @@ st.markdown(
     .sidebar-brand {{
         display:flex;
         align-items:center;
-        gap:9px;
-        min-height:52px;
+        gap:0;
+        min-height:34px;
         color:#FFFFFF;
-        font-weight:800;
-        font-size:18px;
-        line-height:1.05;
-        margin:0 0 10px 1px;
-        letter-spacing:-0.015em;
+        margin:0 0 8px 1px;
+    }}
+
+    .sidebar-brand-compact {{
+        width:100%;
+        justify-content:flex-start;
     }}
 
     .sidebar-brand-mark {{
-        width:34px;
-        height:22px;
+        width:32px;
+        height:20px;
         position:relative;
         display:inline-block;
-        flex:0 0 34px;
+        flex:0 0 32px;
     }}
 
     .sidebar-brand-mark::before,
@@ -1596,15 +1597,19 @@ st.markdown(
        MAIN HEADER — compact executive card
        ------------------------------------------------------------ */
     .main-header {{
-        position:relative !important;
+        position:sticky !important;
+        top:0.35rem !important;
+        z-index:950 !important;
         overflow:hidden !important;
-        background:#FFFFFF !important;
+        background:rgba(255,255,255,0.98) !important;
+        backdrop-filter:blur(8px);
+        -webkit-backdrop-filter:blur(8px);
         border:1px solid #D5E1EA !important;
         border-left:5px solid #0DBAEE !important;
-        border-radius:12px !important;
-        padding:14px 18px 13px 18px !important;
-        margin:0 0 9px 0 !important;
-        box-shadow:0 2px 8px rgba(6,24,63,0.045) !important;
+        border-radius:11px !important;
+        padding:10px 16px 9px 16px !important;
+        margin:0 0 7px 0 !important;
+        box-shadow:0 2px 8px rgba(6,24,63,0.055) !important;
     }}
 
     /* Remove the old decorative arrow to preserve laptop width. */
@@ -1615,8 +1620,8 @@ st.markdown(
 
     .main-title {{
         color:#06183F !important;
-        font-size:31px !important;
-        line-height:1.08 !important;
+        font-size:28px !important;
+        line-height:1.06 !important;
         font-weight:800 !important;
         letter-spacing:-0.025em !important;
         padding-right:0 !important;
@@ -1625,10 +1630,10 @@ st.markdown(
 
     .subtitle {{
         color:#5B6575 !important;
-        font-size:14px !important;
-        line-height:1.35 !important;
+        font-size:12.5px !important;
+        line-height:1.25 !important;
         font-weight:450 !important;
-        margin-top:4px !important;
+        margin-top:2px !important;
     }}
 
     /* ------------------------------------------------------------
@@ -1637,14 +1642,14 @@ st.markdown(
     .filter-summary-card {{
         display:flex;
         align-items:center;
-        min-height:54px;
+        min-height:48px;
         gap:0;
         background:#F8FBFE;
         border:1px solid #D5E1EA;
         border-radius:11px;
         box-shadow:0 1px 5px rgba(6,24,63,0.025);
         margin:0 0 12px 0;
-        padding:7px 14px;
+        padding:5px 12px;
     }}
 
     .filter-summary-item {{
@@ -1718,8 +1723,8 @@ st.markdown(
 
 
     /* ------------------------------------------------------------
-       KPI ICON SYSTEM — reference-style corporate layout
-       Label top -> Icon + Value center -> Detail bottom
+       KPI ICON SYSTEM — clean executive layout
+       Icons are concentrated in HC KPI cards and filter summary
        ------------------------------------------------------------ */
     .kpi-icon-circle {{
         width:44px;
@@ -1757,49 +1762,7 @@ st.markdown(
         text-align:left !important;
     }}
 
-    .shipment-main-row,
-    .pic-main-row {{
-        display:flex;
-        align-items:center;
-        justify-content:center;
-        gap:9px;
-        width:100%;
-        margin:5px 0 2px 0;
-    }}
 
-    .shipment-main-row .shipment-kpi-value,
-    .pic-main-row .pic-kpi-value {{
-        margin:0 !important;
-    }}
-
-    .status-icon-circle {{
-        width:38px;
-        height:38px;
-        min-width:38px;
-        border-radius:50%;
-        display:inline-flex;
-        align-items:center;
-        justify-content:center;
-        flex:0 0 38px;
-    }}
-
-    .status-icon-circle svg {{
-        width:20px;
-        height:20px;
-        fill:none;
-        stroke:currentColor;
-        stroke-width:1.8;
-        stroke-linecap:round;
-        stroke-linejoin:round;
-    }}
-
-    .status-head-inline {{
-        display:flex;
-        align-items:center;
-        justify-content:center;
-        gap:8px;
-        width:100%;
-    }}
 
     /* ------------------------------------------------------------
        KPI / CARD HIERARCHY
@@ -1973,23 +1936,24 @@ st.markdown(
         }}
 
         .block-container {{
-            padding-top:0.65rem !important;
+            padding-top:0.25rem !important;
             padding-left:0.80rem !important;
             padding-right:0.80rem !important;
             padding-bottom:1.25rem !important;
         }}
 
         .main-header {{
-            padding:12px 16px 11px 16px !important;
-            margin-bottom:7px !important;
+            top:0.25rem !important;
+            padding:9px 14px 8px 14px !important;
+            margin-bottom:6px !important;
         }}
 
         .main-title {{
-            font-size:29px !important;
+            font-size:27px !important;
         }}
 
         .subtitle {{
-            font-size:14px !important;
+            font-size:12px !important;
         }}
 
         .filter-summary-card {{
@@ -2420,10 +2384,7 @@ def shipment_kpi_card(label: str, value: str, note: str = ""):
         f"""
         <div class="shipment-kpi-card">
             <div class="shipment-kpi-label">{label}</div>
-            <div class="shipment-main-row">
-                {general_kpi_icon(label)}
-                <div class="shipment-kpi-value">{value}</div>
-            </div>
+            <div class="shipment-kpi-value">{value}</div>
             <div class="shipment-kpi-note">{note}</div>
         </div>
         """,
@@ -2440,10 +2401,7 @@ def pic_kpi_card(label: str, value: str, note: str = "", unit: str = ""):
         <div class="pic-kpi-card">
             <div class="pic-kpi-label">{label}</div>
             {unit_html}
-            <div class="pic-main-row">
-                {general_kpi_icon(label)}
-                <div class="pic-kpi-value">{value}</div>
-            </div>
+            <div class="pic-kpi-value">{value}</div>
             <div class="pic-kpi-note">{note}</div>
         </div>
         """,
@@ -2555,10 +2513,7 @@ def pic_utilization_card(util: float):
         f"""
         <div class="pic-status-card">
             <div class="pic-status-left">
-                <div class="status-head-inline" style="justify-content:flex-start;">
-                    {ui_icon_svg("gauge", "#0DBAEE", "#E8F8FD", circle_class="status-icon-circle")}
-                    <div class="pic-status-title">CAPACITY UTILIZATION</div>
-                </div>
+                <div class="pic-status-title">CAPACITY UTILIZATION</div>
                 <div class="pic-status-value">{value}</div>
             </div>
             <div class="pic-progress-track">
@@ -2580,10 +2535,7 @@ def overall_workload_status_card(util: float):
     st.markdown(
         f"""
         <div class="workload-status-panel">
-            <div class="status-head-inline">
-                {ui_icon_svg("target", color, bg, circle_class="status-icon-circle")}
-                <div class="pic-status-title">OVERALL WORKLOAD STATUS</div>
-            </div>
+            <div class="pic-status-title">OVERALL WORKLOAD STATUS</div>
             <div class="workload-status-text"
                  style="color:{color};background:{bg};
                         border-radius:999px;padding:8px 14px;">
@@ -5406,19 +5358,19 @@ def main():
     # UI only: styled to match the approved Yusen executive HOME format.
     with st.sidebar:
         st.markdown(
-            '<div class="sidebar-brand"><span class="sidebar-brand-mark"></span><span>Yusen Logistics</span></div>',
+            '<div class="sidebar-brand sidebar-brand-compact"><span class="sidebar-brand-mark"></span></div>',
             unsafe_allow_html=True,
         )
-        if st.button("🏠  HOME", use_container_width=True, key="back_to_cover_btn"):
+        if st.button("⌂  HOME", use_container_width=True, key="back_to_cover_btn"):
             st.session_state["dashboard_entered"] = False
             st.rerun()
-        st.markdown('<div class="sidebar-filter-title">⚙ FILTERS</div>', unsafe_allow_html=True)
+        st.markdown('<div class="sidebar-filter-title">FILTERS</div>', unsafe_allow_html=True)
         st.markdown('<div class="sidebar-filter-caption">Month / Office</div>', unsafe_allow_html=True)
-        month = st.selectbox("📅  MONTH", month_options, key="month_filter")
-        office = st.selectbox("🏢  OFFICE", office_options, key="office_filter")
+        month = st.selectbox("MONTH", month_options, key="month_filter")
+        office = st.selectbox("OFFICE", office_options, key="office_filter")
         st.markdown("---")
         uploaded = st.file_uploader(
-            "☁️  UPLOAD EXCEL FILE",
+            "UPLOAD EXCEL FILE",
             type=["xlsx", "xlsm", "xls"],
             help="Nếu không upload, Dashboard sẽ đọc file mặc định trong cùng thư mục app.py.",
             key="excel_uploader",
