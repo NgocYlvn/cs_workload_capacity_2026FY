@@ -12,7 +12,6 @@ import re
 import html
 import hashlib
 from pathlib import Path
-import textwrap
 from typing import Dict, Iterable, List, Optional, Tuple
 
 import numpy as np
@@ -4169,535 +4168,74 @@ def render_yvf_table(df: pd.DataFrame):
 # ============================================================
 
 def render_cover_page() -> None:
-    """Corporate landing page inspired by the approved cover reference."""
-    st.markdown(
-        textwrap.dedent(
-            f"""
-            <style>
-        /* ---------------- COVER ONLY ---------------- */
-        section[data-testid="stSidebar"] {{ display: none !important; }}
-        [data-testid="stSidebarCollapsedControl"] {{ display: none !important; }}
-        header[data-testid="stHeader"] {{
-            background: transparent !important;
-            height: 0 !important;
-        }}
+    """Render the corporate cover page without Markdown code-block artifacts."""
 
-        .block-container {{
-            max-width: none !important;
-            width: 100% !important;
-            padding: 0 !important;
-            margin: 0 !important;
-        }}
+    cover_css = """
+<style>
+section[data-testid="stSidebar"]{display:none!important}
+[data-testid="stSidebarCollapsedControl"]{display:none!important}
+header[data-testid="stHeader"]{background:transparent!important;height:0!important}
+.block-container{max-width:none!important;width:100%!important;padding:0!important;margin:0!important}
+.stApp{background:#06183F!important;min-height:100vh!important}
+.cover-stage{position:relative;width:100%;min-height:100vh;overflow:hidden;background:radial-gradient(circle at 75% 45%,rgba(13,186,238,.06),transparent 27%),linear-gradient(135deg,#031532 0%,#06183F 46%,#082759 100%);font-family:Inter,"Segoe UI",Arial,sans-serif}
+.cover-panel{position:absolute;top:3.2vh;left:2.2vw;width:min(55vw,760px);min-width:590px;height:calc(100vh - 6.4vh);min-height:700px;box-sizing:border-box;padding:30px 38px 28px;border-radius:24px;background:linear-gradient(145deg,rgba(255,255,255,.99),rgba(252,253,255,.97));border:1px solid rgba(255,255,255,.72);box-shadow:0 18px 42px rgba(0,0,0,.18),inset 0 0 24px rgba(0,59,112,.025);z-index:10}
+.cover-logo{display:inline-flex;flex-direction:column;align-items:flex-start;margin-bottom:44px;color:#06183F}
+.cover-logo-mark{width:86px;height:24px;margin-left:4px;margin-bottom:1px}
+.cover-logo-name{font-family:Georgia,"Times New Roman",serif;font-weight:800;font-size:22px;line-height:1;letter-spacing:-.02em}
+.cover-title{margin:0;max-width:650px;color:#06183F;font-size:clamp(48px,4.6vw,70px);line-height:.98;letter-spacing:-.035em;font-weight:850;text-transform:uppercase}
+.cover-title-accent{width:72px;height:5px;border-radius:999px;background:#E6761B;margin:24px 0 17px 2px}
+.cover-subtitle{color:#4F5B6A;font-size:23px;line-height:1.28;font-weight:500;max-width:440px;margin-bottom:22px}
+.cover-separator{height:1px;background:#D8E1EA;margin:0 0 18px}
+.cover-pillars{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;margin-top:2px}
+.cover-pillar{position:relative;text-align:center;padding:0 10px}
+.cover-pillar:not(:last-child)::after{content:"";position:absolute;right:0;top:35px;width:1px;height:92px;background:#DDE5EC}
+.cover-icon{width:56px;height:56px;margin:0 auto 10px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;box-shadow:0 5px 14px rgba(0,0,0,.10)}
+.cover-icon svg{width:30px;height:30px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.icon-capacity{background:#06183F}.icon-workload{background:#0DBAEE}.icon-productivity{background:#F57C00}.icon-insights{background:#45B84A}
+.cover-pillar-title{color:#06183F;font-size:13px;font-weight:800;line-height:1.15;text-transform:uppercase;margin-bottom:7px}
+.cover-pillar-note{color:#4F5B6A;font-size:11px;line-height:1.35;font-weight:500}
+.cover-cta{position:absolute;left:38px;bottom:30px;display:inline-flex;align-items:center;justify-content:space-between;gap:18px;min-width:305px;height:56px;padding:0 20px;box-sizing:border-box;border-radius:9px;background:linear-gradient(180deg,#FF7F0A 0%,#EE6500 100%);color:#fff!important;text-decoration:none!important;font-size:21px;font-weight:800;box-shadow:0 8px 18px rgba(230,118,27,.28)}
+.cover-cta-icon{width:30px;height:30px;border:2px solid rgba(255,255,255,.9);border-radius:4px;display:flex;align-items:center;justify-content:center;flex:0 0 30px}
+.cover-cta-arrow{font-size:34px;line-height:1;margin-left:auto;font-weight:300}
+.cover-orbits{position:absolute;right:-9vw;top:-18vh;width:70vw;height:118vh;z-index:2;pointer-events:none}
+.orbit{position:absolute;border:2px solid #F58220;border-radius:50%;opacity:.98}
+.orbit.o1{width:59vw;height:59vw;right:-15vw;top:-8vw}.orbit.o2{width:52vw;height:52vw;right:-10vw;top:-3vw}.orbit.o3{width:45vw;height:45vw;right:-5vw;top:2vw}.orbit.o4{width:38vw;height:38vw;right:0;top:7vw}
+.orbit-dot{position:absolute;width:13px;height:13px;border-radius:50%;background:#F58220}.dot1{right:9vw;top:8vh}.dot2{right:12vw;top:17vh}.dot3{right:16vw;top:27vh}.dot4{right:23vw;top:39vh}.dot5{right:11vw;top:56vh}.dot6{right:18vw;top:74vh}
+.cover-right-footer{position:absolute;right:4vw;bottom:4.6vh;display:flex;align-items:center;gap:18px;color:#fff;font-size:18px;font-weight:700;z-index:5}
+.cover-headset{width:34px;height:34px;display:flex;align-items:center;justify-content:center;color:#fff}.cover-headset svg{width:31px;height:31px;stroke:currentColor;fill:none;stroke-width:1.8}
+.footer-divider{width:2px;height:28px;background:#F58220}
+.cover-wave-1,.cover-wave-2,.cover-wave-3{position:absolute;left:-5%;width:112%;border-radius:50%;pointer-events:none}
+.cover-wave-1{height:90px;bottom:-58px;border-top:9px solid #0DBAEE;transform:rotate(-1.5deg);opacity:.96}
+.cover-wave-2{height:125px;bottom:-88px;border-top:7px solid #E6761B;transform:rotate(1.7deg);opacity:.98}
+.cover-wave-3{height:155px;bottom:-113px;border-top:8px solid #005BAC;transform:rotate(-.2deg);opacity:.86}
+@media(max-width:900px){.cover-stage{min-height:920px}.cover-panel{position:relative;top:auto;left:auto;width:calc(100% - 28px);min-width:0;height:auto;min-height:830px;margin:14px;padding:28px 24px 110px}.cover-title{font-size:46px}.cover-pillars{grid-template-columns:repeat(2,1fr);row-gap:20px}.cover-pillar:nth-child(2)::after{display:none}.cover-cta{left:24px;right:24px;width:auto;bottom:28px}.cover-orbits,.cover-right-footer,.cover-wave-1,.cover-wave-2,.cover-wave-3{display:none}}
+</style>
+"""
 
-        .stApp {{
-            background: #06183F !important;
-            min-height: 100vh !important;
-        }}
+    # IMPORTANT: keep the HTML compact (no Markdown-indented blank blocks).
+    cover_html = """<div class="cover-stage">
+<div class="cover-orbits"><div class="orbit o1"></div><div class="orbit o2"></div><div class="orbit o3"></div><div class="orbit o4"></div><div class="orbit-dot dot1"></div><div class="orbit-dot dot2"></div><div class="orbit-dot dot3"></div><div class="orbit-dot dot4"></div><div class="orbit-dot dot5"></div><div class="orbit-dot dot6"></div></div>
+<div class="cover-wave-1"></div><div class="cover-wave-2"></div><div class="cover-wave-3"></div>
+<div class="cover-panel">
+<div class="cover-logo"><svg class="cover-logo-mark" viewBox="0 0 100 28" aria-hidden="true"><path d="M4 22 C26 20,49 13,84 2 C69 14,50 23,23 25" fill="none" stroke="#005BAC" stroke-width="3.2"/><path d="M17 18 C40 15,59 9,92 1 C77 11,60 18,35 22" fill="none" stroke="#005BAC" stroke-width="2.2"/></svg><div class="cover-logo-name">Yusen Logistics</div></div>
+<h1 class="cover-title">CS Capacity &amp;<br>Productivity</h1>
+<div class="cover-title-accent"></div>
+<div class="cover-subtitle">Capacity, Workload &amp;<br>Productivity Insights</div>
+<div class="cover-separator"></div>
+<div class="cover-pillars">
+<div class="cover-pillar"><div class="cover-icon icon-capacity"><svg viewBox="0 0 32 32"><circle cx="16" cy="9" r="4"></circle><circle cx="7" cy="12" r="3"></circle><circle cx="25" cy="12" r="3"></circle><path d="M9 25v-3c0-4 3-7 7-7s7 3 7 7v3"></path><path d="M2 24v-2c0-3 2-5 5-5"></path><path d="M30 24v-2c0-3-2-5-5-5"></path></svg></div><div class="cover-pillar-title">Capacity</div><div class="cover-pillar-note">Right People,<br>Right Capacity</div></div>
+<div class="cover-pillar"><div class="cover-icon icon-workload"><svg viewBox="0 0 32 32"><rect x="7" y="6" width="18" height="22" rx="2"></rect><path d="M12 6V4h8v2"></path><path d="M11 12h10"></path><path d="M11 17h10"></path><path d="M11 22h7"></path></svg></div><div class="cover-pillar-title">Workload</div><div class="cover-pillar-note">Understand Work,<br>Drive Balance</div></div>
+<div class="cover-pillar"><div class="cover-icon icon-productivity"><svg viewBox="0 0 32 32"><path d="M5 25h22"></path><rect x="7" y="17" width="4" height="8"></rect><rect x="14" y="12" width="4" height="13"></rect><rect x="21" y="7" width="4" height="18"></rect><path d="M6 13l6-5 5 2 8-7"></path><path d="M22 3h4v4"></path></svg></div><div class="cover-pillar-title">Productivity</div><div class="cover-pillar-note">Measure Performance,<br>Maximize Impact</div></div>
+<div class="cover-pillar"><div class="cover-icon icon-insights"><svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="10"></circle><circle cx="16" cy="16" r="5"></circle><path d="M16 16l8-8"></path><path d="M22 8h4v4"></path></svg></div><div class="cover-pillar-title">Insights</div><div class="cover-pillar-note">Data-Driven Insights,<br>Better Decisions</div></div>
+</div>
+<a href="?enter=1" target="_self" class="cover-cta"><span class="cover-cta-icon">↗</span><span>VIEW DASHBOARD</span><span class="cover-cta-arrow">→</span></a>
+</div>
+<div class="cover-right-footer"><span class="cover-headset"><svg viewBox="0 0 32 32"><path d="M5 17v-2a11 11 0 0 1 22 0v2"></path><rect x="3" y="16" width="5" height="9" rx="2"></rect><rect x="24" y="16" width="5" height="9" rx="2"></rect><path d="M24 26c-2 3-5 3-8 3"></path></svg></span><span class="footer-divider"></span><span>CS DIVISION</span><span class="footer-divider"></span><span>FY2026</span></div>
+</div>"""
 
-        .cover-stage {{
-            position: relative;
-            width: 100%;
-            min-height: 100vh;
-            overflow: hidden;
-            background:
-                radial-gradient(circle at 75% 45%, rgba(13,186,238,0.06), transparent 27%),
-                linear-gradient(135deg, #031532 0%, #06183F 46%, #082759 100%);
-            font-family: {UI['font_family']};
-        }}
-
-        /* Bottom corporate waves */
-        .cover-wave-1,
-        .cover-wave-2,
-        .cover-wave-3 {{
-            position: absolute;
-            left: -5%;
-            width: 112%;
-            border-radius: 50%;
-            pointer-events: none;
-        }}
-
-        .cover-wave-1 {{
-            height: 90px;
-            bottom: -58px;
-            border-top: 9px solid #0DBAEE;
-            transform: rotate(-1.5deg);
-            opacity: 0.96;
-        }}
-
-        .cover-wave-2 {{
-            height: 125px;
-            bottom: -88px;
-            border-top: 7px solid #E6761B;
-            transform: rotate(1.7deg);
-            opacity: 0.98;
-        }}
-
-        .cover-wave-3 {{
-            height: 155px;
-            bottom: -113px;
-            border-top: 8px solid #005BAC;
-            transform: rotate(-0.2deg);
-            opacity: 0.86;
-        }}
-
-        /* Main white panel */
-        .cover-panel {{
-            position: absolute;
-            top: 3.2vh;
-            left: 2.2vw;
-            width: min(55vw, 760px);
-            min-width: 590px;
-            height: calc(100vh - 6.4vh);
-            min-height: 700px;
-            box-sizing: border-box;
-            padding: 30px 38px 28px 38px;
-            border-radius: 24px;
-            background:
-                linear-gradient(145deg, rgba(255,255,255,0.99), rgba(252,253,255,0.97));
-            border: 1px solid rgba(255,255,255,0.72);
-            box-shadow:
-                0 18px 42px rgba(0,0,0,0.18),
-                inset 0 0 24px rgba(0,59,112,0.025);
-            z-index: 10;
-        }}
-
-        /* Text logo approximation — no external image dependency */
-        .cover-logo {{
-            display: inline-flex;
-            flex-direction: column;
-            align-items: flex-start;
-            margin-bottom: 44px;
-            color: #06183F;
-        }}
-
-        .cover-logo-mark {{
-            width: 86px;
-            height: 24px;
-            margin-left: 4px;
-            margin-bottom: 1px;
-        }}
-
-        .cover-logo-name {{
-            font-family: Georgia, 'Times New Roman', serif;
-            font-weight: 800;
-            font-size: 22px;
-            line-height: 1;
-            letter-spacing: -0.02em;
-        }}
-
-        .cover-title {{
-            margin: 0;
-            max-width: 650px;
-            color: #06183F;
-            font-size: clamp(48px, 4.6vw, 70px);
-            line-height: 0.98;
-            letter-spacing: -0.035em;
-            font-weight: 850;
-            text-transform: uppercase;
-        }}
-
-        .cover-title-accent {{
-            width: 72px;
-            height: 5px;
-            border-radius: 999px;
-            background: #E6761B;
-            margin: 24px 0 17px 2px;
-        }}
-
-        .cover-subtitle {{
-            color: #4F5B6A;
-            font-size: 23px;
-            line-height: 1.28;
-            font-weight: 500;
-            max-width: 440px;
-            margin-bottom: 22px;
-        }}
-
-        .cover-separator {{
-            height: 1px;
-            background: #D8E1EA;
-            margin: 0 0 18px 0;
-        }}
-
-        /* Four benefit pillars */
-        .cover-pillars {{
-            display: grid;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
-            gap: 0;
-            margin-top: 2px;
-        }}
-
-        .cover-pillar {{
-            position: relative;
-            text-align: center;
-            padding: 0 10px 0 10px;
-        }}
-
-        .cover-pillar:not(:last-child)::after {{
-            content: "";
-            position: absolute;
-            right: 0;
-            top: 35px;
-            width: 1px;
-            height: 92px;
-            background: #DDE5EC;
-        }}
-
-        .cover-icon {{
-            width: 56px;
-            height: 56px;
-            margin: 0 auto 10px auto;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #FFFFFF;
-            box-shadow: 0 5px 14px rgba(0,0,0,0.10);
-        }}
-
-        .cover-icon svg {{
-            width: 30px;
-            height: 30px;
-            stroke: currentColor;
-            fill: none;
-            stroke-width: 1.9;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-        }}
-
-        .icon-capacity {{ background: #06183F; }}
-        .icon-workload {{ background: #0DBAEE; }}
-        .icon-productivity {{ background: #F57C00; }}
-        .icon-insights {{ background: #45B84A; }}
-
-        .cover-pillar-title {{
-            color: #06183F;
-            font-size: 13px;
-            font-weight: 800;
-            line-height: 1.15;
-            text-transform: uppercase;
-            margin-bottom: 7px;
-        }}
-
-        .cover-pillar-note {{
-            color: #4F5B6A;
-            font-size: 11px;
-            line-height: 1.35;
-            font-weight: 500;
-        }}
-
-        /* CTA */
-        .cover-cta {{
-            position: absolute;
-            left: 38px;
-            bottom: 30px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 18px;
-            min-width: 305px;
-            height: 56px;
-            padding: 0 20px;
-            box-sizing: border-box;
-            border-radius: 9px;
-            background: linear-gradient(180deg, #FF7F0A 0%, #EE6500 100%);
-            color: #FFFFFF !important;
-            text-decoration: none !important;
-            font-size: 21px;
-            font-weight: 800;
-            letter-spacing: -0.01em;
-            box-shadow: 0 8px 18px rgba(230,118,27,0.28);
-            transition: all .15s ease;
-        }}
-
-        .cover-cta:hover {{
-            transform: translateY(-1px);
-            box-shadow: 0 11px 22px rgba(230,118,27,0.34);
-        }}
-
-        .cover-cta-icon {{
-            width: 30px;
-            height: 30px;
-            border: 2px solid rgba(255,255,255,0.9);
-            border-radius: 4px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex: 0 0 30px;
-        }}
-
-        .cover-cta-arrow {{
-            font-size: 34px;
-            line-height: 1;
-            margin-left: auto;
-            font-weight: 300;
-        }}
-
-        /* Right orbit system */
-        .cover-orbits {{
-            position: absolute;
-            right: -9vw;
-            top: -18vh;
-            width: 70vw;
-            height: 118vh;
-            z-index: 2;
-            pointer-events: none;
-        }}
-
-        .orbit {{
-            position: absolute;
-            border: 2px solid #F58220;
-            border-radius: 50%;
-            opacity: 0.98;
-        }}
-
-        .orbit.o1 {{ width: 59vw; height: 59vw; right: -15vw; top: -8vw; }}
-        .orbit.o2 {{ width: 52vw; height: 52vw; right: -10vw; top: -3vw; }}
-        .orbit.o3 {{ width: 45vw; height: 45vw; right: -5vw; top: 2vw; }}
-        .orbit.o4 {{ width: 38vw; height: 38vw; right: 0vw; top: 7vw; }}
-
-        .orbit-dot {{
-            position: absolute;
-            width: 13px;
-            height: 13px;
-            border-radius: 50%;
-            background: #F58220;
-            box-shadow: 0 0 0 2px rgba(245,130,32,0.08);
-        }}
-
-        .dot1 {{ right: 9vw; top: 8vh; }}
-        .dot2 {{ right: 12vw; top: 17vh; }}
-        .dot3 {{ right: 16vw; top: 27vh; }}
-        .dot4 {{ right: 23vw; top: 39vh; }}
-        .dot5 {{ right: 11vw; top: 56vh; }}
-        .dot6 {{ right: 18vw; top: 74vh; }}
-
-        /* Right-side footer */
-        .cover-right-footer {{
-            position: absolute;
-            right: 4vw;
-            bottom: 4.6vh;
-            display: flex;
-            align-items: center;
-            gap: 18px;
-            color: #FFFFFF;
-            font-size: 18px;
-            font-weight: 700;
-            letter-spacing: 0.01em;
-            z-index: 5;
-        }}
-
-        .cover-headset {{
-            width: 34px;
-            height: 34px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #FFFFFF;
-        }}
-
-        .cover-headset svg {{
-            width: 31px;
-            height: 31px;
-            stroke: currentColor;
-            fill: none;
-            stroke-width: 1.8;
-        }}
-
-        .footer-divider {{
-            width: 2px;
-            height: 28px;
-            background: #F58220;
-        }}
-
-        /* Responsive */
-        @media (max-width: 1180px) {{
-            .cover-panel {{
-                width: 60vw;
-                min-width: 560px;
-            }}
-            .cover-right-footer {{
-                font-size: 15px;
-                gap: 12px;
-            }}
-        }}
-
-        @media (max-width: 900px) {{
-            .cover-stage {{
-                min-height: 920px;
-            }}
-            .cover-panel {{
-                position: relative;
-                top: auto;
-                left: auto;
-                width: calc(100% - 28px);
-                min-width: 0;
-                height: auto;
-                min-height: 830px;
-                margin: 14px;
-                padding: 28px 24px 110px 24px;
-            }}
-            .cover-title {{
-                font-size: 46px;
-            }}
-            .cover-pillars {{
-                grid-template-columns: repeat(2, 1fr);
-                row-gap: 20px;
-            }}
-            .cover-pillar:nth-child(2)::after {{
-                display: none;
-            }}
-            .cover-cta {{
-                left: 24px;
-                right: 24px;
-                width: auto;
-                bottom: 28px;
-            }}
-            .cover-orbits,
-            .cover-right-footer,
-            .cover-wave-1,
-            .cover-wave-2,
-            .cover-wave-3 {{
-                display: none;
-            }}
-        }}
-            </style>
-            """
-        ),
-        unsafe_allow_html=True,
-    )
-
-    st.markdown(
-        textwrap.dedent(
-            """
-            <div class="cover-stage">
-
-            <div class="cover-orbits">
-                <div class="orbit o1"></div>
-                <div class="orbit o2"></div>
-                <div class="orbit o3"></div>
-                <div class="orbit o4"></div>
-                <div class="orbit-dot dot1"></div>
-                <div class="orbit-dot dot2"></div>
-                <div class="orbit-dot dot3"></div>
-                <div class="orbit-dot dot4"></div>
-                <div class="orbit-dot dot5"></div>
-                <div class="orbit-dot dot6"></div>
-            </div>
-
-            <div class="cover-wave-1"></div>
-            <div class="cover-wave-2"></div>
-            <div class="cover-wave-3"></div>
-
-            <div class="cover-panel">
-                <div class="cover-logo">
-                    <svg class="cover-logo-mark" viewBox="0 0 100 28" aria-hidden="true">
-                        <path d="M4 22 C26 20, 49 13, 84 2 C69 14, 50 23, 23 25"
-                              fill="none" stroke="#005BAC" stroke-width="3.2"/>
-                        <path d="M17 18 C40 15, 59 9, 92 1 C77 11, 60 18, 35 22"
-                              fill="none" stroke="#005BAC" stroke-width="2.2"/>
-                    </svg>
-                    <div class="cover-logo-name">Yusen Logistics</div>
-                </div>
-
-                <h1 class="cover-title">CS Capacity &amp;<br>Productivity</h1>
-                <div class="cover-title-accent"></div>
-
-                <div class="cover-subtitle">
-                    Capacity, Workload &amp;<br>
-                    Productivity Insights
-                </div>
-
-                <div class="cover-separator"></div>
-
-                <div class="cover-pillars">
-
-                    <div class="cover-pillar">
-                        <div class="cover-icon icon-capacity">
-                            <svg viewBox="0 0 32 32">
-                                <circle cx="16" cy="9" r="4"></circle>
-                                <circle cx="7" cy="12" r="3"></circle>
-                                <circle cx="25" cy="12" r="3"></circle>
-                                <path d="M9 25v-3c0-4 3-7 7-7s7 3 7 7v3"></path>
-                                <path d="M2 24v-2c0-3 2-5 5-5"></path>
-                                <path d="M30 24v-2c0-3-2-5-5-5"></path>
-                            </svg>
-                        </div>
-                        <div class="cover-pillar-title">Capacity</div>
-                        <div class="cover-pillar-note">Right People,<br>Right Capacity</div>
-                    </div>
-
-                    <div class="cover-pillar">
-                        <div class="cover-icon icon-workload">
-                            <svg viewBox="0 0 32 32">
-                                <rect x="7" y="6" width="18" height="22" rx="2"></rect>
-                                <path d="M12 6V4h8v2"></path>
-                                <path d="M11 12h10"></path>
-                                <path d="M11 17h10"></path>
-                                <path d="M11 22h7"></path>
-                            </svg>
-                        </div>
-                        <div class="cover-pillar-title">Workload</div>
-                        <div class="cover-pillar-note">Understand Work,<br>Drive Balance</div>
-                    </div>
-
-                    <div class="cover-pillar">
-                        <div class="cover-icon icon-productivity">
-                            <svg viewBox="0 0 32 32">
-                                <path d="M5 25h22"></path>
-                                <rect x="7" y="17" width="4" height="8"></rect>
-                                <rect x="14" y="12" width="4" height="13"></rect>
-                                <rect x="21" y="7" width="4" height="18"></rect>
-                                <path d="M6 13l6-5 5 2 8-7"></path>
-                                <path d="M22 3h4v4"></path>
-                            </svg>
-                        </div>
-                        <div class="cover-pillar-title">Productivity</div>
-                        <div class="cover-pillar-note">Measure Performance,<br>Maximize Impact</div>
-                    </div>
-
-                    <div class="cover-pillar">
-                        <div class="cover-icon icon-insights">
-                            <svg viewBox="0 0 32 32">
-                                <circle cx="16" cy="16" r="10"></circle>
-                                <circle cx="16" cy="16" r="5"></circle>
-                                <path d="M16 16l8-8"></path>
-                                <path d="M22 8h4v4"></path>
-                            </svg>
-                        </div>
-                        <div class="cover-pillar-title">Insights</div>
-                        <div class="cover-pillar-note">Data-Driven Insights,<br>Better Decisions</div>
-                    </div>
-
-                </div>
-
-                <a href="?enter=1" target="_self" class="cover-cta">
-                    <span class="cover-cta-icon">↗</span>
-                    <span>VIEW DASHBOARD</span>
-                    <span class="cover-cta-arrow">→</span>
-                </a>
-            </div>
-
-            <div class="cover-right-footer">
-                <span class="cover-headset">
-                    <svg viewBox="0 0 32 32">
-                        <path d="M5 17v-2a11 11 0 0 1 22 0v2"></path>
-                        <rect x="3" y="16" width="5" height="9" rx="2"></rect>
-                        <rect x="24" y="16" width="5" height="9" rx="2"></rect>
-                        <path d="M24 26c-2 3-5 3-8 3"></path>
-                    </svg>
-                </span>
-                <span class="footer-divider"></span>
-                <span>CS DIVISION</span>
-                <span class="footer-divider"></span>
-                <span>FY2026</span>
-            </div>
-
-            </div>
-            """
-        ),
-        unsafe_allow_html=True,
-    )
+    # Render CSS and HTML separately, but each as a clean non-indented string.
+    st.markdown(cover_css.strip(), unsafe_allow_html=True)
+    st.markdown(cover_html.strip(), unsafe_allow_html=True)
 
 
 
