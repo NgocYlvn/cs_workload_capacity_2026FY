@@ -3043,7 +3043,7 @@ def chart_office_capacity_trend(df: pd.DataFrame):
             x=trend["Month"],
             y=trend["Total Required HC"],
             mode="lines+markers+text",
-            text=[f"{v:.2f}" for v in trend["Required HC"]],
+            text=[f"{v:.2f}" for v in trend["Required"]],
             textposition="top center",
             textfont=dict(size=11),
             cliponaxis=False,
