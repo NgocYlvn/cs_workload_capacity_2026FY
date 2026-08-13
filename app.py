@@ -2954,7 +2954,7 @@ def prepare_fte(df: pd.DataFrame) -> pd.DataFrame:
         CS PIC Name
         Total Available Time (95%x8x22x1) (i)
         Total Actual Working Time (=C+A+S+E) (ii)
-        FTE Workload (%) (ii /i)
+        FTE Workload (ii /i)
         FTE Workload Status
 
     Legacy wide-format input remains supported as a fallback.
@@ -3006,8 +3006,8 @@ def prepare_fte(df: pd.DataFrame) -> pd.DataFrame:
     factor_col = first_existing(
         df,
         [
-            "FTE Workload (%) (ii /i)",
-            "FTE Workload (%) (ii / i)",
+            "FTE Workload (ii /i)",
+            "FTE Workload (ii / i)",
             "FTE Workload",
             "FTE Workload",
         ],
@@ -5241,6 +5241,32 @@ footer{display:none!important}
     .cover-cta{left:24px;right:24px;width:auto;bottom:28px}
     .cover-arc-svg,.cover-wave-1,.cover-wave-2,.cover-wave-3{display:none}.cover-right-footer{right:20px;bottom:18px;font-size:11px;gap:8px}
 }
+
+    /* ===== FINAL OVERRIDE: FTE WORKLOAD STATUS ===== */
+    .workload-status-text,
+    .status-badge {
+        font-size: 28px !important;
+        line-height: 1.05 !important;
+        font-weight: 800 !important;
+        min-height: 44px !important;
+        padding: 6px 20px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        text-align: center !important;
+        border-radius: 999px !important;
+        letter-spacing: 0 !important;
+    }
+
+    @media (max-width: 1366px) {
+        .workload-status-text,
+        .status-badge {
+            font-size: 26px !important;
+            min-height: 42px !important;
+            padding: 5px 18px !important;
+        }
+    }
+
 </style>
 """
 
@@ -5622,7 +5648,7 @@ def main():
     # Single source of truth for Section 3:
     #   (i)  Total Available Time
     #   (ii) Total Actual Working Time
-    #        FTE Workload (%) = ii / i
+    #        FTE Workload = ii / i
     #        FTE Workload Status
     #
     # Month = All:
@@ -5761,7 +5787,7 @@ def main():
                           style="
                               color:{status_color};
                               background:{status_bg};
-                              font-size:26px !important;
+                              font-size:16px !important;
                               font-weight:800 !important;
                               padding:10px 24px !important;
                               min-width:180px;
