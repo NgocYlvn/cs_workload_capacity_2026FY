@@ -4698,24 +4698,6 @@ def main():
     st.markdown('<div class="chart-box" style="margin-top:8px;">', unsafe_allow_html=True)
     chart_workload_by_pic(f_fte, office)
 
-    st.markdown(
-        """
-        <div style="
-            margin-top:6px;
-            color:#667085;
-            font-size:11px;
-            line-height:1.45;
-            font-family:Inter, 'Segoe UI', Arial, sans-serif;">
-            <b>Section KPI source:</b> Sheet 2. FTE Workload.<br>
-            <b>Total Available Time (i)</b> = 95% × 8 hrs/day × 22 days × PIC.<br>
-            <b>Total Actual Working Time (ii)</b> = C + A + S + E.<br>
-            <b>FTE Workload (%)</b> = ii ÷ i.<br>
-            <b>Month logic:</b> Month = All → average monthly total; selected month → actual total of that month.
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
     section_title("4. Workload by Segment")
 
     segment_summary = build_segment_workload(f_workload, f_mode)
