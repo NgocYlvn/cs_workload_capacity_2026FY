@@ -2748,7 +2748,7 @@ def chart_case_allocation(df: pd.DataFrame):
     if summary.empty or float(summary["Total Workload (min)"].sum()) <= 0:
         st.info("No C/A/S/E workload data available for selected filters.")
         return
-    pair_panel_title("C / A / S / E Workload Allocation by Segment")
+    pair_panel_title("C / A / S / E Workload Composition by Segment")
     plot_df = summary[summary["Total Workload (min)"] > 0].copy().sort_values("Total Workload (min)", ascending=True)
     components = [
         ("Core Service (min)", "Core Service", COLORS["blue"]),
@@ -2772,7 +2772,7 @@ def render_workload_breakdown_table(df: pd.DataFrame):
     if summary.empty:
         st.info("No workload breakdown data available for selected filters.")
         return
-    pair_panel_title("Workload Breakdown Detail")
+    pair_panel_title("Activity Breakdown Detail")
     display = summary.copy()
     display["Ratio"] = pd.to_numeric(display["Ratio"], errors="coerce") * 100
     st.dataframe(
@@ -2784,7 +2784,6 @@ def render_workload_breakdown_table(df: pd.DataFrame):
             "Supporting Activity (min)": st.column_config.NumberColumn("Supporting Activity (min)", format="%,.0f", width=135),
             "Exception Handling (min)": st.column_config.NumberColumn("Exception Handling (min)", format="%,.0f", width=135),
             "Total Workload (min)": st.column_config.NumberColumn("Total Workload (min)", format="%,.0f", width=120),
-            "Ratio": st.column_config.NumberColumn("Ratio", format="%.1f%%", width=72),
         },
     )
 
@@ -4531,7 +4530,7 @@ def main():
         customer_detail_volume_table(f_customer_ns)
 
 
-    section_title("3. Workload per FTE")
+    section_title("3. Workload by PIC")
 
     # KPI source: sheet "2. FTE Workload".
     # Single source of truth for Section 3:
@@ -4698,7 +4697,7 @@ def main():
     st.markdown('<div class="chart-box" style="margin-top:8px;">', unsafe_allow_html=True)
     chart_workload_by_pic(f_fte, office)
 
-    section_title("4. Workload Breakdown By Activity & Segment")
+    section_title("4. Workload by Segment")
 
     segment_summary = build_segment_workload(f_workload, f_mode)
     segment_total_hours = (
@@ -4749,7 +4748,7 @@ def main():
     segment_workload_table(f_workload, f_mode)
 
     
-    section_title("5. Workload Breakdown by Service Type and Activity")
+    section_title("5. Workload Breakdown by Activity")
 
     st.markdown(
         """
