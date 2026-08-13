@@ -1417,31 +1417,32 @@ st.markdown(
     }}
 
     /* ------------------------------------------------------------
-       SIDEBAR — 270px executive navigation / filter rail
+       SIDEBAR — 248px clean executive navigation / filter rail
        ------------------------------------------------------------ */
     section[data-testid="stSidebar"] {{
-        width: 270px !important;
-        min-width: 270px !important;
-        max-width: 270px !important;
+        width: 248px !important;
+        min-width: 248px !important;
+        max-width: 248px !important;
         background: linear-gradient(180deg, #041532 0%, #06183F 100%) !important;
         border-right: 1px solid rgba(255,255,255,0.07) !important;
     }}
 
     section[data-testid="stSidebar"] > div:first-child {{
-        width: 270px !important;
-        padding-top: 0.45rem !important;
-        padding-left: 0.95rem !important;
-        padding-right: 0.95rem !important;
-        padding-bottom: 1rem !important;
+        width: 248px !important;
+        padding-top: 0.25rem !important;
+        padding-left: 0.85rem !important;
+        padding-right: 0.85rem !important;
+        padding-bottom: 0.65rem !important;
     }}
 
     .sidebar-brand {{
         display:flex;
         align-items:center;
         gap:0;
-        min-height:34px;
+        min-height:10px;
+        height:10px;
         color:#FFFFFF;
-        margin:0 0 8px 1px;
+        margin:0 0 2px 1px;
     }}
 
     .sidebar-brand-compact {{
@@ -1450,8 +1451,9 @@ st.markdown(
     }}
 
     .sidebar-brand-mark {{
-        width:32px;
-        height:20px;
+        width:0;
+        height:0;
+        display:none;
         position:relative;
         display:inline-block;
         flex:0 0 32px;
@@ -1472,8 +1474,8 @@ st.markdown(
 
     /* HOME */
     section[data-testid="stSidebar"] div[data-testid="stButton"] > button {{
-        min-height:46px !important;
-        height:46px !important;
+        min-height:41px !important;
+        height:41px !important;
         background:#FFFFFF !important;
         color:#06183F !important;
         border:1px solid #D5E1EA !important;
@@ -1481,7 +1483,7 @@ st.markdown(
         font-size:13px !important;
         font-weight:700 !important;
         box-shadow:0 3px 10px rgba(0,0,0,0.09) !important;
-        margin:0 0 12px 0 !important;
+        margin:0 0 10px 0 !important;
     }}
 
     section[data-testid="stSidebar"] div[data-testid="stButton"] > button *,
@@ -1503,25 +1505,26 @@ st.markdown(
     .sidebar-filter-title {{
         display:flex;
         align-items:center;
-        gap:9px;
+        gap:7px;
         color:#FFFFFF;
-        font-size:17px;
+        font-size:15px;
         line-height:1.2;
         font-weight:800;
-        margin:5px 0 2px 0;
+        margin:3px 0 8px 0;
         letter-spacing:0.01em;
     }}
 
     .sidebar-filter-title::after {{
         content:"";
-        width:25px;
-        height:3px;
+        width:20px;
+        height:2px;
         border-radius:999px;
         background:#E6761B;
         display:block;
     }}
 
     .sidebar-filter-caption {{
+        display:none !important;
         color:#D5EAF8;
         font-size:11.5px;
         line-height:1.3;
@@ -1541,8 +1544,8 @@ st.markdown(
 
     /* Select boxes */
     section[data-testid="stSidebar"] div[data-baseweb="select"] > div {{
-        min-height:43px !important;
-        height:43px !important;
+        min-height:41px !important;
+        height:41px !important;
         background:#FFFFFF !important;
         border:1px solid #D5E1EA !important;
         border-radius:9px !important;
@@ -1564,13 +1567,13 @@ st.markdown(
     }}
 
     section[data-testid="stSidebar"] [data-testid="stSelectbox"] {{
-        margin-bottom:0.40rem !important;
+        margin-bottom:0.28rem !important;
     }}
 
     section[data-testid="stSidebar"] hr {{
         border:0 !important;
         border-top:1px solid rgba(213,234,248,0.20) !important;
-        margin:12px 0 11px 0 !important;
+        margin:10px 0 9px 0 !important;
     }}
 
     /* Upload — compact white card */
@@ -1579,11 +1582,11 @@ st.markdown(
     }}
 
     section[data-testid="stSidebar"] [data-testid="stFileUploader"] section {{
-        min-height:96px !important;
+        min-height:78px !important;
         background:#FFFFFF !important;
         border:1px solid #D5E1EA !important;
         border-radius:9px !important;
-        padding:8px 9px !important;
+        padding:6px 8px !important;
         box-shadow:0 2px 9px rgba(0,0,0,0.07) !important;
     }}
 
@@ -1602,6 +1605,28 @@ st.markdown(
         font-weight:650 !important;
         min-height:34px !important;
     }}
+
+    /* Sidebar footer — compact application metadata */
+    .sidebar-footer {
+        margin-top:14px;
+        padding-top:10px;
+        border-top:1px solid rgba(255,255,255,0.16);
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        gap:4px;
+        white-space:nowrap;
+        color:rgba(255,255,255,0.72);
+        font-size:8.7px;
+        line-height:1.25;
+        font-weight:500;
+        letter-spacing:-0.01em;
+    }
+    .sidebar-footer .footer-sep {
+        color:#E6761B;
+        opacity:0.95;
+        font-weight:700;
+    }
 
     /* ------------------------------------------------------------
        MAIN HEADER — compact executive card
@@ -5624,15 +5649,10 @@ def main():
     # Sidebar order: Month -> Office -> Upload file. No Year and no Reset button.
     # UI only: styled to match the approved Yusen executive HOME format.
     with st.sidebar:
-        st.markdown(
-            '<div class="sidebar-brand sidebar-brand-compact"><span class="sidebar-brand-mark"></span></div>',
-            unsafe_allow_html=True,
-        )
         if st.button("⌂  HOME", use_container_width=True, key="back_to_cover_btn"):
             st.session_state["dashboard_entered"] = False
             st.rerun()
         st.markdown('<div class="sidebar-filter-title">FILTERS</div>', unsafe_allow_html=True)
-        st.markdown('<div class="sidebar-filter-caption">Month / Office</div>', unsafe_allow_html=True)
         month = st.selectbox("MONTH", month_options, key="month_filter")
         office = st.selectbox("OFFICE", office_options, key="office_filter")
         st.markdown("---")
@@ -5653,6 +5673,19 @@ def main():
                 st.session_state["dashboard_uploaded_sig"] = new_sig
                 st.session_state["dashboard_uploaded_path"] = str(tmp_path)
                 st.rerun()
+
+        st.markdown(
+            """
+            <div class="sidebar-footer">
+                <span>Version 1.0</span>
+                <span class="footer-sep">|</span>
+                <span>© 2026 CS Division</span>
+                <span class="footer-sep">|</span>
+                <span>🔒 Internal Use Only</span>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
     # Year is intentionally not exposed as a filter.
     year = "All"
