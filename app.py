@@ -4701,7 +4701,7 @@ def main():
 
     segment_summary = build_segment_workload(f_workload, f_mode)
     segment_total_hours = (
-        float(segment_summary["Allocation Time (h)"].sum())
+        float(segment_summary["Actual Workload (Hours)"].sum())
         if not segment_summary.empty
         else 0.0
     )
@@ -4725,7 +4725,7 @@ def main():
     with seg_summary_col:
         summary_html = f"""
 <div style="height:340px;min-height:340px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;background:#FFFFFF;border:1px solid #D8E1EA;border-radius:12px;box-shadow:0 1px 4px rgba(16,24,40,0.045);padding:24px 26px;">
-    <div style="color:#667085;font-size:12px;line-height:1.25;font-weight:600;letter-spacing:0.025em;text-transform:uppercase;">TOTAL WORKLOAD HOURS</div>
+    <div style="color:#667085;font-size:12px;line-height:1.25;font-weight:600;letter-spacing:0.025em;text-transform:uppercase;">Total Workload Hours</div>
   <div style="color:#003B70;font-size:34px;line-height:1.05;font-weight:700;letter-spacing:-0.02em;margin-top:8px;">{fmt_num(segment_total_hours, 1)}</div>
   <div style="color:#667085;font-size:11px;margin-top:6px;">Unit: Hours</div>
   <div style="height:1px;background:#E6ECF2;margin:24px 0 18px 0;"></div>
@@ -4734,7 +4734,7 @@ def main():
     <span style="color:#003B70;font-size:14px;font-weight:700;">{top_segment}</span>
   </div>
   <div style="display:flex;justify-content:space-between;align-items:center;">
-    <span style="color:#667085;font-size:12px;">Highest Workload Share</span>
+    <span style="color:#667085;font-size:12px;">Top Segment Share</span>
     <span style="color:#003B70;font-size:14px;font-weight:700;">{top_share:.1%}</span>
   </div>
   </div>
@@ -4742,6 +4742,7 @@ def main():
         st.markdown(summary_html.strip(), unsafe_allow_html=True)
 
     with seg_chart_col:
+        pair_panel_title("Workload Share by Segment")
         chart_service_matrix(f_workload, f_mode)
 
     # Full-width detail table below the executive row.
