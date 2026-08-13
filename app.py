@@ -6256,5 +6256,137 @@ def main():
             render_yvf_table(f_yvf)
 
 
+
+# ============================================================
+# SIDEBAR MICRO-POLISH FINAL
+# UI ONLY — no changes to filters, upload logic, session state,
+# calculations, charts, or main dashboard layout.
+# ============================================================
+st.markdown(
+    """
+    <style>
+    /* Sidebar only */
+    section[data-testid="stSidebar"] > div:first-child {
+        padding-top: 0.35rem !important;
+        padding-left: 0.90rem !important;
+        padding-right: 0.90rem !important;
+        padding-bottom: 0.80rem !important;
+    }
+
+    /* HOME: lower height and tighter spacing */
+    section[data-testid="stSidebar"] div[data-testid="stButton"] > button {
+        min-height: 41px !important;
+        height: 41px !important;
+        margin: 0 0 9px 0 !important;
+        border-radius: 8px !important;
+        font-size: 12.5px !important;
+    }
+
+    /* FILTERS block */
+    .sidebar-filter-title {
+        margin: 3px 0 1px 0 !important;
+        font-size: 16px !important;
+        gap: 7px !important;
+    }
+
+    .sidebar-filter-title::after {
+        width: 20px !important;
+        height: 2px !important;
+    }
+
+    .sidebar-filter-caption {
+        display: none !important;
+    }
+
+    /* Labels */
+    section[data-testid="stSidebar"] label {
+        font-size: 12px !important;
+        margin-bottom: 4px !important;
+    }
+
+    /* Select boxes */
+    section[data-testid="stSidebar"] div[data-baseweb="select"] > div {
+        min-height: 41px !important;
+        height: 41px !important;
+        border-radius: 8px !important;
+    }
+
+    section[data-testid="stSidebar"] [data-testid="stSelectbox"] {
+        margin-bottom: 0.20rem !important;
+    }
+
+    /* Divider */
+    section[data-testid="stSidebar"] hr {
+        margin: 9px 0 9px 0 !important;
+    }
+
+    /* Upload title */
+    section[data-testid="stSidebar"] [data-testid="stFileUploader"] {
+        margin-top: 0 !important;
+    }
+
+    /* Compact upload card */
+    section[data-testid="stSidebar"] [data-testid="stFileUploader"] section {
+        min-height: 78px !important;
+        padding: 7px 8px !important;
+        border-radius: 8px !important;
+    }
+
+    section[data-testid="stSidebar"] [data-testid="stFileUploader"] section * {
+        font-size: 10.8px !important;
+        line-height: 1.25 !important;
+    }
+
+    section[data-testid="stSidebar"] [data-testid="stFileUploader"] button {
+        min-height: 32px !important;
+        height: 32px !important;
+        padding: 0 12px !important;
+        border-radius: 7px !important;
+        font-size: 11.5px !important;
+    }
+
+    /* Remove visual clutter from uploader help icon where possible */
+    section[data-testid="stSidebar"] [data-testid="stFileUploader"] [data-testid="stTooltipIcon"] {
+        opacity: 0.55 !important;
+        transform: scale(0.88);
+    }
+
+    /* Footer */
+    .sidebar-footer {
+        margin-top: 12px !important;
+        padding-top: 10px !important;
+        font-size: 10px !important;
+        line-height: 1.25 !important;
+        gap: 4px !important;
+    }
+
+    /* Laptop */
+    @media (max-width:1366px) {
+        section[data-testid="stSidebar"] > div:first-child {
+            padding-top: 0.28rem !important;
+            padding-left: 0.85rem !important;
+            padding-right: 0.85rem !important;
+        }
+
+        section[data-testid="stSidebar"] div[data-testid="stButton"] > button {
+            min-height: 40px !important;
+            height: 40px !important;
+        }
+
+        section[data-testid="stSidebar"] div[data-baseweb="select"] > div {
+            min-height: 40px !important;
+            height: 40px !important;
+        }
+
+        .sidebar-footer {
+            font-size: 9.8px !important;
+        }
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+
 if __name__ == "__main__":
     main()
