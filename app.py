@@ -511,7 +511,7 @@ st.markdown(
     }}
 
     .workload-status-text {{
-        font-size: 20px;
+        font-size:30px ;
         font-weight: 850;
         margin-top: 8px;
     }}
@@ -1890,6 +1890,26 @@ st.markdown(
         line-height:1.3 !important;
     }}
 
+
+    /* FTE Workload Status — align status text with adjacent KPI value */
+    .workload-status-text {{
+        font-size:30px !important;
+        line-height:1.05 !important;
+        font-weight:800 !important;
+        padding:7px 18px !important;
+        min-width:180px;
+        text-align:center;
+        margin-top:8px !important;
+    }}
+
+    @media (max-width:1366px) {{
+        .workload-status-text {{
+            font-size:28px !important;
+            padding:6px 16px !important;
+            min-width:165px;
+        }}
+    }}
+
     /* ------------------------------------------------------------
        TABLE READABILITY
        ------------------------------------------------------------ */
@@ -2988,7 +3008,7 @@ def prepare_fte(df: pd.DataFrame) -> pd.DataFrame:
         [
             "FTE Workload (%) (ii /i)",
             "FTE Workload (%) (ii / i)",
-            "FTE Workload (%)",
+            "FTE Workload",
             "FTE Workload",
         ],
     )
@@ -5710,7 +5730,7 @@ def main():
         st.markdown(
             f"""
             <div class="pic-kpi-card">
-                <div class="pic-kpi-label">FTE Workload (%)</div>
+                <div class="pic-kpi-label">FTE Workload</div>
                 <div class="pic-kpi-value" style="
                     font-size:38px !important;
                     font-weight:800 !important;
