@@ -3,7 +3,7 @@
 # BUILD: V43_HC_COLOR_HIERARCHY
 # BUILD: SECTION2_CHART_DETAIL_V4
 # Python + Streamlit + Pandas + Plotly
-# Data source: (Not for Office Input) MASTER DATA SOURCE.xlsm
+# Data source: (100826)TEMPLATE_DATA FOR DASHBOARD_V1.xlsx
 # ============================================================
 
 from __future__ import annotations
@@ -34,7 +34,7 @@ st.set_page_config(
 
 APP_TITLE = "CS CAPACITY & PRODUCTIVITY"
 APP_SUBTITLE = ""
-DEFAULT_FILE = "(Not for Office Input) MASTER DATA SOURCE.xlsm"
+DEFAULT_FILE = "(100826)TEMPLATE_DATA FOR DASHBOARD_V1.xlsx"
 CAPACITY_HOURS_PER_FTE = 8 * 0.95 * 22  # 167.2 hours/FTE/month
 STANDARD_OFFICES = ["HAN", "HAD", "HLC", "HCM"]
 SERVICE_ORDER = ["AE", "AI", "OE", "OI", "CC", "TR", "WH"]
@@ -55,21 +55,21 @@ SERVICE_LABELS = {
 # are NOT asserted here as official corporate-brand specifications.
 # ============================================================
 YUSEN_THEME = {
-    "primary": "#06183F",          # Yusen Navy - primary
-    "primary_dark": "#041532",     # deeper navy for sidebar gradient
-    "secondary": "#0DBAEE",        # Yusen Cyan - supporting/data series
-    "secondary_mid": "#3F5B81",    # Mid Blue
-    "secondary_light": "#D5EAF8",  # Light Blue
-    "secondary_pale": "#EEF7FC",
-    "accent": "#E6761B",           # Yusen Orange - accent/attention
-    "accent_pale": "#FFF2E8",
-    "background": "#F6F8FB",
+    "primary": "#003B70",          # deep corporate navy
+    "primary_dark": "#002B55",
+    "secondary": "#005BAC",        # corporate blue
+    "secondary_mid": "#3F7FB5",
+    "secondary_light": "#8EB7D8",
+    "secondary_pale": "#EAF3F8",
+    "accent": "#F58220",           # warm corporate accent
+    "accent_pale": "#FFF3E8",
+    "background": "#F5F7FA",
     "surface": "#FFFFFF",
-    "text_primary": "#06183F",
-    "text_secondary": "#5B6575",
-    "border": "#D5E1EA",
-    "grid": "#E8EEF3",
-    "hover": "#F3F7FA",
+    "text_primary": "#1D2A36",
+    "text_secondary": "#5B6876",
+    "border": "#D7E0E8",
+    "grid": "#E9EEF3",
+    "hover": "#EEF4F8",
 }
 
 COLORS = {
@@ -77,7 +77,7 @@ COLORS = {
     "blue": YUSEN_THEME["secondary"],
     "light_blue": YUSEN_THEME["secondary_pale"],
     "red": "#D92D20",
-    "green": "#95C947",
+    "green": "#16834B",
     "amber": YUSEN_THEME["accent"],
     "gray": "#98A2B3",
     "gray_dark": YUSEN_THEME["text_secondary"],
@@ -138,30 +138,22 @@ CORPORATE_PALETTE = [
 ]
 
 SHEET_NAMES = {
-    "hc": " 1.  Office Cap. & Workload",
-    "resolution": "9. CS Resolutions Rate",
-    "workload": "4. Workload by Activity",
-    "yvf": "10. YVF",
-    "shipment": "3. Active Cus - Vol.",
-    "customer_ns": "11. Vol. by Customer",
-
-    # The new master workbook no longer keeps separate office-specific customer sheets.
-    # Keep these aliases intentionally unmatched so prepare_customer() falls back to
-    # the combined Customer Volume-N&S sheet without changing downstream logic.
-    "customer_had": "__NOT_USED_CUSTOMER_HAD__",
-    "customer_han": "__NOT_USED_CUSTOMER_HAN__",
-    "customer_hlc": "__NOT_USED_CUSTOMER_HLC__",
-    "customer_hcm": "__NOT_USED_CUSTOMER_HCM__",
-
-    "fte": " 2. FTE Workload",
-    "core": "5. C Vol.",
-    "ancillary": "6. A Vol.",
-    "supporting": "7. S Vol.",
-    "exception": "8. E Vol.",
-
-    # The new master workbook does not contain the former "Ghi chú" sheet.
-    # Existing downstream fallback behavior is retained.
-    "notes": "__NOT_USED_NOTES__",
+    "hc": "HC",
+    "resolution": "CS Resolutions Rate",
+    "workload": "BU allocation",
+    "yvf": "YVF",
+    "shipment": "Shipment volume",
+    "customer_ns": "Customer Volume-N&S",
+    "customer_had": "Customer Volume - HAD",
+    "customer_han": "Customer Volume - HAN",
+    "customer_hlc": "Customer Volume - HLC",
+    "customer_hcm": "Customer Volume - HCM",
+    "fte": "CS FTE",
+    "core": "C",
+    "ancillary": "A",
+    "supporting": "S",
+    "exception": "E",
+    "notes": "Ghi chú",
 }
 
 # ============================================================
@@ -377,7 +369,7 @@ st.markdown(
         color: #64748B;
         font-size: 12px;
         font-weight: 700;
-        text-transform: none;
+        text-transform: uppercase;
         letter-spacing: 0.04em;
         margin-bottom: 14px;
     }}
@@ -416,7 +408,7 @@ st.markdown(
         color: #64748B;
         font-size: 11px;
         font-weight: 700;
-        text-transform: none;
+        text-transform: uppercase;
         letter-spacing: 0.035em;
         line-height: 1.25;
         min-height: 30px;
@@ -471,7 +463,7 @@ st.markdown(
         color: #64748B;
         font-size: 11px;
         font-weight: 700;
-        text-transform: none;
+        text-transform: uppercase;
         letter-spacing: 0.035em;
     }}
 
@@ -519,7 +511,7 @@ st.markdown(
         color: {COLORS['muted']};
         font-size: 12px;
         font-weight: 700;
-        text-transform: none;
+        text-transform: uppercase;
         letter-spacing: 0.04em;
         margin-bottom: 6px;
     }}
@@ -723,7 +715,7 @@ st.markdown(
         line-height: 1.25 !important;
         font-weight: 600 !important;
         letter-spacing: 0.025em !important;
-        text-transform: none !important;
+        text-transform: uppercase !important;
         margin-bottom: 7px !important;
     }}
 
@@ -1350,266 +1342,6 @@ st.markdown(
     .pic-progress-track {{
         height: 10px !important;
     }}
-
-    /* Section 3 KPI alignment: equal title area and value baseline */
-    .pic-kpi-card {{
-        display: flex !important;
-        flex-direction: column !important;
-        align-items: center !important;
-        justify-content: flex-start !important;
-        text-align: center !important;
-        padding-top: 18px !important;
-    }}
-
-    .pic-kpi-label {{
-        width: 100% !important;
-        min-height: 40px !important;
-        height: 40px !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        text-align: center !important;
-        font-size: 14px !important;
-        font-weight: 600 !important;
-        line-height: 1.25 !important;
-        margin: 0 0 8px 0 !important;
-    }}
-
-    .pic-kpi-value {{
-        margin-top: 0 !important;
-    }}
-
-    .pic-kpi-note {{
-        margin-top: 8px !important;
-    }}
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
-
-# ============================================================
-# HOME / SIDEBAR / HEADER POLISH — YUSEN EXECUTIVE FORMAT
-# UI only — keeps all existing text, filters, business logic and calculations unchanged
-# ============================================================
-st.markdown(
-    f"""
-    <style>
-    /* Wider, cleaner sidebar inspired by the approved HOME format */
-    section[data-testid="stSidebar"] {{
-        background: linear-gradient(180deg, #041532 0%, #06183F 100%) !important;
-        border-right: 1px solid rgba(255,255,255,0.06) !important;
-    }}
-    section[data-testid="stSidebar"] > div:first-child {{
-        padding-top: 1.0rem !important;
-        padding-left: 1.15rem !important;
-        padding-right: 1.15rem !important;
-    }}
-    .sidebar-brand {{
-        display:flex;
-        align-items:center;
-        gap:10px;
-        color:#FFFFFF;
-        font-weight:800;
-        font-size:22px;
-        line-height:1;
-        margin:2px 0 18px 2px;
-        letter-spacing:-0.02em;
-    }}
-    .sidebar-brand-mark {{
-        width:36px;
-        height:22px;
-        position:relative;
-        display:inline-block;
-    }}
-    .sidebar-brand-mark::before,
-    .sidebar-brand-mark::after {{
-        content:"";
-        position:absolute;
-        left:0;
-        height:3px;
-        border-radius:999px;
-        background:#FFFFFF;
-        transform:skewX(-28deg);
-    }}
-    .sidebar-brand-mark::before {{ width:34px; top:4px; }}
-    .sidebar-brand-mark::after {{ width:27px; top:13px; left:6px; }}
-
-    /* HOME action */
-    section[data-testid="stSidebar"] div[data-testid="stButton"] > button {{
-        min-height:48px !important;
-        background:#FFFFFF !important;
-        color:#06183F !important;
-        border:1px solid #D5E1EA !important;
-        border-radius:10px !important;
-        font-size:13px !important;
-        font-weight:700 !important;
-        box-shadow:0 4px 14px rgba(0,0,0,0.10) !important;
-        margin-bottom:14px !important;
-    }}
-    section[data-testid="stSidebar"] div[data-testid="stButton"] > button:hover {{
-        color:#E6761B !important;
-        border-color:#E6761B !important;
-        background:#FFFFFF !important;
-    }}
-
-    /* Sidebar section heading */
-    .sidebar-filter-title {{
-        display:flex;
-        align-items:center;
-        gap:10px;
-        color:#FFFFFF;
-        font-size:16px;
-        font-weight:800;
-        margin:6px 0 2px 0;
-        letter-spacing:0.01em;
-    }}
-    .sidebar-filter-title::after {{
-        content:"";
-        width:26px;
-        height:3px;
-        border-radius:999px;
-        background:#E6761B;
-        display:block;
-    }}
-    .sidebar-filter-caption {{
-        color:#D5EAF8;
-        font-size:10px;
-        font-weight:600;
-        margin-bottom:14px;
-    }}
-
-    section[data-testid="stSidebar"] label {{
-        color:#FFFFFF !important;
-        font-size:11px !important;
-        font-weight:750 !important;
-        letter-spacing:0.015em !important;
-        margin-bottom:5px !important;
-    }}
-    section[data-testid="stSidebar"] div[data-baseweb="select"] > div {{
-        min-height:44px !important;
-        background:#FFFFFF !important;
-        border:1px solid #D5E1EA !important;
-        border-radius:9px !important;
-        box-shadow:none !important;
-    }}
-    section[data-testid="stSidebar"] div[data-baseweb="select"] span,
-    section[data-testid="stSidebar"] div[data-baseweb="select"] input,
-    section[data-testid="stSidebar"] div[data-baseweb="select"] svg {{
-        color:#06183F !important;
-        fill:#06183F !important;
-    }}
-
-    section[data-testid="stSidebar"] hr {{
-        border:0 !important;
-        border-top:1px solid rgba(213,234,248,0.20) !important;
-        margin:16px 0 !important;
-    }}
-
-    /* Upload area as a premium white card */
-    section[data-testid="stSidebar"] [data-testid="stFileUploader"] {{
-        margin-top:2px !important;
-    }}
-    section[data-testid="stSidebar"] [data-testid="stFileUploader"] section {{
-        background:#FFFFFF !important;
-        border:1px solid #D5E1EA !important;
-        border-radius:10px !important;
-        padding:10px 10px !important;
-        box-shadow:0 3px 12px rgba(0,0,0,0.08) !important;
-    }}
-    section[data-testid="stSidebar"] [data-testid="stFileUploader"] section * {{
-        color:#06183F !important;
-    }}
-    section[data-testid="stSidebar"] [data-testid="stFileUploader"] button {{
-        background:#FFFFFF !important;
-        color:#06183F !important;
-        border:1px solid #B9CAD8 !important;
-        border-radius:8px !important;
-        font-weight:650 !important;
-    }}
-
-    /* Main page: cleaner executive header */
-    .main-header {{
-        position:relative !important;
-        overflow:hidden !important;
-        background:#FFFFFF !important;
-        border:1px solid #D5E1EA !important;
-        border-left:5px solid #0DBAEE !important;
-        border-radius:12px !important;
-        padding:17px 22px !important;
-        margin-bottom:12px !important;
-        box-shadow:0 4px 14px rgba(6,24,63,0.055) !important;
-    }}
-    .main-header::after {{
-        content:"↗";
-        position:absolute;
-        right:24px;
-        top:18px;
-        width:44px;
-        height:44px;
-        border-radius:12px;
-        display:flex;
-        align-items:center;
-        justify-content:center;
-        color:#E6761B;
-        background:#FFF2E8;
-        font-size:25px;
-        font-weight:700;
-    }}
-    .main-title {{
-        color:#06183F !important;
-        font-size:30px !important;
-        font-weight:800 !important;
-        letter-spacing:-0.025em !important;
-        padding-right:70px !important;
-    }}
-
-    .filter-summary-card {{
-        display:flex;
-        align-items:center;
-        gap:0;
-        background:#FFFFFF;
-        border:1px solid #D5E1EA;
-        border-radius:12px;
-        box-shadow:0 2px 8px rgba(6,24,63,0.035);
-        margin:0 0 14px 0;
-        padding:11px 18px;
-    }}
-    .filter-summary-item {{
-        min-width:190px;
-        padding:0 24px 0 0;
-        margin-right:24px;
-        border-right:1px solid #E8EEF3;
-    }}
-    .filter-summary-item:last-child {{ border-right:0; }}
-    .filter-summary-label {{
-        color:#5B6575;
-        font-size:11px;
-        font-weight:650;
-        margin-bottom:2px;
-    }}
-    .filter-summary-value {{
-        color:#06183F;
-        font-size:14px;
-        font-weight:750;
-    }}
-
-    /* Section title and cards */
-    .section-title {{
-        color:#06183F !important;
-        border-left:4px solid #E6761B !important;
-        font-weight:800 !important;
-    }}
-    .kpi-card,.hc-kpi-card,.shipment-kpi-card,.pic-kpi-card,
-    .pic-status-card,.workload-status-panel,[data-testid="stPlotlyChart"],[data-testid="stDataFrame"] {{
-        border-color:#D5E1EA !important;
-        box-shadow:0 3px 10px rgba(6,24,63,0.04) !important;
-    }}
-
-    @media (max-width: 1100px) {{
-        .main-header::after {{ display:none; }}
-        .filter-summary-card {{ flex-wrap:wrap; gap:8px 0; }}
-        .filter-summary-item {{ min-width:150px; }}
-    }}
     </style>
     """,
     unsafe_allow_html=True,
@@ -1651,21 +1383,6 @@ def parse_month(value) -> pd.Timestamp | pd.NaT:
     if isinstance(value, pd.Timestamp):
         return pd.Timestamp(year=value.year, month=value.month, day=1)
     text = str(value).strip()
-
-    # Adapter for the new MASTER DATA SOURCE workbook:
-    # Month is stored as Apr..Mar while the dashboard logic still works with
-    # real MonthDate values. FY2026 = Apr-Dec 2026 + Jan-Mar 2027.
-    month_only = {
-        "jan": (2027, 1), "feb": (2027, 2), "mar": (2027, 3),
-        "apr": (2026, 4), "may": (2026, 5), "jun": (2026, 6),
-        "jul": (2026, 7), "aug": (2026, 8), "sep": (2026, 9),
-        "oct": (2026, 10), "nov": (2026, 11), "dec": (2026, 12),
-    }
-    key = text[:3].lower()
-    if len(text) <= 4 and key in month_only:
-        year, month = month_only[key]
-        return pd.Timestamp(year=year, month=month, day=1)
-
     for fmt in ["%b-%y", "%b-%Y", "%Y-%m", "%m/%Y", "%Y/%m"]:
         try:
             dt = pd.to_datetime(text, format=fmt)
@@ -2237,39 +1954,27 @@ def prepare_hc(df: pd.DataFrame) -> pd.DataFrame:
     df["Office"] = df[office_col].map(normalize_office)
     df["MonthDate"] = df[month_col].map(parse_month)
     mapping = {
-        "Approved HC MNG": ["Approved HC – MNG", "Approved HC (MNG)"],
-        "Approved HC PIC": ["Approved HC – PIC", "Approved HC (PIC)"],
-        "Total Approved HC": ["Total Approved HC"],
-        "Actual HC MNG": ["Actual HC – MNG", "Actual HC (MNG)"],
-        "Actual HC PIC": ["Actual HC – PIC", "Actual HC (PIC)"],
-        "Total Actual HC": ["Total Actual HC", "Total Actual  HC"],
-        "Required HC MNG": ["Required HC – MNG", "Required HC (MNG)"],
-        "Required HC PIC": ["Required HC – PIC", "Required HC (PIC)"],
-        "Total Required HC": ["Total Required HC"],
-        "HC Available Hours": [
-            "Total Available Standard Time (95%x8x22xPIC)",
-            "Total Available Time (95%x8x22x total PIC) (i)",
-        ],
-        "HC Actual Working Hours": [
-            "Total actual Working Time (=C+A+S+E)",
-            "Total actual Working Time (=C+A+S+E) (ii)",
-        ],
-        "HC Actual Workload per PIC": ["Actual workload/PIC (hour)"],
-        "HC Utilization": [
-            "Capacity Utilization (%)",
-            "HC Utilization (%)",
-            "Office Workload (%) (ii /i)",
-        ],
-        "HC Status": [
-            "Overal Workload Status",
-            "Overal  Workload Status",
-            "Overall Workload Status",
-            "Office Workload Status",
-            "HC Status",
-        ],
+        "Approved HC – MNG": "Approved HC MNG",
+        "Approved HC – PIC": "Approved HC PIC",
+        "Total Approved HC": "Total Approved HC",
+        "Actual HC – MNG": "Actual HC MNG",
+        "Actual HC – PIC": "Actual HC PIC",
+        "Total Actual HC": "Total Actual HC",
+        "Total Actual  HC": "Total Actual HC",
+        "Required HC – MNG": "Required HC MNG",
+        "Required HC – PIC": "Required HC PIC",
+        "Total Required HC": "Total Required HC",
+        "Total Available Standard Time (95%x8x22xPIC)": "HC Available Hours",
+        "Total actual Working Time (=C+A+S+E)": "HC Actual Working Hours",
+        "Actual workload/PIC (hour)": "HC Actual Workload per PIC",
+        "Capacity Utilization (%)": "HC Utilization",
+        "HC Utilization (%)": "HC Utilization",
+        "Overal  Workload Status": "HC Status",
+        "Overall Workload Status": "HC Status",
+        "HC Status": "HC Status",
     }
-    for new, candidates in mapping.items():
-        col = first_existing(df, candidates)
+    for old, new in mapping.items():
+        col = first_existing(df, [old])
         if col:
             df[new] = df[col]
     # Fallback calculations
@@ -2311,76 +2016,31 @@ def prepare_hc(df: pd.DataFrame) -> pd.DataFrame:
 def prepare_workload(df: pd.DataFrame) -> pd.DataFrame:
     if df.empty:
         return pd.DataFrame(columns=["Office", "MonthDate", "Segment"])
-
     df = df.copy()
     office_col = first_existing(df, ["Office", "OFFICE"])
     month_col = first_existing(df, ["Month"])
     segment_col = first_existing(df, ["Segment"])
-
     if not office_col or not month_col or not segment_col:
         return pd.DataFrame(columns=["Office", "MonthDate", "Segment"])
-
     df["Office"] = df[office_col].map(normalize_office)
     df["MonthDate"] = df[month_col].map(parse_month)
     df["Segment"] = df[segment_col].astype(str).str.strip().str.upper()
-
-    # Canonical dashboard fields remain unchanged.
-    # Only source-header aliases are expanded for the renamed MASTER DATA SOURCE workbook.
+    # Use BU allocation workload columns as source of truth.
     component_map = {
-        "Core Workload (min)": [
-            "Core Workload (min)",
-            "C Total Time (min)",
-        ],
-        "Ancillary Workload (min)": [
-            "Ancillary Workload (min)",
-            "A Total Time (min)",
-        ],
-        "Supporting Workload (min)": [
-            "Supporting Workload (min)",
-            "S Total time (min)",
-            "S Total Time (min)",
-        ],
-        "Exception Workload (min)": [
-            "Exception Workload (min)",
-            "E Total Time (min)",
-        ],
-        "Total Workload (min)": [
-            "Total Workload (min)",
-            "Total time (min)",
-        ],
-        "Workload Share": [
-            "% of Network",
-            "CS Allocation (%)",
-        ],
-        "Office HC Allocation Ratio": [
-            "OFFICE HC ALLOCATION RATIO TO Bus",
-            "CS Allocation (FTE)",
-        ],
-        "Core Volume": [
-            "Core Volume",
-            "C Volume",
-        ],
-        "Ancillary Volume": [
-            "Ancillary Volume",
-            "A Volume",
-        ],
-        "Supporting Volume": [
-            "Supporting Volume",
-            "S Volume",
-        ],
-        "Exception Volume": [
-            "Exception Volume",
-            "E Volume",
-        ],
+        "Core Workload (min)": "Core Workload (min)",
+        "Ancillary Workload (min)": "Ancillary Workload (min)",
+        "Supporting Workload (min)": "Supporting Workload (min)",
+        "Exception Workload (min)": "Exception Workload (min)",
+        "Total Workload (min)": "Total Workload (min)",
+        "% of Network": "Workload Share",
+        "OFFICE HC ALLOCATION RATIO TO Bus": "Office HC Allocation Ratio",
     }
-
-    for canonical, candidates in component_map.items():
-        col = first_existing(df, candidates)
+    for old, new in component_map.items():
+        col = first_existing(df, [old])
         if col:
-            df[canonical] = pd.to_numeric(df[col], errors="coerce").fillna(0)
+            df[new] = numeric_series(df[col])
         else:
-            df[canonical] = 0.0
-
+            df[new] = 0.0
     if df["Total Workload (min)"].sum() == 0:
         df["Total Workload (min)"] = (
             df["Core Workload (min)"]
@@ -2388,211 +2048,44 @@ def prepare_workload(df: pd.DataFrame) -> pd.DataFrame:
             + df["Supporting Workload (min)"]
             + df["Exception Workload (min)"]
         )
-
     df["Workload Hours"] = df["Total Workload (min)"] / 60
     df["Core Hours"] = df["Core Workload (min)"] / 60
     df["Ancillary Hours"] = df["Ancillary Workload (min)"] / 60
     df["Supporting Hours"] = df["Supporting Workload (min)"] / 60
     df["Exception Hours"] = df["Exception Workload (min)"] / 60
     df["Service Label"] = df["Segment"].map(SERVICE_LABELS).fillna(df["Segment"])
-
     return df.dropna(subset=["MonthDate"])
 
 
 @st.cache_data(show_spinner=False)
 def prepare_fte(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Normalize PIC workload while preserving the new source fields from
-    sheet "2. FTE Workload".
-
-    Canonical output:
-        Office
-        CS PIC
-        MonthDate
-        Available Time
-        Actual Working Time
-        Actual FTE
-        FTE Workload Status
-
-    New MASTER DATA SOURCE:
-        Office
-        Month
-        CS PIC Name
-        Total Available Time (95%x8x22x1) (i)
-        Total Actual Working Time (=C+A+S+E) (ii)
-        FTE Workload (%) (ii /i)
-        FTE Workload Status
-
-    Legacy wide-format input remains supported as a fallback.
-    """
-    base = [
-        "Office",
-        "CS PIC",
-        "MonthDate",
-        "Available Time",
-        "Actual Working Time",
-        "Actual FTE",
-        "FTE Workload Status",
-    ]
-
     if df.empty:
-        return pd.DataFrame(columns=base)
-
+        return pd.DataFrame(columns=["Office", "CS PIC", "MonthDate", "Actual FTE"])
     df = df.copy()
-
     office_col = first_existing(df, ["OFFICE", "Office"])
-    pic_col = first_existing(df, ["CS PIC", "PIC", "CS PIC Name"])
-
+    pic_col = first_existing(df, ["CS PIC", "PIC"])
     if not office_col or not pic_col:
-        return pd.DataFrame(columns=base)
-
-    # --------------------------------------------------------
-    # New long-format source
-    # --------------------------------------------------------
-    month_col = first_existing(df, ["Month"])
-
-    available_col = first_existing(
-        df,
-        [
-            "Total Available Time (95%x8x22x1) (i)",
-            "Total Available Time",
-            "Available Time",
-        ],
-    )
-
-    actual_time_col = first_existing(
-        df,
-        [
-            "Total Actual Working Time (=C+A+S+E) (ii)",
-            "Total Actual Working Time",
-            "Actual Working Time",
-        ],
-    )
-
-    factor_col = first_existing(
-        df,
-        [
-            "FTE Workload (%) (ii /i)",
-            "FTE Workload (%) (ii / i)",
-            "FTE Workload (%)",
-            "FTE Workload",
-        ],
-    )
-
-    status_col = first_existing(
-        df,
-        [
-            "FTE Workload Status",
-            "Workload Status",
-        ],
-    )
-
-    if month_col and (factor_col or actual_time_col):
-        keep_cols = [office_col, month_col, pic_col]
-        for c in [available_col, actual_time_col, factor_col, status_col]:
-            if c and c not in keep_cols:
-                keep_cols.append(c)
-
-        long = df[keep_cols].copy()
-
-        long["Office"] = long[office_col].map(normalize_office)
-        long["CS PIC"] = long[pic_col].astype(str).str.strip()
-        long["MonthDate"] = long[month_col].map(parse_month)
-
-        # Use source values directly whenever available.
-        if available_col:
-            long["Available Time"] = pd.to_numeric(
-                long[available_col], errors="coerce"
-            )
-        else:
-            long["Available Time"] = CAPACITY_HOURS_PER_FTE
-
-        if actual_time_col:
-            long["Actual Working Time"] = pd.to_numeric(
-                long[actual_time_col], errors="coerce"
-            )
-        else:
-            long["Actual Working Time"] = np.nan
-
-        if factor_col:
-            long["Actual FTE"] = pd.to_numeric(
-                long[factor_col], errors="coerce"
-            )
-        else:
-            long["Actual FTE"] = np.nan
-
-        # Fallback only when a source field is missing.
-        missing_fte = long["Actual FTE"].isna()
-        long.loc[missing_fte, "Actual FTE"] = (
-            long.loc[missing_fte, "Actual Working Time"]
-            / long.loc[missing_fte, "Available Time"].replace(0, np.nan)
-        )
-
-        missing_actual = long["Actual Working Time"].isna()
-        long.loc[missing_actual, "Actual Working Time"] = (
-            long.loc[missing_actual, "Actual FTE"]
-            * long.loc[missing_actual, "Available Time"]
-        )
-
-        if status_col:
-            long["FTE Workload Status"] = (
-                long[status_col].astype(str).str.strip()
-            )
-        else:
-            long["FTE Workload Status"] = long["Actual FTE"].apply(
-                lambda x: status_from_util(float(x))[0]
-                if pd.notna(x) else "NO DATA"
-            )
-
-        long = long[
-            (long["Office"] != "")
-            & (long["CS PIC"] != "")
-            & (~long["MonthDate"].isna())
-            & (long["Actual FTE"].notna())
-        ]
-
-        return long[base].reset_index(drop=True)
-
-    # --------------------------------------------------------
-    # Legacy wide-format source
-    # --------------------------------------------------------
-    month_cols = [
-        c for c in df.columns
-        if not pd.isna(parse_month(c))
-    ]
-
+        return pd.DataFrame(columns=["Office", "CS PIC", "MonthDate", "Actual FTE"])
+    month_cols = [c for c in df.columns if parse_month(c) is not pd.NaT and not pd.isna(parse_month(c))]
     if not month_cols:
-        return pd.DataFrame(columns=base)
-
-    long = df.melt(
-        id_vars=[office_col, pic_col],
-        value_vars=month_cols,
-        var_name="Month",
-        value_name="Actual FTE",
-    )
-
+        return pd.DataFrame(columns=["Office", "CS PIC", "MonthDate", "Actual FTE"])
+    long = df.melt(id_vars=[office_col, pic_col], value_vars=month_cols, var_name="Month", value_name="Actual FTE")
     long["Office"] = long[office_col].map(normalize_office)
     long["CS PIC"] = long[pic_col].astype(str).str.strip()
     long["MonthDate"] = long["Month"].map(parse_month)
-    long["Actual FTE"] = pd.to_numeric(long["Actual FTE"], errors="coerce")
 
-    long["Available Time"] = CAPACITY_HOURS_PER_FTE
-    long["Actual Working Time"] = (
-        long["Actual FTE"] * long["Available Time"]
-    )
-    long["FTE Workload Status"] = long["Actual FTE"].apply(
-        lambda x: status_from_util(float(x))[0]
-        if pd.notna(x) else "NO DATA"
-    )
+    # IMPORTANT:
+    # Keep blank future-month FTE cells as NaN.
+    # Converting blanks to 0 would dilute the average FTE when Month = All
+    # and can incorrectly hide overloaded PICs.
+    long["Actual FTE"] = pd.to_numeric(long["Actual FTE"], errors="coerce")
 
     long = long[
         (long["Office"] != "")
         & (~long["MonthDate"].isna())
         & (long["Actual FTE"].notna())
     ]
-
-    return long[base].reset_index(drop=True)
-
+    return long[["Office", "CS PIC", "MonthDate", "Actual FTE"]]
 
 
 @st.cache_data(show_spinner=False)
@@ -2606,22 +2099,8 @@ def prepare_shipment(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
     df = df.copy()
     office_col = first_existing(df, ["Office", "OFFICE"])
     month_col = first_existing(df, ["Month"])
-    active_col = first_existing(
-        df,
-        [
-            "Active Customers",
-            "Total No. of Active Customers",
-        ],
-    )
-    total_col = first_existing(
-        df,
-        [
-            "TOTAL",
-            "Total",
-            "Total No. of shipment",
-            "Total No. of Shipment",
-        ],
-    )
+    active_col = first_existing(df, ["Active Customers"])
+    total_col = first_existing(df, ["TOTAL", "Total"])
 
     if not office_col or not month_col:
         return pd.DataFrame(), pd.DataFrame()
@@ -2629,22 +2108,25 @@ def prepare_shipment(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
     df["Office"] = df[office_col].map(normalize_office)
     df["MonthDate"] = df[month_col].map(parse_month)
 
-    df["Total Shipment"] = (
-        pd.to_numeric(df[total_col], errors="coerce")
-        if total_col else np.nan
-    )
-    df["Active Customers"] = (
-        pd.to_numeric(df[active_col], errors="coerce")
-        if active_col else np.nan
-    )
+    # Keep blanks as NaN first so future empty months are not treated as real zero-data months.
+    if total_col:
+        df["Total Shipment"] = pd.to_numeric(df[total_col], errors="coerce")
+    else:
+        df["Total Shipment"] = np.nan
 
+    if active_col:
+        df["Active Customers"] = pd.to_numeric(df[active_col], errors="coerce")
+    else:
+        df["Active Customers"] = np.nan
+
+    # Exclude rows/months where both key shipment metrics are blank.
     df = df.dropna(subset=["MonthDate"])
     df = df.dropna(subset=["Total Shipment", "Active Customers"], how="all")
+
+    # Valid rows can safely use zero fallback afterward.
     df["Total Shipment"] = df["Total Shipment"].fillna(0)
     df["Active Customers"] = df["Active Customers"].fillna(0)
 
-    # Legacy workbook contained mode columns directly.
-    # New master summary sheet contains only Active Customers + Total Shipment.
     excluded = {
         office_col, month_col, active_col, total_col,
         "Office", "MonthDate", "Active Customers", "Total Shipment"
@@ -2671,7 +2153,7 @@ def prepare_shipment(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
 
 @st.cache_data(show_spinner=False)
 def prepare_customer(data: Dict[str, pd.DataFrame]) -> pd.DataFrame:
-    # Prefer office-specific customer sheets when available; otherwise use 11. Vol. by Customer.
+    # Prefer office-specific customer sheets to avoid double count with Customer Volume-N&S.
     office_sheets = ["customer_had", "customer_han", "customer_hlc", "customer_hcm"]
     frames = []
     for key in office_sheets:
@@ -2691,7 +2173,7 @@ def customer_wide_to_long(df: pd.DataFrame) -> pd.DataFrame:
         return pd.DataFrame(columns=["Office", "Customer", "MonthDate", "Volume"])
     df = df.copy()
     office_col = first_existing(df, ["Office", "OFFICE"])
-    cust_col = first_existing(df, ["Customer", "CUSTOMER", "Customer Name"])
+    cust_col = first_existing(df, ["Customer", "CUSTOMER"])
     if not office_col or not cust_col:
         return pd.DataFrame(columns=["Office", "Customer", "MonthDate", "Volume"])
     month_cols = [c for c in df.columns if parse_month(c) is not pd.NaT and not pd.isna(parse_month(c))]
@@ -2971,172 +2453,50 @@ def workload_breakdown_table(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def chart_case_allocation(df: pd.DataFrame):
-    """C/A/S/E workload composition by Segment, displayed in hours."""
+    """C/A/S/E allocation by Segment."""
     summary = workload_breakdown_table(df)
     if summary.empty or float(summary["Total Workload (min)"].sum()) <= 0:
         st.info("No C/A/S/E workload data available for selected filters.")
         return
-
-    pair_panel_title("Workload Composition by Activity")
-
-    plot_df = (
-        summary[summary["Total Workload (min)"] > 0]
-        .copy()
-        .sort_values("Total Workload (min)", ascending=True)
-    )
-
-    # Display layer only: convert minutes to hours.
-    for _col in [
-        "Core Service (min)",
-        "Ancillary Service (min)",
-        "Supporting Activity (min)",
-        "Exception Handling (min)",
-        "Total Workload (min)",
-    ]:
-        plot_df[_col] = pd.to_numeric(
-            plot_df[_col], errors="coerce"
-        ).fillna(0) / 60
-
+    pair_panel_title("C / A / S / E Workload Allocation by Segment")
+    plot_df = summary[summary["Total Workload (min)"] > 0].copy().sort_values("Total Workload (min)", ascending=True)
     components = [
         ("Core Service (min)", "Core Service", COLORS["blue"]),
         ("Ancillary Service (min)", "Ancillary Service", COLORS["green"]),
         ("Supporting Activity (min)", "Supporting Activity", COLORS["amber"]),
         ("Exception Handling (min)", "Exception Handling", COLORS["red"]),
     ]
-
     fig = go.Figure()
-
     for col, label, color in components:
-        fig.add_trace(
-            go.Bar(
-                y=plot_df["Segment"],
-                x=plot_df[col],
-                name=label,
-                orientation="h",
-                marker_color=color,
-                customdata=np.column_stack(
-                    [
-                        plot_df["Total Workload (min)"],
-                        plot_df["Ratio"],
-                    ]
-                ),
-                hovertemplate=(
-                    f"<b>{label}</b>"
-                    "<br>Segment: %{y}"
-                    "<br>Workload: %{x:,.1f} hrs"
-                    "<br>Segment Total: %{customdata[0]:,.1f} hrs"
-                    "<br>Share of Total: %{customdata[1]:.1%}"
-                    "<extra></extra>"
-                ),
-            )
-        )
-
-    fig.update_layout(
-        barmode="stack",
-        title=dict(text=""),
-        xaxis_title="Workload (Hours)",
-        yaxis_title="",
-    )
-
-    fig = plotly_layout(
-        fig,
-        350,
-        show_legend=True,
-        legend_position="top",
-        margin_left=50,
-        margin_right=35,
-        margin_top=38,
-        margin_bottom=40,
-    )
-
+        fig.add_trace(go.Bar(y=plot_df["Segment"], x=plot_df[col], name=label, orientation="h", marker_color=color,
+            customdata=np.column_stack([plot_df["Total Workload (min)"], plot_df["Ratio"]]),
+            hovertemplate=f"<b>{label}</b><br>Segment: %{{y}}<br>Workload: %{{x:,.0f}} min<br>Segment Total: %{{customdata[0]:,.0f}} min<br>Share of Total: %{{customdata[1]:.1%}}<extra></extra>"))
+    fig.update_layout(barmode="stack", title=dict(text=""), xaxis_title="Workload (min)", yaxis_title="")
+    fig = plotly_layout(fig, 390, show_legend=True, legend_position="top", margin_left=50, margin_right=35, margin_top=38, margin_bottom=48)
     fig.update_xaxes(rangemode="tozero")
-
-    st.plotly_chart(
-        fig,
-        use_container_width=True,
-        config={"displayModeBar": False},
-    )
-
-
+    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
 def render_workload_breakdown_table(df: pd.DataFrame):
-    """C/A/S/E workload detail in hours; no TOTAL row and no Ratio column."""
+    """C/A/S/E workload detail; no TOTAL row."""
     summary = workload_breakdown_table(df)
     if summary.empty:
         st.info("No workload breakdown data available for selected filters.")
         return
-
-    pair_panel_title("Activity Breakdown Detail")
-
+    pair_panel_title("Workload Breakdown Detail")
     display = summary.copy()
-
-    # Display layer only: convert minutes to hours.
-    display["Core Service (Hours)"] = pd.to_numeric(
-        display["Core Service (min)"], errors="coerce"
-    ).fillna(0) / 60
-    display["Ancillary Service (Hours)"] = pd.to_numeric(
-        display["Ancillary Service (min)"], errors="coerce"
-    ).fillna(0) / 60
-    display["Supporting Activity (Hours)"] = pd.to_numeric(
-        display["Supporting Activity (min)"], errors="coerce"
-    ).fillna(0) / 60
-    display["Exception Handling (Hours)"] = pd.to_numeric(
-        display["Exception Handling (min)"], errors="coerce"
-    ).fillna(0) / 60
-    display["Total Workload (Hours)"] = pd.to_numeric(
-        display["Total Workload (min)"], errors="coerce"
-    ).fillna(0) / 60
-
-    display = display[
-        [
-            "Segment",
-            "Core Service (Hours)",
-            "Ancillary Service (Hours)",
-            "Supporting Activity (Hours)",
-            "Exception Handling (Hours)",
-            "Total Workload (Hours)",
-        ]
-    ]
-
+    display["Ratio"] = pd.to_numeric(display["Ratio"], errors="coerce") * 100
     st.dataframe(
-        display,
-        use_container_width=True,
-        hide_index=True,
-        height=350,
+        display, use_container_width=True, hide_index=True, height=390,
         column_config={
-            "Segment": st.column_config.TextColumn(
-                "Segment",
-                width=70,
-            ),
-            "Core Service (Hours)": st.column_config.NumberColumn(
-                "Core Service (Hours)",
-                format="%,.1f",
-                width=125,
-            ),
-            "Ancillary Service (Hours)": st.column_config.NumberColumn(
-                "Ancillary Service (Hours)",
-                format="%,.1f",
-                width=140,
-            ),
-            "Supporting Activity (Hours)": st.column_config.NumberColumn(
-                "Supporting Activity (Hours)",
-                format="%,.1f",
-                width=150,
-            ),
-            "Exception Handling (Hours)": st.column_config.NumberColumn(
-                "Exception Handling (Hours)",
-                format="%,.1f",
-                width=150,
-            ),
-            "Total Workload (Hours)": st.column_config.NumberColumn(
-                "Total Workload (Hours)",
-                format="%,.1f",
-                width=135,
-            ),
+            "Segment": st.column_config.TextColumn("Segment", width=70),
+            "Core Service (min)": st.column_config.NumberColumn("Core Service (min)", format="%,.0f", width=115),
+            "Ancillary Service (min)": st.column_config.NumberColumn("Ancillary Service (min)", format="%,.0f", width=125),
+            "Supporting Activity (min)": st.column_config.NumberColumn("Supporting Activity (min)", format="%,.0f", width=135),
+            "Exception Handling (min)": st.column_config.NumberColumn("Exception Handling (min)", format="%,.0f", width=135),
+            "Total Workload (min)": st.column_config.NumberColumn("Total Workload (min)", format="%,.0f", width=120),
+            "Ratio": st.column_config.NumberColumn("Ratio", format="%.1f%%", width=72),
         },
     )
-
-
 
 def render_activity_detail_table(
     df: pd.DataFrame,
@@ -3234,10 +2594,10 @@ def prepare_resolution(df: pd.DataFrame) -> pd.DataFrame:
     office_col = first_existing(d, ["OFFICE", "Office"])
     month_col = first_existing(d, ["Month"])
     total_col = first_existing(
-        d, ["Total abnormality/month", "Total abnormality", "Total Exception Case"]
+        d, ["Total abnormality/month", "Total abnormality"]
     )
     resolved_col = first_existing(
-        d, ["No of abnormality resolved by CS", "Resolved", "No of Exception Case Resolved by CS"]
+        d, ["No of abnormality resolved by CS", "Resolved"]
     )
 
     if not office_col or not month_col or not total_col or not resolved_col:
@@ -3305,7 +2665,7 @@ def prepare_yvf(df: pd.DataFrame) -> pd.DataFrame:
         d, ["Total YVF booking/month", "Total YVF booking"]
     )
     iff_col = first_existing(
-        d, ["Total IFF shipment/month", "Total IFF shipment", "Total IFF Booking"]
+        d, ["Total IFF shipment/month", "Total IFF shipment"]
     )
 
     if not office_col or not yvf_col or not iff_col:
@@ -3508,18 +2868,6 @@ def chart_office_capacity_trend(df: pd.DataFrame):
     )
     trend["Month"] = trend["MonthDate"].dt.strftime("%b-%y")
 
-    # Use one canonical series variable for Required HC so the line and
-    # its visible labels can never reference different column names.
-    if "Total Required HC" in trend.columns:
-        required_values = trend["Total Required HC"]
-    elif "Required" in trend.columns:
-        required_values = trend["Required"]
-    elif "Required HC" in trend.columns:
-        required_values = trend["Required HC"]
-    else:
-        st.info("HC trend cannot be displayed because Required HC data is missing.")
-        return
-
     fig = go.Figure()
 
     # Approved HC line
@@ -3553,7 +2901,7 @@ def chart_office_capacity_trend(df: pd.DataFrame):
     fig.add_trace(
         go.Scatter(
             x=trend["Month"],
-            y=required_values,
+            y=trend["Total Required HC"],
             mode="lines+markers",
             name="Required HC",
             line=dict(color=BUSINESS_COLORS["required"], width=3, dash="solid"),
@@ -3565,15 +2913,11 @@ def chart_office_capacity_trend(df: pd.DataFrame):
     )
 
     fig.update_layout(
-        title="HC Capacity vs. Requirement Trend",
+        title="HC Capacity Trend & Gap",
         yaxis_title="HC",
         hovermode="x unified",
     )
-    fig = plotly_layout(fig, UI["chart_height"], show_legend=True, legend_position="top", margin_left=56, margin_right=42, margin_top=76, margin_bottom=46)
-
-    # Keep the HC chart proportional: Y-axis always starts from zero.
-    fig.update_yaxes(rangemode="tozero")
-
+    fig = plotly_layout(fig, UI["chart_height"], show_legend=True, legend_position="top", margin_left=56, margin_right=42, margin_top=66, margin_bottom=46)
     fig.update_xaxes(type="category", categoryorder="array", categoryarray=trend["Month"].tolist())
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
@@ -4118,12 +3462,7 @@ def segment_workload_table(df: pd.DataFrame, mode_df: pd.DataFrame):
         return
 
     pair_panel_title("Segment Workload Summary")
-    display = (
-        seg.copy()
-        .sort_values("Workload Share", ascending=False)
-        .reset_index(drop=True)
-        .rename(columns={"Workload Share": "Workload Share (%)"})
-    )
+    display = seg.copy().rename(columns={"Workload Share": "Workload Share (%)"})
     display["Workload Share (%)"] = pd.to_numeric(display["Workload Share (%)"], errors="coerce").fillna(0) * 100
     display = display[["Segment", "Shipment Volume", "Allocation Time (h)", "Required FTE", "Workload Share (%)"]]
 
@@ -4132,7 +3471,7 @@ def segment_workload_table(df: pd.DataFrame, mode_df: pd.DataFrame):
         column_config={
             "Segment": st.column_config.TextColumn("Segment", width=70),
             "Shipment Volume": st.column_config.NumberColumn("Shipment Volume", width="medium", format="%,.0f"),
-            "Allocation Time (h)": st.column_config.NumberColumn("Actual Workload (Hours)", width="medium", format="%,.1f"),
+            "Allocation Time (h)": st.column_config.NumberColumn("Allocation Time (hrs)", width="medium", format="%,.1f"),
             "Required FTE": st.column_config.NumberColumn("Required FTE", width="small", format="%.2f"),
             "Workload Share (%)": st.column_config.NumberColumn("Workload Share (%)", width="medium", format="%.1f%%"),
         },
@@ -4160,10 +3499,11 @@ def chart_shipment_modes(mode_df: pd.DataFrame):
         hovertemplate="<b>%{y}</b><br>Shipment Volume: %{x:,.0f}<br>Share: %{customdata:.1%}<extra></extra>",
         customdata=plot_df["Share"],
     ))
-    fig.update_layout(title_text="", xaxis_title=None, yaxis_title="", bargap=0.26)
+    fig.add_annotation(x=1, y=1.04, xref="paper", yref="paper", text=f"<b>{total:,.0f}</b> TOTAL SHIPMENTS", showarrow=False, xanchor="right", yanchor="bottom", font=dict(family=UI["font_family"], size=12, color=COLORS["navy"]))
+    fig.update_layout(title_text="", xaxis_title="Shipment Volume", yaxis_title="", bargap=0.26)
     fig.update_yaxes(categoryorder="array", categoryarray=plot_df["Mode"].tolist(), automargin=True, tickfont=dict(size=UI["axis_size"]))
     fig.update_xaxes(automargin=True, rangemode="tozero", tickformat=",.0f")
-    fig = plotly_layout(fig, 460, show_legend=False, margin_left=58, margin_right=105, margin_top=12, margin_bottom=40)
+    fig = plotly_layout(fig, SHIPMENT_PAIR_HEIGHT, show_legend=False, margin_left=58, margin_right=105, margin_top=40, margin_bottom=52)
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
 def mode_detail_table(mode_df: pd.DataFrame):
@@ -4180,20 +3520,12 @@ def mode_detail_table(mode_df: pd.DataFrame):
     detail["Rank"] = np.arange(1, len(detail) + 1)
     detail["Share"] = detail["Volume"] / total
     display = detail.rename(columns={"Volume": "Shipment Volume"})[["Rank", "Mode", "Shipment Volume", "Share"]].copy()
-
-    # Compact height: only show the rows that actually exist instead of
-    # reserving the full chart height and leaving blank rows underneath.
-    mode_table_height = min(SHIPMENT_PAIR_HEIGHT, 38 + 35 * len(display))
-
     st.dataframe(
-        display,
-        use_container_width=True,
-        hide_index=True,
-        height=mode_table_height,
+        display, use_container_width=True, hide_index=True, height=SHIPMENT_PAIR_HEIGHT,
         column_config={
             "Rank": st.column_config.NumberColumn("Rank", width="small", format="%d"),
             "Mode": st.column_config.TextColumn("Mode", width="small"),
-            "Shipment Volume": st.column_config.NumberColumn("Shipment Volume", width="large", format="%,.0f"),
+            "Shipment Volume": st.column_config.NumberColumn("Shipment Volume", width="medium", format="%,.0f"),
             "Share": st.column_config.NumberColumn("Share", width="small", format="percent"),
         },
     )
@@ -4219,29 +3551,29 @@ def chart_top_customers(df: pd.DataFrame):
         st.info("No customer volume data available for selected filters.")
         return
     ranking = build_customer_ranking(df)
-    top = ranking.head(15).sort_values("Shipment Volume", ascending=True)
-    pair_panel_title("Top 15 Customers by Shipment Volume")
+    top = ranking.head(20).sort_values("Shipment Volume", ascending=True)
+    pair_panel_title("Top 20 Customers by Shipment Volume")
     fig = px.bar(top, x="Shipment Volume", y="Customer", orientation="h", text="Shipment Volume", color_discrete_sequence=[COLORS["blue"]])
     fig.update_traces(texttemplate="%{text:,.0f}", textposition="outside", cliponaxis=False, hovertemplate="%{y}<br>Shipment Volume: %{x:,.0f}<extra></extra>")
-    fig.update_layout(title_text="", yaxis_title="", xaxis_title=None, bargap=0.18)
+    fig.update_layout(title_text="", yaxis_title="", xaxis_title="Shipment Volume", bargap=0.18)
     fig.update_yaxes(automargin=True, tickfont=dict(size=UI["axis_size"]))
     fig.update_xaxes(automargin=True)
-    fig = plotly_layout(fig, 460, show_legend=False, margin_left=155, margin_right=60, margin_top=22, margin_bottom=40)
+    fig = plotly_layout(fig, SHIPMENT_PAIR_HEIGHT, show_legend=False, margin_left=155, margin_right=60, margin_top=22, margin_bottom=50)
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
 def customer_detail_volume_table(df: pd.DataFrame):
-    """Full customer ranking paired with the Top 15 chart; scrollable and no TOTAL row."""
+    """Full customer ranking paired with the Top 20 chart; scrollable and no TOTAL row."""
     ranking = build_customer_ranking(df)
     if ranking.empty:
         st.info("No customer detail data available for selected filters.")
         return
 
-    pair_panel_title("Customer Volume Detail")
+    pair_panel_title("Customer Detail Volume")
     st.dataframe(
         ranking,
         use_container_width=True,
         hide_index=True,
-        height=SHIPMENT_PAIR_HEIGHT,  # keep full-height scrollable detail for all customers
+        height=SHIPMENT_PAIR_HEIGHT,  # same height as paired Top 10 chart; vertical scroll keeps the full list accessible
         column_config={
             "Rank": st.column_config.NumberColumn("Rank", width="small", format="%d"),
             "Customer": st.column_config.TextColumn("Customer", width="large"),
@@ -4255,7 +3587,7 @@ def chart_resolution(df: pd.DataFrame):
     if df is None or df.empty:
         st.info("No CS Resolution data available for selected filters.")
         return
-    pair_panel_title("CS Resolution Trend by Month")
+    pair_panel_title("CS Resolution Performance by Month")
     agg = df.groupby("MonthDate", as_index=False).agg(**{"Total Abnormality": ("Total Abnormality", "sum"), "Resolved": ("Resolved", "sum")}).sort_values("MonthDate")
     agg["Resolution Rate"] = np.where(agg["Total Abnormality"] > 0, agg["Resolved"] / agg["Total Abnormality"], np.nan)
     agg["Month"] = agg["MonthDate"].dt.strftime("%b-%y")
@@ -4263,7 +3595,7 @@ def chart_resolution(df: pd.DataFrame):
     fig.add_trace(go.Bar(x=agg["Month"], y=agg["Total Abnormality"], name="Total Abnormalities", marker_color=BUSINESS_COLORS["supporting"], text=agg["Total Abnormality"], texttemplate="%{text:,.0f}", textposition="outside", cliponaxis=False))
     fig.add_trace(go.Bar(x=agg["Month"], y=agg["Resolved"], name="Resolved by CS", marker_color=BUSINESS_COLORS["actual"], text=agg["Resolved"], texttemplate="%{text:,.0f}", textposition="outside", cliponaxis=False))
     fig.add_trace(go.Scatter(x=agg["Month"], y=agg["Resolution Rate"], name="CS Resolution Rate", mode="lines+markers+text", line=dict(color=COLORS["green"], width=3), marker=dict(size=7), text=agg["Resolution Rate"], texttemplate="%{text:.1%}", textposition="top center", yaxis="y2"))
-    fig.update_layout(title_text="", barmode="group", yaxis=dict(title="Cases", rangemode="tozero"), yaxis2=dict(title="Resolution Rate", overlaying="y", side="right", tickformat=".0%", range=[0, 1.00], showgrid=False))
+    fig.update_layout(title_text="", barmode="group", yaxis=dict(title="Cases", rangemode="tozero"), yaxis2=dict(title="Resolution Rate", overlaying="y", side="right", tickformat=".0%", range=[0, 1.08], showgrid=False))
     fig = plotly_layout(fig, 390, show_legend=True, legend_position="top", margin_left=58, margin_right=68, margin_top=38, margin_bottom=44)
     fig.update_xaxes(type="category", categoryorder="array", categoryarray=agg["Month"].tolist())
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
@@ -4277,33 +3609,14 @@ def render_cs_solution_table(df: pd.DataFrame):
     d = df.copy().sort_values(["Office", "MonthDate"])
     d["Month"] = d["MonthDate"].dt.strftime("%b-%y")
     display = d[["Office", "Month", "Total Abnormality", "Resolved", "Resolution Rate"]].copy()
-    display["Resolution Rate (%)"] = (
-        pd.to_numeric(display["Resolution Rate"], errors="coerce") * 100
-    )
-    display = display.drop(columns=["Resolution Rate"])
-
-    resolution_table_height = min(
-        390,
-        max(160, 38 + len(display) * 34),
-    )
-
     st.dataframe(
-        display,
-        use_container_width=True,
-        hide_index=True,
-        height=resolution_table_height,
+        display, use_container_width=True, hide_index=True, height=390,
         column_config={
             "Office": st.column_config.TextColumn("Office", width=70),
             "Month": st.column_config.TextColumn("Month", width=80),
-            "Total Abnormality": st.column_config.NumberColumn(
-                "Total Abnormalities", width="medium", format="%,.0f"
-            ),
-            "Resolved": st.column_config.NumberColumn(
-                "Resolved by CS", width="medium", format="%,.0f"
-            ),
-            "Resolution Rate (%)": st.column_config.NumberColumn(
-                "CS Resolution Rate", width=120, format="%.2f%%"
-            ),
+            "Total Abnormality": st.column_config.NumberColumn("Total Abnormalities", width="medium", format="%,.0f"),
+            "Resolved": st.column_config.NumberColumn("Resolved by CS", width="medium", format="%,.0f"),
+            "Resolution Rate": st.column_config.NumberColumn("CS Resolution Rate", width=110, format="percent"),
         },
     )
 
@@ -4322,30 +3635,9 @@ def chart_yvf(df: pd.DataFrame):
     pair_panel_title("YVF Booking Share of Total IFF Shipments")
     total_yvf = float(d["YVF Booking"].sum()); total_iff = float(d["IFF Shipment"].sum())
     remaining_iff = max(total_iff - total_yvf, 0.0); ratio = safe_div(total_yvf, total_iff)
-    fig = go.Figure(
-        data=[
-            go.Pie(
-                labels=["YVF Bookings", "Non-YVF IFF Shipments"],
-                values=[total_yvf, remaining_iff],
-                hole=0.58,
-                sort=False,
-                direction="clockwise",
-                marker=dict(
-                    colors=[BUSINESS_COLORS["actual"], COLORS["grid"]],
-                    line=dict(color="white", width=2),
-                ),
-                textinfo="none",
-                hovertemplate=(
-                    "<b>%{label}</b>"
-                    "<br>Shipments: %{value:,.0f}"
-                    "<br>Share: %{percent:.1%}"
-                    "<extra></extra>"
-                ),
-            )
-        ]
-    )
+    fig = go.Figure(data=[go.Pie(labels=["YVF Bookings", "Non-YVF IFF Shipments"], values=[total_yvf, remaining_iff], hole=0.58, sort=False, direction="clockwise", marker=dict(colors=[BUSINESS_COLORS["actual"], COLORS["grid"]], line=dict(color="white", width=2)), textinfo="label+percent", texttemplate="<b>%{label}</b><br>%{value:,.0f} · %{percent:.1%}", textposition="outside")])
     fig.update_layout(title_text="", annotations=[dict(text=f"<b>{ratio:.1%}</b><br><span style='font-size:12px'>YVF Adoption</span><br><span style='font-size:11px'>{total_yvf:,.0f} / {total_iff:,.0f}</span>", x=0.5, y=0.5, font=dict(size=22, color=COLORS["navy"], family=UI["font_family"]), showarrow=False, align="center")])
-    fig = plotly_layout(fig, 340, show_legend=True, legend_position="top", margin_left=44, margin_right=44, margin_top=34, margin_bottom=24)
+    fig = plotly_layout(fig, 390, show_legend=True, legend_position="top", margin_left=44, margin_right=44, margin_top=38, margin_bottom=30)
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
 def render_yvf_table(df: pd.DataFrame):
@@ -4373,22 +3665,8 @@ def render_yvf_table(df: pd.DataFrame):
     }
     if has_month:
         column_cfg["Month"] = st.column_config.TextColumn("Month", width="small")
-    display["YVF Booking Ratio"] = pd.to_numeric(
-        display["YVF Booking Ratio"], errors="coerce"
-    ) * 100
-
-    yvf_table_height = min(
-        390,
-        max(160, 38 + len(display) * 34),
-    )
-
-    st.dataframe(
-        display,
-        use_container_width=True,
-        hide_index=True,
-        height=yvf_table_height,
-        column_config=column_cfg,
-    )
+    display["YVF Booking Ratio"] = pd.to_numeric(display["YVF Booking Ratio"], errors="coerce") * 100
+    st.dataframe(display, use_container_width=True, hide_index=True, height=390, column_config=column_cfg)
 
 # ============================================================
 # COVER / WELCOME PAGE
@@ -4396,383 +3674,269 @@ def render_yvf_table(df: pd.DataFrame):
 # ============================================================
 
 def render_cover_page() -> None:
-    """Render the approved corporate cover page."""
+    """Executive welcome screen shown before loading dashboard data."""
+    # Hide the sidebar and Streamlit chrome while the cover is active.
+    st.markdown(
+        f"""
+        <style>
+        section[data-testid="stSidebar"] {{ display: none !important; }}
+        [data-testid="stSidebarCollapsedControl"] {{ display: none !important; }}
+        header[data-testid="stHeader"] {{ background: transparent !important; }}
 
-    cover_css = """
-<style>
-section[data-testid="stSidebar"]{display:none!important}
-[data-testid="stSidebarCollapsedControl"]{display:none!important}
-header[data-testid="stHeader"]{display:none!important;height:0!important}
-[data-testid="stToolbar"]{display:none!important}
-[data-testid="stDecoration"]{display:none!important}
-[data-testid="stStatusWidget"]{display:none!important}
-#MainMenu{visibility:hidden!important}
-[data-testid="stAppViewContainer"]{height:100dvh!important;overflow:hidden!important;padding:0!important;margin:0!important}
-[data-testid="stAppViewBlockContainer"]{height:100dvh!important;overflow:hidden!important;padding:0!important;margin:0!important}
-.main{height:100dvh!important;overflow:hidden!important;padding:0!important;margin:0!important}
-footer{display:none!important}
-.block-container{max-width:none!important;width:100%!important;padding:0!important;margin:0!important}
-.stApp{background:#06183F!important;height:100dvh!important;min-height:0!important;overflow:hidden!important}
+        .block-container {{
+            max-width: 1500px !important;
+            padding-top: 1.15rem !important;
+            padding-bottom: 1.25rem !important;
+        }}
 
-.cover-stage{
-    position:fixed;
-    inset:0;
-    width:100vw;
-    height:100dvh;
-    min-height:0;
-    overflow:hidden;
-    z-index:999;
-    background:linear-gradient(135deg,#031532 0%,#06183F 48%,#082759 100%);
-    font-family:Inter,"Segoe UI",Arial,sans-serif;
-}
+        .cover-shell {{
+            min-height: 58vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }}
 
-.cover-panel{
-    position:absolute;
-    top:10px;
-    bottom:14px;
-    left:2.2vw;
-    width:min(50.5vw,760px);
-    min-width:570px;
-    height:auto;
-    min-height:0;
-    box-sizing:border-box;
-    padding:18px 36px 20px;
-    border-radius:24px;
-    background:linear-gradient(145deg,#FFFFFF 0%,#FCFDFE 100%);
-    border:1px solid rgba(255,255,255,.72);
-    box-shadow:0 18px 42px rgba(0,0,0,.18);
-    z-index:10;
-}
+        .cover-card {{
+            width: 100%;
+            position: relative;
+            overflow: hidden;
+            background:
+                radial-gradient(circle at 88% 12%, rgba(0,91,172,0.13), transparent 30%),
+                radial-gradient(circle at 5% 95%, rgba(245,158,11,0.10), transparent 26%),
+                linear-gradient(135deg, #FFFFFF 0%, #F8FBFD 58%, #EEF5FA 100%);
+            border: 1px solid {COLORS['border']};
+            border-radius: 24px;
+            box-shadow: 0 18px 50px rgba(0,59,112,0.10);
+            padding: clamp(30px, 4vw, 58px);
+            box-sizing: border-box;
+        }}
 
-.cover-logo-real{
-    width:180px;
-    height:auto;
-    display:block;
-    margin:0 0 clamp(16px,2.2vh,26px) 0;
-}
+        .cover-accent {{
+            width: 76px;
+            height: 6px;
+            border-radius: 999px;
+            background: linear-gradient(90deg, {COLORS['blue']} 0%, {COLORS['amber']} 100%);
+            margin-bottom: 30px;
+        }}
 
-.cover-title{
-    margin:0;
-    max-width:650px;
-    color:#06183F;
-    font-size:clamp(46px,3.65vw,66px);
-    line-height:.98;
-    letter-spacing:-.035em;
-    font-weight:850;
-    text-transform:uppercase;
-}
+        .cover-eyebrow {{
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: {COLORS['blue']};
+            background: #EAF3F8;
+            border: 1px solid #D3E5F1;
+            border-radius: 999px;
+            padding: 7px 12px;
+            font-size: 11px;
+            line-height: 1;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            margin-bottom: 18px;
+        }}
 
-.cover-title-accent{
-    width:72px;
-    height:5px;
-    border-radius:999px;
-    background:#E6761B;
-    margin:clamp(14px,2.2vh,22px) 0 clamp(10px,1.6vh,16px) 2px;
-}
+        .cover-title {{
+            color: {COLORS['navy']};
+            font-family: {UI['font_family']};
+            font-size: clamp(38px, 5vw, 64px);
+            line-height: 1.02;
+            letter-spacing: -0.035em;
+            font-weight: 800;
+            max-width: 980px;
+            margin: 0;
+        }}
 
-.cover-subtitle{
-    color:#4F5B6A;
-    font-size:clamp(18px,1.45vw,23px);
-    line-height:1.24;
-    font-weight:500;
-    max-width:440px;
-    margin-bottom:clamp(12px,1.8vh,20px);
-}
+        .cover-subtitle {{
+            color: {COLORS['gray_dark']};
+            font-size: clamp(16px, 1.5vw, 20px);
+            line-height: 1.55;
+            max-width: 830px;
+            margin-top: 20px;
+            margin-bottom: 22px;
+        }}
 
-.cover-separator{
-    height:1px;
-    background:#D8E1EA;
-    margin:0 0 clamp(12px,1.8vh,18px);
-}
+        .cover-contents-label {{
+            color: {COLORS['muted']};
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.07em;
+            text-transform: uppercase;
+            margin: 0 0 10px 1px;
+        }}
 
-.cover-pillars{
-    display:grid;
-    grid-template-columns:repeat(4,minmax(0,1fr));
-    gap:0;
-    margin-top:2px;
-}
+        .cover-module-grid {{
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 10px;
+            margin: 0 0 24px 0;
+        }}
 
-.cover-pillar{
-    position:relative;
-    text-align:center;
-    padding:0 10px;
-}
+        .cover-module {{
+            min-height: 76px;
+            display: flex;
+            align-items: center;
+            gap: 11px;
+            padding: 12px 13px;
+            box-sizing: border-box;
+            background: rgba(255,255,255,0.86);
+            border: 1px solid {COLORS['border']};
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(16,24,40,0.025);
+        }}
 
-.cover-pillar:not(:last-child)::after{
-    content:"";
-    position:absolute;
-    right:0;
-    top:35px;
-    width:1px;
-    height:92px;
-    background:#DDE5EC;
-}
+        .cover-module-number {{
+            flex: 0 0 31px;
+            width: 31px;
+            height: 31px;
+            border-radius: 9px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: {COLORS['light_blue']};
+            color: {COLORS['navy']};
+            font-size: 13px;
+            font-weight: 800;
+        }}
 
-.cover-icon{
-    width:clamp(48px,3.4vw,58px);
-    height:clamp(48px,3.4vw,58px);
-    margin:0 auto 8px;
-    border-radius:50%;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    color:#fff;
-    box-shadow:0 5px 14px rgba(0,0,0,.10);
-}
+        .cover-module-title {{
+            color: {COLORS['navy']};
+            font-size: 12px;
+            line-height: 1.3;
+            font-weight: 700;
+        }}
 
-.cover-icon svg{
-    width:31px;
-    height:31px;
-    stroke:currentColor;
-    fill:none;
-    stroke-width:1.9;
-    stroke-linecap:round;
-    stroke-linejoin:round;
-}
+        .cover-divider {{
+            height: 1px;
+            background: linear-gradient(90deg, {COLORS['border']} 0%, rgba(217,226,236,0) 100%);
+            margin: 8px 0 22px 0;
+        }}
 
-.icon-capacity{background:#06183F}
-.icon-workload{background:#0DBAEE}
-.icon-productivity{background:#F57C00}
-.icon-insights{background:#45B84A}
+        .cover-footer {{
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            gap: 18px;
+            color: {COLORS['muted']};
+            font-size: 11px;
+            line-height: 1.45;
+        }}
 
-.cover-pillar-title{
-    color:#06183F;
-    font-size:clamp(11px,.82vw,13px);
-    font-weight:800;
-    line-height:1.15;
-    text-transform:uppercase;
-    margin-bottom:7px;
-}
+        .cover-footer strong {{
+            color: {COLORS['navy']};
+            font-weight: 700;
+        }}
 
-.cover-pillar-note{
-    color:#4F5B6A;
-    font-size:clamp(9px,.70vw,11px);
-    line-height:1.35;
-    font-weight:500;
-}
+        /* Primary cover button */
+        div[data-testid="stButton"] > button[kind="primary"] {{
+            min-height: 48px !important;
+            border: 0 !important;
+            border-radius: 10px !important;
+            padding: 0 28px !important;
+            background: {COLORS['navy']} !important;
+            color: #FFFFFF !important;
+            font-family: {UI['font_family']} !important;
+            font-size: 13px !important;
+            font-weight: 750 !important;
+            letter-spacing: 0.035em !important;
+            box-shadow: 0 8px 18px rgba(0,59,112,0.16) !important;
+        }}
 
-.cover-cta{
-    position:absolute;
-    left:36px;
-    bottom:22px;
-    display:inline-flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:18px;
-    min-width:300px;
-    height:52px;
-    padding:0 20px;
-    box-sizing:border-box;
-    border-radius:9px;
-    background:linear-gradient(180deg,#FF7F0A 0%,#EE6500 100%);
-    color:#fff!important;
-    text-decoration:none!important;
-    font-size:20px;
-    font-weight:800;
-    box-shadow:0 8px 18px rgba(230,118,27,.28);
-}
+        div[data-testid="stButton"] > button[kind="primary"]:hover {{
+            background: {COLORS['blue']} !important;
+            transform: translateY(-1px);
+        }}
 
-.cover-cta-icon{
-    width:30px;
-    height:30px;
-    border:2px solid rgba(255,255,255,.9);
-    border-radius:4px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    flex:0 0 30px;
-}
+        @media (max-width: 1100px) {{
+            .cover-module-grid {{ grid-template-columns: repeat(2, minmax(0, 1fr)); }}
+        }}
 
-.cover-cta-arrow{
-    font-size:34px;
-    line-height:1;
-    margin-left:auto;
-    font-weight:300;
-}
+        @media (max-width: 900px) {{
+            .cover-card {{ padding: 34px 26px; border-radius: 18px; }}
+            .cover-footer {{ flex-direction: column; align-items: flex-start; }}
+        }}
 
-/* SVG arc field based on the approved reference */
-.cover-arc-svg{
-    position:absolute;
-    right:0;
-    top:0;
-    width:55vw;
-    height:100dvh;
-    z-index:2;
-    pointer-events:none;
-    overflow:visible;
-}
+        @media (max-width: 620px) {{
+            .cover-module-grid {{ grid-template-columns: 1fr; }}
+        }}
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
 
-.cover-right-footer{
-    position:absolute;
-    right:4vw;
-    bottom:3.2vh;
-    display:flex;
-    align-items:center;
-    gap:18px;
-    color:#fff;
-    font-size:18px;
-    font-weight:700;
-    z-index:5;
-}
+    st.markdown(
+        f"""
+        <div class="cover-shell">
+            <div class="cover-card">
+                <div class="cover-accent"></div>
+                <div class="cover-eyebrow">CS Management Analytics</div>
+                <h1 class="cover-title">CS Capacity &amp; Productivity</h1>
+                <div class="cover-subtitle">
+                    Executive dashboard for workforce capacity, workload allocation,
+                    shipment volume and productivity visibility.
+                </div>
+                <div class="cover-contents-label">Dashboard Contents</div>
+                <div class="cover-module-grid">
+                    <div class="cover-module">
+                        <div class="cover-module-number">1</div>
+                        <div class="cover-module-title">Office Capacity Snapshot</div>
+                    </div>
+                    <div class="cover-module">
+                        <div class="cover-module-number">2</div>
+                        <div class="cover-module-title">Shipment Volume</div>
+                    </div>
+                    <div class="cover-module">
+                        <div class="cover-module-number">3</div>
+                        <div class="cover-module-title">Workload by PIC</div>
+                    </div>
+                    <div class="cover-module">
+                        <div class="cover-module-number">4</div>
+                        <div class="cover-module-title">Workload by Segment</div>
+                    </div>
+                    <div class="cover-module">
+                        <div class="cover-module-number">5</div>
+                        <div class="cover-module-title">Workload Breakdown by Service Type and Activity</div>
+                    </div>
+                    <div class="cover-module">
+                        <div class="cover-module-number">6</div>
+                        <div class="cover-module-title">CS Solution</div>
+                    </div>
+                    <div class="cover-module">
+                        <div class="cover-module-number">7</div>
+                        <div class="cover-module-title">YVF Promoter Effectiveness</div>
+                    </div>
+                </div>
+                <div class="cover-divider"></div>
+                <div class="cover-footer">
+                    <div><strong>Customer Service Division</strong><br>Management Dashboard • Internal Use Only</div>
+                </div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
-.cover-headset{
-    width:34px;
-    height:34px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    color:#fff;
-}
-
-.cover-headset svg{
-    width:31px;
-    height:31px;
-    stroke:currentColor;
-    fill:none;
-    stroke-width:1.8;
-}
-
-.footer-divider{
-    width:2px;
-    height:28px;
-    background:#F58220;
-}
-
-.cover-wave-1,.cover-wave-2,.cover-wave-3{
-    position:absolute;
-    left:-5%;
-    width:112%;
-    border-radius:50%;
-    pointer-events:none;
-}
-
-.cover-wave-1{
-    height:90px;
-    bottom:-58px;
-    border-top:9px solid #0DBAEE;
-    transform:rotate(-1.5deg);
-    opacity:.96;
-}
-
-.cover-wave-2{
-    height:125px;
-    bottom:-88px;
-    border-top:7px solid #E6761B;
-    transform:rotate(1.7deg);
-    opacity:.98;
-}
-
-.cover-wave-3{
-    height:155px;
-    bottom:-113px;
-    border-top:8px solid #005BAC;
-    transform:rotate(-.2deg);
-    opacity:.86;
-}
-
-
-@media(max-height:820px) and (min-width:901px){
-    .cover-panel{top:8px;bottom:10px;padding:16px 34px 16px}
-    .cover-logo-real{width:165px;margin-bottom:14px}
-    .cover-title{font-size:clamp(44px,3.3vw,60px)}
-    .cover-title-accent{margin:14px 0 11px 2px}
-    .cover-subtitle{font-size:19px;margin-bottom:12px}
-    .cover-separator{margin-bottom:12px}
-    .cover-icon{width:50px;height:50px}
-    .cover-icon svg{width:27px;height:27px}
-    .cover-pillar-title{font-size:11px;margin-bottom:5px}
-    .cover-pillar-note{font-size:9px;line-height:1.25}
-    .cover-pillar:not(:last-child)::after{top:30px;height:78px}
-    .cover-cta{bottom:18px;height:50px;min-width:300px;font-size:19px}
-    .cover-right-footer{bottom:3.0vh;font-size:16px}
-}
-
-@media(max-width:900px){
-    .cover-stage{min-height:920px}
-    .cover-panel{
-        position:relative;
-        top:auto;
-        left:auto;
-        width:calc(100% - 28px);
-        min-width:0;
-        height:auto;
-        min-height:830px;
-        margin:14px;
-        padding:28px 24px 110px;
-    }
-    .cover-title{font-size:46px}
-    .cover-pillars{grid-template-columns:repeat(2,1fr);row-gap:20px}
-    .cover-pillar:nth-child(2)::after{display:none}
-    .cover-cta{left:24px;right:24px;width:auto;bottom:28px}
-    .cover-arc-svg,.cover-right-footer,.cover-wave-1,.cover-wave-2,.cover-wave-3{display:none}
-}
-</style>
-"""
-
-    cover_html = """<div class="cover-stage">
-<svg class="cover-arc-svg" viewBox="0 0 900 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-  <path d="M560 -60 C690 120 700 300 610 470 C550 585 445 675 330 735" fill="none" stroke="#F58220" stroke-width="2.2"/>
-  <path d="M640 -45 C760 130 770 320 685 495 C625 620 525 710 415 775" fill="none" stroke="#F58220" stroke-width="2.2"/>
-  <path d="M715 -28 C825 145 838 345 758 525 C700 655 610 752 500 820" fill="none" stroke="#F58220" stroke-width="2.2"/>
-  <path d="M785 -10 C885 165 900 375 825 555 C772 685 690 785 585 855" fill="none" stroke="#F58220" stroke-width="2.2"/>
-  <path d="M850 12 C940 190 958 405 890 585 C842 710 765 815 670 885" fill="none" stroke="#F58220" stroke-width="2.2"/>
-  <circle cx="603" cy="160" r="7" fill="#F58220"/>
-  <circle cx="690" cy="235" r="7" fill="#F58220"/>
-  <circle cx="752" cy="340" r="7" fill="#F58220"/>
-  <circle cx="636" cy="510" r="7" fill="#F58220"/>
-  <circle cx="780" cy="625" r="7" fill="#F58220"/>
-  <circle cx="700" cy="760" r="7" fill="#F58220"/>
-</svg>
-<div class="cover-wave-1"></div><div class="cover-wave-2"></div><div class="cover-wave-3"></div>
-<div class="cover-panel">
-<img src="data:image/png;base64,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" class="cover-logo-real" alt="Yusen Logistics">
-<h1 class="cover-title">CS Capacity &amp;<br>Productivity</h1>
-<div class="cover-title-accent"></div>
-<div class="cover-subtitle">Capacity, Workload &amp;<br>Productivity Insights</div>
-<div class="cover-separator"></div>
-<div class="cover-pillars">
-<div class="cover-pillar"><div class="cover-icon icon-capacity"><svg viewBox="0 0 32 32"><circle cx="16" cy="9" r="4"></circle><circle cx="7" cy="12" r="3"></circle><circle cx="25" cy="12" r="3"></circle><path d="M9 25v-3c0-4 3-7 7-7s7 3 7 7v3"></path><path d="M2 24v-2c0-3 2-5 5-5"></path><path d="M30 24v-2c0-3-2-5-5-5"></path></svg></div><div class="cover-pillar-title">Capacity</div><div class="cover-pillar-note">Right People,<br>Right Capacity</div></div>
-<div class="cover-pillar"><div class="cover-icon icon-workload"><svg viewBox="0 0 32 32"><rect x="7" y="6" width="18" height="22" rx="2"></rect><path d="M12 6V4h8v2"></path><path d="M11 12h10"></path><path d="M11 17h10"></path><path d="M11 22h7"></path></svg></div><div class="cover-pillar-title">Workload</div><div class="cover-pillar-note">Understand Work,<br>Drive Balance</div></div>
-<div class="cover-pillar"><div class="cover-icon icon-productivity"><svg viewBox="0 0 32 32"><path d="M5 25h22"></path><rect x="7" y="17" width="4" height="8"></rect><rect x="14" y="12" width="4" height="13"></rect><rect x="21" y="7" width="4" height="18"></rect><path d="M6 13l6-5 5 2 8-7"></path><path d="M22 3h4v4"></path></svg></div><div class="cover-pillar-title">Productivity</div><div class="cover-pillar-note">Measure Performance,<br>Maximize Impact</div></div>
-<div class="cover-pillar"><div class="cover-icon icon-insights"><svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="10"></circle><circle cx="16" cy="16" r="5"></circle><path d="M16 16l8-8"></path><path d="M22 8h4v4"></path></svg></div><div class="cover-pillar-title">Insights</div><div class="cover-pillar-note">Data-Driven Insights,<br>Better Decisions</div></div>
-</div>
-<a href="?enter=1" target="_self" class="cover-cta"><span class="cover-cta-icon">↗</span><span>VIEW DASHBOARD</span><span class="cover-cta-arrow">→</span></a>
-</div>
-<div class="cover-right-footer"><span class="cover-headset"><svg viewBox="0 0 32 32"><path d="M5 17v-2a11 11 0 0 1 22 0v2"></path><rect x="3" y="16" width="5" height="9" rx="2"></rect><rect x="24" y="16" width="5" height="9" rx="2"></rect><path d="M24 26c-2 3-5 3-8 3"></path></svg></span><span class="footer-divider"></span><span>CS DIVISION</span><span class="footer-divider"></span><span>FY2026</span></div>
-</div>"""
-
-    st.markdown(cover_css.strip(), unsafe_allow_html=True)
-    st.markdown(cover_html.strip(), unsafe_allow_html=True)
-
+    # Keep CTA directly beneath the hero card for a clean single-action entry.
+    c1, c2, c3 = st.columns([1, 1.15, 1])
+    with c2:
+        if st.button(
+            "VIEW DASHBOARD  →",
+            type="primary",
+            use_container_width=True,
+            key="enter_dashboard_btn",
+        ):
+            st.session_state["dashboard_entered"] = True
+            st.rerun()
 
 
 def render_cover_gate() -> None:
-    """Stop on the cover until the user selects VIEW DASHBOARD."""
+    """Stop the app on the cover until the user explicitly enters the dashboard."""
     if "dashboard_entered" not in st.session_state:
         st.session_state["dashboard_entered"] = False
-
-    # The cover CTA is a styled HTML link to ?enter=1.
-    # This allows the button to remain visually inside the white cover panel.
-    try:
-        enter_param = st.query_params.get("enter")
-    except Exception:
-        enter_param = None
-
-    if isinstance(enter_param, list):
-        enter_param = enter_param[0] if enter_param else None
-
-    if str(enter_param) == "1":
-        st.session_state["dashboard_entered"] = True
-        try:
-            st.query_params.clear()
-        except Exception:
-            pass
 
     if not st.session_state["dashboard_entered"]:
         render_cover_page()
         st.stop()
-
-
 
 # ============================================================
 # MAIN APP
@@ -4811,21 +3975,8 @@ def main():
         workload = prepare_workload(raw["workload"])
         fte = prepare_fte(raw["fte"])
         shipment, shipment_mode = prepare_shipment(raw["shipment"])
-
-        # New MASTER DATA SOURCE stores shipment-by-segment volume in
-        # "4. Workload by Activity" (C Volume), while the old workbook stored
-        # transportation-mode columns inside "Shipment volume".
-        # Build the same canonical Mode/Volume table only when direct mode data is absent.
-        if shipment_mode.empty and not workload.empty and "Core Volume" in workload.columns:
-            _mode = workload[["Office", "MonthDate", "Segment", "Core Volume"]].copy()
-            _mode["Volume"] = pd.to_numeric(_mode["Core Volume"], errors="coerce").fillna(0)
-            _mode = _mode[_mode["Volume"] > 0]
-            shipment_mode = _mode.rename(columns={"Segment": "Mode"})[
-                ["Office", "MonthDate", "Mode", "Volume"]
-            ].reset_index(drop=True)
-
         customer = prepare_customer(raw)
-        # Section 2 customer ranking/detail uses the mapped customer-volume source: 11. Vol. by Customer.
+        # Section 2 customer ranking/detail must use Customer Volume-N&S only.
         customer_ns = customer_wide_to_long(raw["customer_ns"])
         resolution = prepare_resolution(raw["resolution"])
         yvf = prepare_yvf(raw["yvf"])
@@ -4859,17 +4010,12 @@ def main():
     office_options = ["All Offices"] + sorted(set(STANDARD_OFFICES + [o for o in offices_from_data if o]))
 
     # Sidebar order: Month -> Office -> Upload file. No Year and no Reset button.
-    # UI only: styled to match the approved Yusen executive HOME format.
     with st.sidebar:
-        st.markdown(
-            '<div class="sidebar-brand"><span class="sidebar-brand-mark"></span><span>Yusen Logistics</span></div>',
-            unsafe_allow_html=True,
-        )
         if st.button("← HOME", use_container_width=True, key="back_to_cover_btn"):
             st.session_state["dashboard_entered"] = False
             st.rerun()
-        st.markdown('<div class="sidebar-filter-title">FILTERS</div>', unsafe_allow_html=True)
-        st.markdown('<div class="sidebar-filter-caption">Month / Office</div>', unsafe_allow_html=True)
+        st.markdown("## FILTERS")
+        st.caption("Month / Office")
         month = st.selectbox("MONTH", month_options, key="month_filter")
         office = st.selectbox("OFFICE", office_options, key="office_filter")
         st.markdown("---")
@@ -4925,16 +4071,7 @@ def main():
         <div class="main-header">
             <div class="main-title">{APP_TITLE}</div>
             <div class="subtitle">{APP_SUBTITLE}</div>
-        </div>
-        <div class="filter-summary-card">
-            <div class="filter-summary-item">
-                <div class="filter-summary-label">Selected Month</div>
-                <div class="filter-summary-value">{month}</div>
-            </div>
-            <div class="filter-summary-item">
-                <div class="filter-summary-label">Selected Office</div>
-                <div class="filter-summary-value">{office}</div>
-            </div>
+            <div class="subtitle"><b>Selected Month:</b> {month} &nbsp; | &nbsp; <b>Selected Office:</b> {office}</div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -4950,7 +4087,7 @@ def main():
             unsafe_allow_html=True,
         )
 
-    section_title("1. Workload & Capacity Utilization")
+    section_title("1. Office Capacity Snapshot")
 
     # Section 1 uses the HC sheet as the single source of truth.
     approved_hc = weighted_period_avg(f_hc, "Total Approved HC") if not f_hc.empty else 0.0
@@ -4977,7 +4114,7 @@ def main():
 
     with hc1:
         hc_detail_card(
-            "Approved HC",
+            "APPROVED HC",
             approved_hc,
             approved_mng,
             approved_pic,
@@ -4985,7 +4122,7 @@ def main():
 
     with hc2:
         hc_detail_card(
-            "Actual HC",
+            "ACTUAL HC",
             actual_hc,
             actual_mng,
             actual_pic,
@@ -4993,7 +4130,7 @@ def main():
 
     with hc3:
         hc_detail_card(
-            "Required HC",
+            "REQUIRED HC",
             required_hc,
             required_mng,
             required_pic,
@@ -5001,7 +4138,7 @@ def main():
 
     with hc4:
         hc_variance_card(
-            "HC Variance",
+            "HC VARIANCE",
             hc_variance,
             "Required HC − Actual HC",
             variance_status[0],
@@ -5049,7 +4186,7 @@ def main():
 
     # Row 1: both charts on the same row.
     # Customer chart gets slightly more width because customer names are longer.
-    mode_chart_col, customer_chart_col = st.columns([0.42, 0.58], gap="medium")
+    mode_chart_col, customer_chart_col = st.columns([0.48, 0.52], gap="medium")
 
     with mode_chart_col:
         chart_shipment_modes(f_mode)
@@ -5070,170 +4207,179 @@ def main():
 
     section_title("3. Workload by PIC")
 
-    # KPI source: sheet "2. FTE Workload".
-    # Single source of truth for Section 3:
-    #   (i)  Total Available Time
-    #   (ii) Total Actual Working Time
-    #        FTE Workload (%) = ii / i
-    #        FTE Workload Status
-    #
-    # Month = All:
-    #   Calculate monthly office/PIC totals first, then show the average
-    #   monthly Total Available Time and Total Actual Working Time.
-    # Selected month:
-    #   Show the actual total of that selected month.
+    # KPI source: HC — PIC-only logic.
+    # IMPORTANT: all KPIs in Section 3 use the same population: Actual HC – PIC.
+    # Available Standard Time / PIC = 8 hrs/day × 22 days/month × 95% = 167.2 hrs.
+    # Total PIC Available Standard Time = Actual HC PIC × 167.2.
+    # Total Actual PIC Workload = HC source Actual workload/PIC × Actual HC PIC.
+    # Actual Workload / PIC = Total Actual PIC Workload ÷ Actual HC PIC.
+    # Capacity Utilization = Total Actual PIC Workload ÷ Total PIC Available Standard Time.
+    hc_for_pic = f_hc.copy()
 
-    if f_fte is not None and not f_fte.empty:
-        fte_kpi = f_fte.copy()
+    standard_per_pic = CAPACITY_HOURS_PER_FTE
 
-        fte_kpi["Available Time"] = pd.to_numeric(
-            fte_kpi["Available Time"], errors="coerce"
+    if not hc_for_pic.empty:
+        hc_for_pic["Actual HC PIC"] = pd.to_numeric(
+            hc_for_pic.get("Actual HC PIC"), errors="coerce"
         )
-        fte_kpi["Actual Working Time"] = pd.to_numeric(
-            fte_kpi["Actual Working Time"], errors="coerce"
+        hc_for_pic["HC Actual Workload per PIC"] = pd.to_numeric(
+            hc_for_pic.get("HC Actual Workload per PIC"), errors="coerce"
         )
 
-        monthly_fte = (
-            fte_kpi.dropna(
-                subset=["MonthDate", "Available Time", "Actual Working Time"]
-            )
-            .groupby("MonthDate", as_index=False)
+        # PIC capacity only — Managers are excluded from this section.
+        hc_for_pic["PIC Available Hours"] = (
+            hc_for_pic["Actual HC PIC"] * standard_per_pic
+        )
+
+        # Reconstruct PIC total workload from the HC source per-PIC workload.
+        # This keeps the HC sheet as the source while ensuring all KPIs use the same PIC population.
+        hc_for_pic["PIC Actual Workload Hours"] = (
+            hc_for_pic["HC Actual Workload per PIC"] * hc_for_pic["Actual HC PIC"]
+        )
+
+        # Monthly PIC totals are the common source for all displayed Section 3 KPIs.
+        pic_monthly = (
+            hc_for_pic.groupby("MonthDate", dropna=True)
             .agg(
-                Total_Available_Time=("Available Time", "sum"),
-                Total_Actual_Working_Time=("Actual Working Time", "sum"),
+                Actual_HC_PIC=("Actual HC PIC", "sum"),
+                PIC_Available_Hours=("PIC Available Hours", "sum"),
+                PIC_Actual_Workload_Hours=("PIC Actual Workload Hours", "sum"),
             )
+            .reset_index()
+        )
+        pic_monthly = pic_monthly[pic_monthly["Actual_HC_PIC"] > 0].copy()
+    else:
+        pic_monthly = pd.DataFrame()
+
+    if not pic_monthly.empty:
+        # Build each month's KPI first so "All" means the average of monthly KPI values,
+        # while a selected month shows that month's actual value.
+        pic_monthly["Actual_Workload_per_PIC"] = np.where(
+            pic_monthly["Actual_HC_PIC"] > 0,
+            pic_monthly["PIC_Actual_Workload_Hours"] / pic_monthly["Actual_HC_PIC"],
+            np.nan,
+        )
+        pic_monthly["Capacity_Utilization"] = np.where(
+            pic_monthly["PIC_Available_Hours"] > 0,
+            pic_monthly["PIC_Actual_Workload_Hours"] / pic_monthly["PIC_Available_Hours"],
+            np.nan,
         )
 
-        if not monthly_fte.empty:
-            if str(month).strip().lower() == "all":
-                total_available = float(
-                    monthly_fte["Total_Available_Time"].mean()
-                )
-                total_actual_working = float(
-                    monthly_fte["Total_Actual_Working_Time"].mean()
-                )
-            else:
-                selected_month_row = monthly_fte.sort_values(
-                    "MonthDate"
-                ).iloc[-1]
-                total_available = float(
-                    selected_month_row["Total_Available_Time"]
-                )
-                total_actual_working = float(
-                    selected_month_row["Total_Actual_Working_Time"]
-                )
-
-            fte_workload = safe_div(
-                total_actual_working,
-                total_available,
+        if str(month).strip().lower() == "all":
+            # ALL MONTHS = average of each valid month's KPI.
+            total_available = float(pic_monthly["PIC_Available_Hours"].mean())
+            total_actual_working = float(pic_monthly["PIC_Actual_Workload_Hours"].mean())
+            actual_pic_hc = float(pic_monthly["Actual_HC_PIC"].mean())
+            actual_workload_per_pic = float(
+                pic_monthly["Actual_Workload_per_PIC"].dropna().mean()
             )
-            fte_status = status_from_util(fte_workload)
+            capacity_util = float(
+                pic_monthly["Capacity_Utilization"].dropna().mean()
+            )
         else:
-            total_available = float("nan")
-            total_actual_working = float("nan")
-            fte_workload = float("nan")
-            fte_status = ("NO DATA", COLORS["muted"], COLORS["light_blue"])
+            # SELECTED MONTH = actual KPI of that month after current filters.
+            selected_month_row = pic_monthly.sort_values("MonthDate").iloc[-1]
+            total_available = float(selected_month_row["PIC_Available_Hours"])
+            total_actual_working = float(selected_month_row["PIC_Actual_Workload_Hours"])
+            actual_pic_hc = float(selected_month_row["Actual_HC_PIC"])
+            actual_workload_per_pic = float(selected_month_row["Actual_Workload_per_PIC"])
+            capacity_util = float(selected_month_row["Capacity_Utilization"])
     else:
         total_available = float("nan")
         total_actual_working = float("nan")
-        fte_workload = float("nan")
-        fte_status = ("NO DATA", COLORS["muted"], COLORS["light_blue"])
+        actual_pic_hc = float("nan")
+        actual_workload_per_pic = float("nan")
+        capacity_util = float("nan")
 
-    # Four management KPIs in one row.
+    # Dynamic KPI labels:
+    # Month = All -> clarify that displayed totals are average monthly values.
+    # Selected month -> keep "Total" because values represent the actual selected month.
+    is_all_months = str(month).strip().lower() == "all"
+    available_time_label = (
+        "AVG. MONTHLY AVAILABLE STANDARD TIME"
+        if is_all_months
+        else "TOTAL AVAILABLE STANDARD TIME"
+    )
+    actual_working_time_label = (
+        "AVG. MONTHLY ACTUAL WORKING TIME"
+        if is_all_months
+        else "TOTAL ACTUAL WORKING TIME"
+    )
+
+    # Row 1: group the two total/monthly KPIs next to each other,
+    # followed by the two per-PIC KPIs for easier visual comparison.
     p1, p2, p3, p4 = st.columns(4, gap="medium")
 
-    def section3_kpi_card(label: str, value: str, note: str = ""):
-        note_html = (
-            f'<div class="pic-kpi-note">{note}</div>'
-            if note else ""
-        )
-        st.markdown(
-            f"""
-            <div class="pic-kpi-card">
-                <div class="pic-kpi-label">{label}</div>
-                <div class="pic-kpi-value">{value}</div>
-                {note_html}
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
     with p1:
-        section3_kpi_card(
-            "Total Available Time",
-            fmt_num(total_available, 1)
-            if not pd.isna(total_available) else "N/A",
-            "95% × 8 × 22 × PIC",
+        pic_kpi_card(
+            available_time_label,
+            fmt_num(total_available, 1) if not pd.isna(total_available) else "N/A",
+            "Actual HC – PIC × 167.2 hrs"
+            if not is_all_months
+            else "Average monthly PIC capacity",
+            unit="Hours",
         )
 
     with p2:
-        section3_kpi_card(
-            "Total Actual Working Time",
+        pic_kpi_card(
+            actual_working_time_label,
             fmt_num(total_actual_working, 1)
             if not pd.isna(total_actual_working) else "N/A",
-            "C + A + S + E",
+            "Actual workload/PIC × Actual HC – PIC"
+            if not is_all_months
+            else "Average monthly PIC workload",
+            unit="Hours",
         )
 
     with p3:
-        fte_value = (
-            f"{fte_workload * 100:,.1f}%"
-            if not pd.isna(fte_workload) else "N/A"
-        )
-        st.markdown(
-            f"""
-            <div class="pic-kpi-card">
-                <div class="pic-kpi-label">FTE Workload (%)</div>
-                <div class="pic-kpi-value" style="
-                    font-size:38px !important;
-                    font-weight:800 !important;
-                    line-height:1.05 !important;
-                ">
-                    {fte_value}
-                </div>
-                <div class="pic-kpi-note">Actual Time ÷ Available Time</div>
-            </div>
-            """,
-            unsafe_allow_html=True,
+        pic_kpi_card(
+            "AVAILABLE STANDARD TIME / PIC",
+            fmt_num(standard_per_pic, 1),
+            "95% × 8 × 22",
+            unit="Hours / PIC",
         )
 
     with p4:
-        status_text, status_color, status_bg = fte_status
-        st.markdown(
-            f"""
-            <div class="pic-kpi-card">
-                <div class="pic-kpi-label">FTE Workload Status</div>
-                <div style="
-                    margin-top:0;
-                    min-height:52px;
-                    display:flex;
-                    justify-content:center;
-                    align-items:center;
-                ">
-                    <span class="status-badge"
-                          style="
-                              color:{status_color};
-                              background:{status_bg};
-                              font-size:16px !important;
-                              font-weight:800 !important;
-                              padding:10px 24px !important;
-                              min-width:180px;
-                              text-align:center;
-                          ">
-                        {status_text}
-                    </span>
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
+        pic_kpi_card(
+            "ACTUAL WORKLOAD / PIC",
+            fmt_num(actual_workload_per_pic, 1)
+            if not pd.isna(actual_workload_per_pic) else "N/A",
+            "Total PIC workload ÷ Actual HC – PIC",
+            unit="Hours / PIC",
         )
 
-    # Chart source: 2. FTE Workload
-    # PIC Workload = FTE Workload factor × Available Time / PIC.
+    # Row 2: Utilization + Status as wider management indicators.
+    ps1, ps2 = st.columns([1.35, 0.65], gap="medium")
+    with ps1:
+        pic_utilization_card(capacity_util)
+    with ps2:
+        overall_workload_status_card(capacity_util)
+
+    # Chart source: CS FTE
+    # PIC Workload = coefficient in sheet "CS FTE" × Available Standard Time / PIC.
     # Available Standard Time / PIC = 95% × 8 × 22 = 167.2 hours.
     # Therefore: PIC Workload = CS FTE coefficient × 167.2 hours.
     # When All Offices is selected, only overloaded PICs/offices are displayed.
     st.markdown('<div class="chart-box" style="margin-top:8px;">', unsafe_allow_html=True)
     chart_workload_by_pic(f_fte, office)
+
+    st.markdown(
+        """
+        <div style="
+            margin-top:6px;
+            color:#667085;
+            font-size:11px;
+            line-height:1.45;
+            font-family:Inter, 'Segoe UI', Arial, sans-serif;">
+            <b>Section KPI logic:</b> Actual HC – PIC only (Managers excluded).<br>
+            <b>Capacity Utilization</b> = Total Actual PIC Workload ÷ Total PIC Available Standard Time.<br>
+            <b>PIC chart logic:</b> PIC Workload (hrs) = CS FTE Factor × Available Standard Time / PIC;<br>
+            <b>Available Standard Time / PIC</b> = 8 hrs/day × 22 days/month × 95% efficiency = 167.2 hrs/month<br>
+            <b>Month logic:</b> Month = All → average of valid monthly KPI values; selected month → actual value of that month
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
     section_title("4. Workload by Segment")
 
@@ -5263,16 +4409,16 @@ def main():
     with seg_summary_col:
         summary_html = f"""
 <div style="height:340px;min-height:340px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;background:#FFFFFF;border:1px solid #D8E1EA;border-radius:12px;box-shadow:0 1px 4px rgba(16,24,40,0.045);padding:24px 26px;">
-    <div style="color:#667085;font-size:12px;line-height:1.25;font-weight:600;letter-spacing:0.025em;text-transform:uppercase;">Total Workload Hours</div>
+    <div style="color:#667085;font-size:12px;line-height:1.25;font-weight:600;letter-spacing:0.025em;text-transform:uppercase;">TOTAL WORKLOAD HOURS</div>
   <div style="color:#003B70;font-size:34px;line-height:1.05;font-weight:700;letter-spacing:-0.02em;margin-top:8px;">{fmt_num(segment_total_hours, 1)}</div>
-  <div style="color:#667085;font-size:11px;margin-top:6px;"></div>
+  <div style="color:#667085;font-size:11px;margin-top:6px;">Unit: Hours</div>
   <div style="height:1px;background:#E6ECF2;margin:24px 0 18px 0;"></div>
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
     <span style="color:#667085;font-size:12px;">Top Segment</span>
     <span style="color:#003B70;font-size:14px;font-weight:700;">{top_segment}</span>
   </div>
   <div style="display:flex;justify-content:space-between;align-items:center;">
-    <span style="color:#667085;font-size:12px;">Top Segment Share</span>
+    <span style="color:#667085;font-size:12px;">Highest Workload Share</span>
     <span style="color:#003B70;font-size:14px;font-weight:700;">{top_share:.1%}</span>
   </div>
   </div>
@@ -5286,7 +4432,7 @@ def main():
     segment_workload_table(f_workload, f_mode)
 
     
-    section_title("5. Workload Breakdown by Activity")
+    section_title("5. Workload Breakdown by Service Type and Activity")
 
     st.markdown(
         """
@@ -5295,7 +4441,7 @@ def main():
             font-size:12px;
             line-height:1.5;
             margin:0 0 10px 2px;">
-            Workload composition: Core Service (C), Ancillary Service (A),
+            Workload is broken down into Core Service (C), Ancillary Service (A),
             Supporting Activity (S) and Exception Handling (E).
         </div>
         """,
@@ -5349,34 +4495,21 @@ def main():
         cs1, cs2, cs3 = st.columns(3, gap="medium")
         with cs1:
             kpi_card(
-                "Total Abnormalities",
+                "TOTAL ABNORMALITIES",
                 fmt_int(total_abn),
                 "",
             )
         with cs2:
             kpi_card(
-                "Resolved by CS",
+                "RESOLVED BY CS",
                 fmt_int(resolved),
                 "",
             )
         with cs3:
-            st.markdown(
-                f"""
-                <div class="kpi-card">
-                    <div class="kpi-label">CS Resolution Rate</div>
-                    <div class="kpi-value" style="
-                        font-size:38px !important;
-                        font-weight:800 !important;
-                        line-height:1.05 !important;
-                    ">
-                        {fmt_pct(rate)}
-                    </div>
-                    <div class="kpi-note">
-                        {fmt_int(resolved)} / {fmt_int(total_abn)} cases
-                    </div>
-                </div>
-                """,
-                unsafe_allow_html=True,
+            kpi_card(
+                "CS RESOLUTION RATE",
+                fmt_pct(rate),
+                f"{fmt_int(resolved)} / {fmt_int(total_abn)} cases",
             )
 
     cs_chart, cs_table = st.columns([0.55, 0.45], gap="medium")
@@ -5387,11 +4520,7 @@ def main():
 
     section_title("7. YVF Promoter Effectiveness")
 
-    # Show only one common message when no YVF data is available.
-    # Chart and detail table are rendered only when filtered YVF data exists.
-    if f_yvf.empty:
-        st.info("No YVF data available for selected filters.")
-    else:
+    if not f_yvf.empty:
         yvf_booking = float(f_yvf["YVF Booking"].sum())
         iff = float(f_yvf["IFF Shipment"].sum())
         yvf_rate = safe_div(yvf_booking, iff)
@@ -5399,41 +4528,28 @@ def main():
         y1, y2, y3 = st.columns(3, gap="medium")
         with y1:
             kpi_card(
-                "Total YVF Bookings",
+                "TOTAL YVF BOOKINGS",
                 fmt_int(yvf_booking),
                 "",
             )
         with y2:
             kpi_card(
-                "Total IFF Shipments",
+                "TOTAL IFF SHIPMENTS",
                 fmt_int(iff),
                 "",
             )
         with y3:
-            st.markdown(
-                f"""
-                <div class="kpi-card">
-                    <div class="kpi-label">YVF Booking Ratio</div>
-                    <div class="kpi-value" style="
-                        font-size:38px !important;
-                        font-weight:800 !important;
-                        line-height:1.05 !important;
-                    ">
-                        {fmt_pct(yvf_rate)}
-                    </div>
-                    <div class="kpi-note">
-                        {fmt_int(yvf_booking)} / {fmt_int(iff)}
-                    </div>
-                </div>
-                """,
-                unsafe_allow_html=True,
+            kpi_card(
+                "YVF BOOKING RATIO",
+                fmt_pct(yvf_rate),
+                f"{fmt_int(yvf_booking)} / {fmt_int(iff)}",
             )
 
-        yvf_chart_col, yvf_table_col = st.columns([0.52, 0.48], gap="medium")
-        with yvf_chart_col:
-            chart_yvf(f_yvf)
-        with yvf_table_col:
-            render_yvf_table(f_yvf)
+    yvf_chart_col, yvf_table_col = st.columns([0.52, 0.48], gap="medium")
+    with yvf_chart_col:
+        chart_yvf(f_yvf)
+    with yvf_table_col:
+        render_yvf_table(f_yvf)
 
 
 if __name__ == "__main__":
