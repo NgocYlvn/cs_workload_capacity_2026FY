@@ -3655,11 +3655,10 @@ def chart_shipment_modes(mode_df: pd.DataFrame):
         hovertemplate="<b>%{y}</b><br>Shipment Volume: %{x:,.0f}<br>Share: %{customdata:.1%}<extra></extra>",
         customdata=plot_df["Share"],
     ))
-    fig.add_annotation(x=1, y=1.04, xref="paper", yref="paper", text=f"<b>{total:,.0f}</b> TOTAL SHIPMENTS", showarrow=False, xanchor="right", yanchor="bottom", font=dict(family=UI["font_family"], size=12, color=COLORS["navy"]))
     fig.update_layout(title_text="", xaxis_title="Shipment Volume", yaxis_title="", bargap=0.26)
     fig.update_yaxes(categoryorder="array", categoryarray=plot_df["Mode"].tolist(), automargin=True, tickfont=dict(size=UI["axis_size"]))
     fig.update_xaxes(automargin=True, rangemode="tozero", tickformat=",.0f")
-    fig = plotly_layout(fig, SHIPMENT_PAIR_HEIGHT, show_legend=False, margin_left=58, margin_right=105, margin_top=40, margin_bottom=52)
+    fig = plotly_layout(fig, SHIPMENT_PAIR_HEIGHT, show_legend=False, margin_left=58, margin_right=105, margin_top=24, margin_bottom=52)
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
 def mode_detail_table(mode_df: pd.DataFrame):
