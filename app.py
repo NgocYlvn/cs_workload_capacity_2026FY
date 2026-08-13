@@ -3057,7 +3057,37 @@ def chart_office_capacity_trend(df: pd.DataFrame):
         yaxis_title="HC",
         hovermode="x unified",
     )
-    fig = plotly_layout(fig, UI["chart_height"], show_legend=True, legend_position="top", margin_left=56, margin_right=42, margin_top=66, margin_bottom=46)
+    fig.update_layout(
+    title="HC Capacity vs. Requirement Trend",
+    yaxis_title="HC",
+    hovermode="x unified",
+)
+
+fig = plotly_layout(
+    fig,
+    UI["chart_height"],
+    show_legend=True,
+    legend_position="top",
+    margin_left=56,
+    margin_right=42,
+    margin_top=66,
+    margin_bottom=46
+)
+
+# Trục Y bắt đầu từ 0
+fig.update_yaxes(rangemode="tozero")
+
+fig.update_xaxes(
+    type="category",
+    categoryorder="array",
+    categoryarray=trend["Month"].tolist()
+)
+
+st.plotly_chart(
+    fig,
+    use_container_width=True,
+    config={"displayModeBar": False}
+)=46)
     fig.update_xaxes(type="category", categoryorder="array", categoryarray=trend["Month"].tolist())
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
