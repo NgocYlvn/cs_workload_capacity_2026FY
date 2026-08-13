@@ -3008,6 +3008,18 @@ def chart_office_capacity_trend(df: pd.DataFrame):
     )
     trend["Month"] = trend["MonthDate"].dt.strftime("%b-%y")
 
+    # Use one canonical series variable for Required HC so the line and
+    # its visible labels can never reference different column names.
+    if "Total Required HC" in trend.columns:
+        required_values = trend["Total Required HC"]
+    elif "Required" in trend.columns:
+        required_values = trend["Required"]
+    elif "Required HC" in trend.columns:
+        required_values = trend["Required HC"]
+    else:
+        st.info("HC trend cannot be displayed because Required HC data is missing.")
+        return
+
     fig = go.Figure()
 
     # Approved HC line
@@ -3041,9 +3053,9 @@ def chart_office_capacity_trend(df: pd.DataFrame):
     fig.add_trace(
         go.Scatter(
             x=trend["Month"],
-            y=trend["Total Required HC"],
+            y=required_values,
             mode="lines+markers+text",
-            text=[f"{v:.2f}" for v in trend["Required"]],
+            text=[f"{v:.2f}" if pd.notna(v) else "" for v in required_values],
             textposition="top center",
             textfont=dict(size=11),
             cliponaxis=False,
