@@ -4645,7 +4645,7 @@ def main():
         st.markdown(
             f"""
             <div class="pic-kpi-card">
-                <div class="pic-kpi-label">FTE Workload (%)</div>
+                <div class="pic-kpi-label">FTE Workload</div>
                 <div class="pic-kpi-value" style="
                     font-size:38px !important;
                     font-weight:800 !important;
