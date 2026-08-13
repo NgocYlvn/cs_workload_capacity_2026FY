@@ -3658,7 +3658,7 @@ def chart_shipment_modes(mode_df: pd.DataFrame):
     fig.update_layout(title_text="", xaxis_title=None, yaxis_title="", bargap=0.26)
     fig.update_yaxes(categoryorder="array", categoryarray=plot_df["Mode"].tolist(), automargin=True, tickfont=dict(size=UI["axis_size"]))
     fig.update_xaxes(automargin=True, rangemode="tozero", tickformat=",.0f")
-    fig = plotly_layout(fig, SHIPMENT_PAIR_HEIGHT, show_legend=False, margin_left=58, margin_right=105, margin_top=12, margin_bottom=52)
+    fig = plotly_layout(fig, 460, show_legend=False, margin_left=58, margin_right=105, margin_top=12, margin_bottom=40)
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
 def mode_detail_table(mode_df: pd.DataFrame):
@@ -3721,7 +3721,7 @@ def chart_top_customers(df: pd.DataFrame):
     fig.update_layout(title_text="", yaxis_title="", xaxis_title=None, bargap=0.18)
     fig.update_yaxes(automargin=True, tickfont=dict(size=UI["axis_size"]))
     fig.update_xaxes(automargin=True)
-    fig = plotly_layout(fig, SHIPMENT_PAIR_HEIGHT, show_legend=False, margin_left=155, margin_right=60, margin_top=22, margin_bottom=50)
+    fig = plotly_layout(fig, 460, show_legend=False, margin_left=155, margin_right=60, margin_top=22, margin_bottom=40)
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
 def customer_detail_volume_table(df: pd.DataFrame):
@@ -4362,7 +4362,7 @@ def main():
 
     # Row 1: both charts on the same row.
     # Customer chart gets slightly more width because customer names are longer.
-    mode_chart_col, customer_chart_col = st.columns([0.48, 0.52], gap="medium")
+    mode_chart_col, customer_chart_col = st.columns([0.42, 0.58], gap="medium")
 
     with mode_chart_col:
         chart_shipment_modes(f_mode)
