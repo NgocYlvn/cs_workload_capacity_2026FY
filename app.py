@@ -4698,7 +4698,7 @@ def main():
     st.markdown('<div class="chart-box" style="margin-top:8px;">', unsafe_allow_html=True)
     chart_workload_by_pic(f_fte, office)
 
-    section_title("4. Workload by Segment")
+    section_title("4. Workload Breakdown By Activity & Segment")
 
     segment_summary = build_segment_workload(f_workload, f_mode)
     segment_total_hours = (
