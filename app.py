@@ -2060,6 +2060,83 @@ st.markdown(
 )
 
 
+
+# ============================================================
+# OFFICE COMPARISON UI — ALL OFFICES ONLY
+# UI layer only; KPI formulas / filters / business logic unchanged
+# ============================================================
+st.markdown(
+    f"""
+    <style>
+    .office-comparison-heading {{
+        display:flex; align-items:center; gap:8px; color:#06183F;
+        font-size:15px; line-height:1.2; font-weight:750;
+        margin:10px 0 8px 1px;
+    }}
+    .office-comparison-heading::before {{
+        content:""; width:22px; height:3px; border-radius:999px;
+        background:#E6761B; display:inline-block;
+    }}
+    .office-compare-card {{
+        --office-status:#3F5B81; --office-status-bg:#EEF3F8;
+        position:relative; background:#FFFFFF; border:1px solid #D5E1EA;
+        border-top:4px solid var(--office-status); border-radius:11px;
+        min-height:154px; padding:11px 12px 10px 12px; box-sizing:border-box;
+        box-shadow:0 2px 7px rgba(6,24,63,0.035); overflow:hidden;
+    }}
+    .office-compare-top {{
+        display:flex; align-items:center; justify-content:space-between;
+        gap:8px; margin-bottom:9px;
+    }}
+    .office-compare-name {{
+        color:#06183F; font-size:18px; line-height:1; font-weight:800;
+    }}
+    .office-compare-status {{
+        display:inline-flex; align-items:center; justify-content:center;
+        max-width:125px; min-height:24px; padding:3px 9px; border-radius:999px;
+        background:var(--office-status-bg); color:var(--office-status);
+        font-size:10.5px; line-height:1.1; font-weight:800; white-space:nowrap;
+    }}
+    .office-compare-primary {{
+        display:flex; align-items:baseline; justify-content:space-between;
+        gap:10px; padding-bottom:8px; margin-bottom:7px;
+        border-bottom:1px solid #E8EEF3;
+    }}
+    .office-compare-primary-label {{
+        color:#667085; font-size:10.5px; line-height:1.15; font-weight:600;
+    }}
+    .office-compare-primary-value {{
+        color:#06183F; font-size:24px; line-height:1; font-weight:800;
+        letter-spacing:-0.02em; white-space:nowrap;
+    }}
+    .office-compare-grid {{
+        display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px 10px;
+    }}
+    .office-compare-metric {{ min-width:0; }}
+    .office-compare-metric-label {{
+        color:#7A8699; font-size:9.8px; line-height:1.15; font-weight:600;
+        margin-bottom:2px; white-space:nowrap;
+    }}
+    .office-compare-metric-value {{
+        color:#06183F; font-size:14px; line-height:1.15; font-weight:750;
+        font-variant-numeric:tabular-nums; white-space:nowrap;
+    }}
+    .office-compare-metric-value.negative {{ color:#D92D20; }}
+    .office-compare-metric-value.positive {{ color:#6EA52B; }}
+    @media (max-width:1366px) {{
+        .office-compare-card {{ min-height:146px; padding:10px 10px 9px 10px; }}
+        .office-compare-name {{ font-size:17px; }}
+        .office-compare-primary-value {{ font-size:22px; }}
+        .office-compare-status {{ font-size:9.8px; padding:3px 7px; }}
+        .office-compare-metric-label {{ font-size:9.3px; }}
+        .office-compare-metric-value {{ font-size:13px; }}
+    }}
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+
 # ============================================================
 # HELPER FUNCTIONS
 # ============================================================
@@ -2218,6 +2295,130 @@ def status_from_util(util: float) -> Tuple[str, str, str]:
     if util <= 1.00:
         return "HIGH LOAD", COLORS["amber"], "#FEF3C7"
     return "OVERLOAD", COLORS["red"], "#FEE2E2"
+
+
+
+def _office_compare_card(
+    office_name: str,
+    primary_label: str,
+    primary_value: str,
+    metrics: List[Tuple[str, str, str]],
+    status_text: str,
+    status_color: str,
+    status_bg: str,
+) -> None:
+    # Render one compact office benchmark card. UI only.
+    metric_html = "".join(
+        f'<div class="office-compare-metric"><div class="office-compare-metric-label">{html.escape(str(label))}</div><div class="office-compare-metric-value {css_class}">{html.escape(str(value))}</div></div>'
+        for label, value, css_class in metrics
+    )
+    st.markdown(
+        f'<div class="office-compare-card" style="--office-status:{status_color};--office-status-bg:{status_bg};"><div class="office-compare-top"><div class="office-compare-name">{html.escape(str(office_name))}</div><div class="office-compare-status">{html.escape(str(status_text))}</div></div><div class="office-compare-primary"><div class="office-compare-primary-label">{html.escape(str(primary_label))}</div><div class="office-compare-primary-value">{html.escape(str(primary_value))}</div></div><div class="office-compare-grid">{metric_html}</div></div>',
+        unsafe_allow_html=True,
+    )
+
+
+def _office_comparison_heading(title: str) -> None:
+    st.markdown(
+        f'<div class="office-comparison-heading">{html.escape(title)}</div>',
+        unsafe_allow_html=True,
+    )
+
+
+def render_hc_office_comparison(hc_filtered_all_offices: pd.DataFrame) -> None:
+    # Reuse existing HC source-of-truth functions and status thresholds.
+    _office_comparison_heading("Office Comparison — Capacity")
+    cols = st.columns(4, gap="small")
+    for col, office_name in zip(cols, STANDARD_OFFICES):
+        if hc_filtered_all_offices is not None and not hc_filtered_all_offices.empty and "Office" in hc_filtered_all_offices.columns:
+            office_df = hc_filtered_all_offices[hc_filtered_all_offices["Office"] == office_name].copy()
+        else:
+            office_df = pd.DataFrame()
+
+        if office_df.empty:
+            actual = required = gap = util = float("nan")
+            status_text, status_color, status_bg = "NO DATA", COLORS["muted"], COLORS["light_blue"]
+        else:
+            actual = weighted_period_avg(office_df, "Total Actual HC")
+            required = weighted_period_avg(office_df, "Total Required HC")
+            gap = required - actual
+            util = hc_capacity_utilization(office_df)
+            if pd.isna(util):
+                status_text, status_color, status_bg = "NO DATA", COLORS["muted"], COLORS["light_blue"]
+            else:
+                status_text, status_color, status_bg = status_from_util(util)
+
+        gap_class = "negative" if (not pd.isna(gap) and gap > 0.05) else ("positive" if (not pd.isna(gap) and gap < -0.05) else "")
+        gap_text = "N/A" if pd.isna(gap) else f"{gap:+,.2f}"
+        with col:
+            _office_compare_card(
+                office_name,
+                "HC Utilization",
+                "N/A" if pd.isna(util) else fmt_pct(util),
+                [
+                    ("Actual HC", "N/A" if pd.isna(actual) else fmt_num(actual, 2), ""),
+                    ("Required HC", "N/A" if pd.isna(required) else fmt_num(required, 2), ""),
+                    ("HC Gap", gap_text, gap_class),
+                    ("Status", status_text.title(), ""),
+                ],
+                status_text, status_color, status_bg,
+            )
+
+
+def _fte_office_summary(office_fte: pd.DataFrame, selected_month: str) -> Tuple[float, float, float, Tuple[str, str, str]]:
+    # Apply the exact Section 3 month logic to one office.
+    if office_fte is None or office_fte.empty:
+        return float("nan"), float("nan"), float("nan"), ("NO DATA", COLORS["muted"], COLORS["light_blue"])
+    d = office_fte.copy()
+    d["Available Time"] = pd.to_numeric(d.get("Available Time"), errors="coerce")
+    d["Actual Working Time"] = pd.to_numeric(d.get("Actual Working Time"), errors="coerce")
+    monthly = (
+        d.dropna(subset=["MonthDate", "Available Time", "Actual Working Time"])
+        .groupby("MonthDate", as_index=False)
+        .agg(
+            Total_Available_Time=("Available Time", "sum"),
+            Total_Actual_Working_Time=("Actual Working Time", "sum"),
+        )
+    )
+    if monthly.empty:
+        return float("nan"), float("nan"), float("nan"), ("NO DATA", COLORS["muted"], COLORS["light_blue"])
+    if str(selected_month).strip().lower() == "all":
+        total_available = float(monthly["Total_Available_Time"].mean())
+        total_actual = float(monthly["Total_Actual_Working_Time"].mean())
+    else:
+        row = monthly.sort_values("MonthDate").iloc[-1]
+        total_available = float(row["Total_Available_Time"])
+        total_actual = float(row["Total_Actual_Working_Time"])
+    workload = safe_div(total_actual, total_available)
+    return total_available, total_actual, workload, status_from_util(workload)
+
+
+def render_fte_office_comparison(fte_filtered_all_offices: pd.DataFrame, selected_month: str) -> None:
+    # Reuse exact Section 3 FTE formula / month handling.
+    _office_comparison_heading("Office Comparison — Workload per FTE")
+    cols = st.columns(4, gap="small")
+    for col, office_name in zip(cols, STANDARD_OFFICES):
+        if fte_filtered_all_offices is not None and not fte_filtered_all_offices.empty and "Office" in fte_filtered_all_offices.columns:
+            office_df = fte_filtered_all_offices[fte_filtered_all_offices["Office"] == office_name].copy()
+        else:
+            office_df = pd.DataFrame()
+        available, actual, workload, status = _fte_office_summary(office_df, selected_month)
+        status_text, status_color, status_bg = status
+        variance = actual - available if not pd.isna(actual) and not pd.isna(available) else float("nan")
+        variance_class = "negative" if (not pd.isna(variance) and variance > 0) else ("positive" if not pd.isna(variance) else "")
+        with col:
+            _office_compare_card(
+                office_name,
+                "FTE Workload",
+                "N/A" if pd.isna(workload) else fmt_pct(workload),
+                [
+                    ("Available Time", "N/A" if pd.isna(available) else fmt_num(available, 1), ""),
+                    ("Actual Time", "N/A" if pd.isna(actual) else fmt_num(actual, 1), ""),
+                    ("Variance", "N/A" if pd.isna(variance) else fmt_num(variance, 1), variance_class),
+                    ("Status", status_text.title(), ""),
+                ],
+                status_text, status_color, status_bg,
+            )
 
 
 
@@ -5583,6 +5784,9 @@ def main():
             variance_status[2],
         )
 
+    if office == "All Offices":
+        render_hc_office_comparison(f_hc)
+
     # KPI cards follow Month + Office filters.
     # The line chart keeps all available months so management can see the HC trend.
     hc_trend_data = filter_office_only(hc, office)
@@ -5806,6 +6010,9 @@ def main():
             """,
             unsafe_allow_html=True,
         )
+
+    if office == "All Offices":
+        render_fte_office_comparison(f_fte, month)
 
     # Chart source: 2. FTE Workload
     # PIC Workload = FTE Workload factor × Available Time / PIC.
