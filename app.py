@@ -1395,6 +1395,15 @@ st.markdown(
 st.markdown(
     f"""
     <style>
+    header[data-testid="stHeader"] {{
+        background:transparent !important;
+        height:2.2rem !important;
+    }}
+
+    [data-testid="stToolbar"] {{
+        top:0.15rem !important;
+    }}
+
     /* ------------------------------------------------------------
        LAPTOP-FIRST MAIN CANVAS
        ------------------------------------------------------------ */
@@ -1597,19 +1606,28 @@ st.markdown(
        MAIN HEADER — compact executive card
        ------------------------------------------------------------ */
     .main-header {{
-        position:sticky !important;
-        top:0.35rem !important;
-        z-index:950 !important;
+        position:relative !important;
         overflow:hidden !important;
-        background:rgba(255,255,255,0.98) !important;
+        background:rgba(255,255,255,0.985) !important;
         backdrop-filter:blur(8px);
         -webkit-backdrop-filter:blur(8px);
         border:1px solid #D5E1EA !important;
         border-left:5px solid #0DBAEE !important;
         border-radius:11px !important;
-        padding:10px 16px 9px 16px !important;
-        margin:0 0 7px 0 !important;
-        box-shadow:0 2px 8px rgba(6,24,63,0.055) !important;
+        padding:9px 14px 8px 14px !important;
+        margin:0 !important;
+        box-shadow:0 4px 14px rgba(6,24,63,0.08) !important;
+    }}
+
+    /* Make the Streamlit element wrapper sticky, not the inner HTML.
+       This avoids clipping/stacking issues on Streamlit Cloud. */
+    div[data-testid="stVerticalBlock"] > div:has(.main-header) {{
+        position:sticky !important;
+        top:0.35rem !important;
+        z-index:1000 !important;
+        background:{COLORS['bg']} !important;
+        padding-top:0.15rem !important;
+        padding-bottom:0.30rem !important;
     }}
 
     /* Remove the old decorative arrow to preserve laptop width. */
@@ -1642,14 +1660,14 @@ st.markdown(
     .filter-summary-card {{
         display:flex;
         align-items:center;
-        min-height:48px;
+        min-height:40px;
         gap:0;
         background:#F8FBFE;
-        border:1px solid #D5E1EA;
-        border-radius:11px;
-        box-shadow:0 1px 5px rgba(6,24,63,0.025);
-        margin:0 0 12px 0;
-        padding:5px 12px;
+        border:1px solid #E0E7EE;
+        border-radius:8px;
+        box-shadow:none;
+        margin:6px 0 0 0;
+        padding:3px 9px;
     }}
 
     .filter-summary-item {{
@@ -1658,9 +1676,9 @@ st.markdown(
         grid-template-rows:auto auto;
         column-gap:8px;
         align-items:center;
-        min-width:210px;
-        padding:0 22px 0 0;
-        margin-right:22px;
+        min-width:185px;
+        padding:0 16px 0 0;
+        margin-right:16px;
         border-right:1px solid #E4EBF1;
     }}
 
@@ -1671,8 +1689,8 @@ st.markdown(
 
     .filter-summary-icon {{
         grid-row:1 / span 2;
-        width:28px;
-        height:28px;
+        width:25px;
+        height:25px;
         border-radius:7px;
         display:flex;
         align-items:center;
@@ -1943,9 +1961,10 @@ st.markdown(
         }}
 
         .main-header {{
-            top:0.25rem !important;
-            padding:9px 14px 8px 14px !important;
-            margin-bottom:6px !important;
+            padding:8px 12px 7px 12px !important;
+        }}
+        div[data-testid="stVerticalBlock"] > div:has(.main-header) {{
+            top:0.20rem !important;
         }}
 
         .main-title {{
@@ -5421,27 +5440,27 @@ def main():
         <div class="main-header">
             <div class="main-title">{APP_TITLE}</div>
             <div class="subtitle">{APP_SUBTITLE}</div>
-        </div>
-        <div class="filter-summary-card">
-            <div class="filter-summary-item">
-                <div class="filter-summary-icon">
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <rect x="3" y="5" width="18" height="16" rx="2"></rect>
-                        <path d="M8 3v4M16 3v4M3 10h18"></path>
-                    </svg>
+            <div class="filter-summary-card">
+                <div class="filter-summary-item">
+                    <div class="filter-summary-icon">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <rect x="3" y="5" width="18" height="16" rx="2"></rect>
+                            <path d="M8 3v4M16 3v4M3 10h18"></path>
+                        </svg>
+                    </div>
+                    <div class="filter-summary-label">Selected Month</div>
+                    <div class="filter-summary-value">{month}</div>
                 </div>
-                <div class="filter-summary-label">Selected Month</div>
-                <div class="filter-summary-value">{month}</div>
-            </div>
-            <div class="filter-summary-item">
-                <div class="filter-summary-icon">
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="M4 21V7l8-4 8 4v14"></path>
-                        <path d="M8 21v-6h8v6M8 9h2M14 9h2M8 12h2M14 12h2"></path>
-                    </svg>
+                <div class="filter-summary-item">
+                    <div class="filter-summary-icon">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M4 21V7l8-4 8 4v14"></path>
+                            <path d="M8 21v-6h8v6M8 9h2M14 9h2M8 12h2M14 12h2"></path>
+                        </svg>
+                    </div>
+                    <div class="filter-summary-label">Selected Office</div>
+                    <div class="filter-summary-value">{office}</div>
                 </div>
-                <div class="filter-summary-label">Selected Office</div>
-                <div class="filter-summary-value">{office}</div>
             </div>
         </div>
         """,
