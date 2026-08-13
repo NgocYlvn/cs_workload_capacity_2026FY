@@ -3,7 +3,7 @@
 # BUILD: V43_HC_COLOR_HIERARCHY
 # BUILD: SECTION2_CHART_DETAIL_V4
 # Python + Streamlit + Pandas + Plotly
-# Data source: (100826)TEMPLATE_DATA FOR DASHBOARD_V1.xlsx
+# Data source: (Not for Office Input) MASTER DATA SOURCE.xlsm
 # ============================================================
 
 from __future__ import annotations
@@ -34,7 +34,7 @@ st.set_page_config(
 
 APP_TITLE = "CS CAPACITY & PRODUCTIVITY"
 APP_SUBTITLE = ""
-DEFAULT_FILE = "(100826)TEMPLATE_DATA FOR DASHBOARD_V1.xlsx"
+DEFAULT_FILE = "(Not for Office Input) MASTER DATA SOURCE.xlsm"
 CAPACITY_HOURS_PER_FTE = 8 * 0.95 * 22  # 167.2 hours/FTE/month
 STANDARD_OFFICES = ["HAN", "HAD", "HLC", "HCM"]
 SERVICE_ORDER = ["AE", "AI", "OE", "OI", "CC", "TR", "WH"]
@@ -138,22 +138,30 @@ CORPORATE_PALETTE = [
 ]
 
 SHEET_NAMES = {
-    "hc": "HC",
-    "resolution": "CS Resolutions Rate",
-    "workload": "BU allocation",
-    "yvf": "YVF",
-    "shipment": "Shipment volume",
-    "customer_ns": "Customer Volume-N&S",
-    "customer_had": "Customer Volume - HAD",
-    "customer_han": "Customer Volume - HAN",
-    "customer_hlc": "Customer Volume - HLC",
-    "customer_hcm": "Customer Volume - HCM",
-    "fte": "CS FTE",
-    "core": "C",
-    "ancillary": "A",
-    "supporting": "S",
-    "exception": "E",
-    "notes": "Ghi chú",
+    "hc": " 1.  Office Cap. & Workload",
+    "resolution": "9. CS Resolutions Rate",
+    "workload": "4. Workload by Activity",
+    "yvf": "10. YVF",
+    "shipment": "3. Active Cus - Vol.",
+    "customer_ns": "11. Vol. by Customer",
+
+    # The new master workbook no longer keeps separate office-specific customer sheets.
+    # Keep these aliases intentionally unmatched so prepare_customer() falls back to
+    # the combined Customer Volume-N&S sheet without changing downstream logic.
+    "customer_had": "__NOT_USED_CUSTOMER_HAD__",
+    "customer_han": "__NOT_USED_CUSTOMER_HAN__",
+    "customer_hlc": "__NOT_USED_CUSTOMER_HLC__",
+    "customer_hcm": "__NOT_USED_CUSTOMER_HCM__",
+
+    "fte": " 2. FTE Workload",
+    "core": "5. C Vol.",
+    "ancillary": "6. A Vol.",
+    "supporting": "7. S Vol.",
+    "exception": "8. E Vol.",
+
+    # The new master workbook does not contain the former "Ghi chú" sheet.
+    # Existing downstream fallback behavior is retained.
+    "notes": "__NOT_USED_NOTES__",
 }
 
 # ============================================================
@@ -1383,6 +1391,21 @@ def parse_month(value) -> pd.Timestamp | pd.NaT:
     if isinstance(value, pd.Timestamp):
         return pd.Timestamp(year=value.year, month=value.month, day=1)
     text = str(value).strip()
+
+    # Adapter for the new MASTER DATA SOURCE workbook:
+    # Month is stored as Apr..Mar while the dashboard logic still works with
+    # real MonthDate values. FY2026 = Apr-Dec 2026 + Jan-Mar 2027.
+    month_only = {
+        "jan": (2027, 1), "feb": (2027, 2), "mar": (2027, 3),
+        "apr": (2026, 4), "may": (2026, 5), "jun": (2026, 6),
+        "jul": (2026, 7), "aug": (2026, 8), "sep": (2026, 9),
+        "oct": (2026, 10), "nov": (2026, 11), "dec": (2026, 12),
+    }
+    key = text[:3].lower()
+    if len(text) <= 4 and key in month_only:
+        year, month = month_only[key]
+        return pd.Timestamp(year=year, month=month, day=1)
+
     for fmt in ["%b-%y", "%b-%Y", "%Y-%m", "%m/%Y", "%Y/%m"]:
         try:
             dt = pd.to_datetime(text, format=fmt)
@@ -1954,27 +1977,39 @@ def prepare_hc(df: pd.DataFrame) -> pd.DataFrame:
     df["Office"] = df[office_col].map(normalize_office)
     df["MonthDate"] = df[month_col].map(parse_month)
     mapping = {
-        "Approved HC – MNG": "Approved HC MNG",
-        "Approved HC – PIC": "Approved HC PIC",
-        "Total Approved HC": "Total Approved HC",
-        "Actual HC – MNG": "Actual HC MNG",
-        "Actual HC – PIC": "Actual HC PIC",
-        "Total Actual HC": "Total Actual HC",
-        "Total Actual  HC": "Total Actual HC",
-        "Required HC – MNG": "Required HC MNG",
-        "Required HC – PIC": "Required HC PIC",
-        "Total Required HC": "Total Required HC",
-        "Total Available Standard Time (95%x8x22xPIC)": "HC Available Hours",
-        "Total actual Working Time (=C+A+S+E)": "HC Actual Working Hours",
-        "Actual workload/PIC (hour)": "HC Actual Workload per PIC",
-        "Capacity Utilization (%)": "HC Utilization",
-        "HC Utilization (%)": "HC Utilization",
-        "Overal  Workload Status": "HC Status",
-        "Overall Workload Status": "HC Status",
-        "HC Status": "HC Status",
+        "Approved HC MNG": ["Approved HC – MNG", "Approved HC (MNG)"],
+        "Approved HC PIC": ["Approved HC – PIC", "Approved HC (PIC)"],
+        "Total Approved HC": ["Total Approved HC"],
+        "Actual HC MNG": ["Actual HC – MNG", "Actual HC (MNG)"],
+        "Actual HC PIC": ["Actual HC – PIC", "Actual HC (PIC)"],
+        "Total Actual HC": ["Total Actual HC", "Total Actual  HC"],
+        "Required HC MNG": ["Required HC – MNG", "Required HC (MNG)"],
+        "Required HC PIC": ["Required HC – PIC", "Required HC (PIC)"],
+        "Total Required HC": ["Total Required HC"],
+        "HC Available Hours": [
+            "Total Available Standard Time (95%x8x22xPIC)",
+            "Total Available Time (95%x8x22x total PIC) (i)",
+        ],
+        "HC Actual Working Hours": [
+            "Total actual Working Time (=C+A+S+E)",
+            "Total actual Working Time (=C+A+S+E) (ii)",
+        ],
+        "HC Actual Workload per PIC": ["Actual workload/PIC (hour)"],
+        "HC Utilization": [
+            "Capacity Utilization (%)",
+            "HC Utilization (%)",
+            "Office Workload (%) (ii /i)",
+        ],
+        "HC Status": [
+            "Overal Workload Status",
+            "Overal  Workload Status",
+            "Overall Workload Status",
+            "Office Workload Status",
+            "HC Status",
+        ],
     }
-    for old, new in mapping.items():
-        col = first_existing(df, [old])
+    for new, candidates in mapping.items():
+        col = first_existing(df, candidates)
         if col:
             df[new] = df[col]
     # Fallback calculations
@@ -2016,31 +2051,76 @@ def prepare_hc(df: pd.DataFrame) -> pd.DataFrame:
 def prepare_workload(df: pd.DataFrame) -> pd.DataFrame:
     if df.empty:
         return pd.DataFrame(columns=["Office", "MonthDate", "Segment"])
+
     df = df.copy()
     office_col = first_existing(df, ["Office", "OFFICE"])
     month_col = first_existing(df, ["Month"])
     segment_col = first_existing(df, ["Segment"])
+
     if not office_col or not month_col or not segment_col:
         return pd.DataFrame(columns=["Office", "MonthDate", "Segment"])
+
     df["Office"] = df[office_col].map(normalize_office)
     df["MonthDate"] = df[month_col].map(parse_month)
     df["Segment"] = df[segment_col].astype(str).str.strip().str.upper()
-    # Use BU allocation workload columns as source of truth.
+
+    # Canonical dashboard fields remain unchanged.
+    # Only source-header aliases are expanded for the renamed MASTER DATA SOURCE workbook.
     component_map = {
-        "Core Workload (min)": "Core Workload (min)",
-        "Ancillary Workload (min)": "Ancillary Workload (min)",
-        "Supporting Workload (min)": "Supporting Workload (min)",
-        "Exception Workload (min)": "Exception Workload (min)",
-        "Total Workload (min)": "Total Workload (min)",
-        "% of Network": "Workload Share",
-        "OFFICE HC ALLOCATION RATIO TO Bus": "Office HC Allocation Ratio",
+        "Core Workload (min)": [
+            "Core Workload (min)",
+            "C Total Time (min)",
+        ],
+        "Ancillary Workload (min)": [
+            "Ancillary Workload (min)",
+            "A Total Time (min)",
+        ],
+        "Supporting Workload (min)": [
+            "Supporting Workload (min)",
+            "S Total time (min)",
+            "S Total Time (min)",
+        ],
+        "Exception Workload (min)": [
+            "Exception Workload (min)",
+            "E Total Time (min)",
+        ],
+        "Total Workload (min)": [
+            "Total Workload (min)",
+            "Total time (min)",
+        ],
+        "Workload Share": [
+            "% of Network",
+            "CS Allocation (%)",
+        ],
+        "Office HC Allocation Ratio": [
+            "OFFICE HC ALLOCATION RATIO TO Bus",
+            "CS Allocation (FTE)",
+        ],
+        "Core Volume": [
+            "Core Volume",
+            "C Volume",
+        ],
+        "Ancillary Volume": [
+            "Ancillary Volume",
+            "A Volume",
+        ],
+        "Supporting Volume": [
+            "Supporting Volume",
+            "S Volume",
+        ],
+        "Exception Volume": [
+            "Exception Volume",
+            "E Volume",
+        ],
     }
-    for old, new in component_map.items():
-        col = first_existing(df, [old])
+
+    for canonical, candidates in component_map.items():
+        col = first_existing(df, candidates)
         if col:
-            df[new] = numeric_series(df[col])
+            df[canonical] = pd.to_numeric(df[col], errors="coerce").fillna(0)
         else:
-            df[new] = 0.0
+            df[canonical] = 0.0
+
     if df["Total Workload (min)"].sum() == 0:
         df["Total Workload (min)"] = (
             df["Core Workload (min)"]
@@ -2048,36 +2128,85 @@ def prepare_workload(df: pd.DataFrame) -> pd.DataFrame:
             + df["Supporting Workload (min)"]
             + df["Exception Workload (min)"]
         )
+
     df["Workload Hours"] = df["Total Workload (min)"] / 60
     df["Core Hours"] = df["Core Workload (min)"] / 60
     df["Ancillary Hours"] = df["Ancillary Workload (min)"] / 60
     df["Supporting Hours"] = df["Supporting Workload (min)"] / 60
     df["Exception Hours"] = df["Exception Workload (min)"] / 60
     df["Service Label"] = df["Segment"].map(SERVICE_LABELS).fillna(df["Segment"])
+
     return df.dropna(subset=["MonthDate"])
 
 
 @st.cache_data(show_spinner=False)
 def prepare_fte(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Normalize CS PIC workload into the original canonical output:
+        Office | CS PIC | MonthDate | Actual FTE
+
+    Old workbook:
+        OFFICE | CS PIC | Apr-26 | May-26 | ...
+        (cell value = FTE workload factor)
+
+    New MASTER DATA SOURCE:
+        Office | Month | CS PIC Name | ... | FTE Workload (%)
+        (FTE Workload % is the same workload factor used by downstream logic)
+    """
+    base = ["Office", "CS PIC", "MonthDate", "Actual FTE"]
     if df.empty:
-        return pd.DataFrame(columns=["Office", "CS PIC", "MonthDate", "Actual FTE"])
+        return pd.DataFrame(columns=base)
+
     df = df.copy()
     office_col = first_existing(df, ["OFFICE", "Office"])
-    pic_col = first_existing(df, ["CS PIC", "PIC"])
+    pic_col = first_existing(df, ["CS PIC", "PIC", "CS PIC Name"])
+
     if not office_col or not pic_col:
-        return pd.DataFrame(columns=["Office", "CS PIC", "MonthDate", "Actual FTE"])
-    month_cols = [c for c in df.columns if parse_month(c) is not pd.NaT and not pd.isna(parse_month(c))]
+        return pd.DataFrame(columns=base)
+
+    # New long-format source
+    month_col = first_existing(df, ["Month"])
+    factor_col = first_existing(
+        df,
+        [
+            "FTE Workload (%) (ii /i)",
+            "FTE Workload (%)",
+            "FTE Workload",
+        ],
+    )
+
+    if month_col and factor_col:
+        long = df[[office_col, month_col, pic_col, factor_col]].copy()
+        long["Office"] = long[office_col].map(normalize_office)
+        long["CS PIC"] = long[pic_col].astype(str).str.strip()
+        long["MonthDate"] = long[month_col].map(parse_month)
+        long["Actual FTE"] = pd.to_numeric(long[factor_col], errors="coerce")
+
+        long = long[
+            (long["Office"] != "")
+            & (long["CS PIC"] != "")
+            & (~long["MonthDate"].isna())
+            & (long["Actual FTE"].notna())
+        ]
+        return long[base].reset_index(drop=True)
+
+    # Legacy wide-format source
+    month_cols = [
+        c for c in df.columns
+        if not pd.isna(parse_month(c))
+    ]
     if not month_cols:
-        return pd.DataFrame(columns=["Office", "CS PIC", "MonthDate", "Actual FTE"])
-    long = df.melt(id_vars=[office_col, pic_col], value_vars=month_cols, var_name="Month", value_name="Actual FTE")
+        return pd.DataFrame(columns=base)
+
+    long = df.melt(
+        id_vars=[office_col, pic_col],
+        value_vars=month_cols,
+        var_name="Month",
+        value_name="Actual FTE",
+    )
     long["Office"] = long[office_col].map(normalize_office)
     long["CS PIC"] = long[pic_col].astype(str).str.strip()
     long["MonthDate"] = long["Month"].map(parse_month)
-
-    # IMPORTANT:
-    # Keep blank future-month FTE cells as NaN.
-    # Converting blanks to 0 would dilute the average FTE when Month = All
-    # and can incorrectly hide overloaded PICs.
     long["Actual FTE"] = pd.to_numeric(long["Actual FTE"], errors="coerce")
 
     long = long[
@@ -2085,7 +2214,7 @@ def prepare_fte(df: pd.DataFrame) -> pd.DataFrame:
         & (~long["MonthDate"].isna())
         & (long["Actual FTE"].notna())
     ]
-    return long[["Office", "CS PIC", "MonthDate", "Actual FTE"]]
+    return long[base].reset_index(drop=True)
 
 
 @st.cache_data(show_spinner=False)
@@ -2099,8 +2228,22 @@ def prepare_shipment(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
     df = df.copy()
     office_col = first_existing(df, ["Office", "OFFICE"])
     month_col = first_existing(df, ["Month"])
-    active_col = first_existing(df, ["Active Customers"])
-    total_col = first_existing(df, ["TOTAL", "Total"])
+    active_col = first_existing(
+        df,
+        [
+            "Active Customers",
+            "Total No. of Active Customers",
+        ],
+    )
+    total_col = first_existing(
+        df,
+        [
+            "TOTAL",
+            "Total",
+            "Total No. of shipment",
+            "Total No. of Shipment",
+        ],
+    )
 
     if not office_col or not month_col:
         return pd.DataFrame(), pd.DataFrame()
@@ -2108,25 +2251,22 @@ def prepare_shipment(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
     df["Office"] = df[office_col].map(normalize_office)
     df["MonthDate"] = df[month_col].map(parse_month)
 
-    # Keep blanks as NaN first so future empty months are not treated as real zero-data months.
-    if total_col:
-        df["Total Shipment"] = pd.to_numeric(df[total_col], errors="coerce")
-    else:
-        df["Total Shipment"] = np.nan
+    df["Total Shipment"] = (
+        pd.to_numeric(df[total_col], errors="coerce")
+        if total_col else np.nan
+    )
+    df["Active Customers"] = (
+        pd.to_numeric(df[active_col], errors="coerce")
+        if active_col else np.nan
+    )
 
-    if active_col:
-        df["Active Customers"] = pd.to_numeric(df[active_col], errors="coerce")
-    else:
-        df["Active Customers"] = np.nan
-
-    # Exclude rows/months where both key shipment metrics are blank.
     df = df.dropna(subset=["MonthDate"])
     df = df.dropna(subset=["Total Shipment", "Active Customers"], how="all")
-
-    # Valid rows can safely use zero fallback afterward.
     df["Total Shipment"] = df["Total Shipment"].fillna(0)
     df["Active Customers"] = df["Active Customers"].fillna(0)
 
+    # Legacy workbook contained mode columns directly.
+    # New master summary sheet contains only Active Customers + Total Shipment.
     excluded = {
         office_col, month_col, active_col, total_col,
         "Office", "MonthDate", "Active Customers", "Total Shipment"
@@ -2153,7 +2293,7 @@ def prepare_shipment(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
 
 @st.cache_data(show_spinner=False)
 def prepare_customer(data: Dict[str, pd.DataFrame]) -> pd.DataFrame:
-    # Prefer office-specific customer sheets to avoid double count with Customer Volume-N&S.
+    # Prefer office-specific customer sheets when available; otherwise use 11. Vol. by Customer.
     office_sheets = ["customer_had", "customer_han", "customer_hlc", "customer_hcm"]
     frames = []
     for key in office_sheets:
@@ -2173,7 +2313,7 @@ def customer_wide_to_long(df: pd.DataFrame) -> pd.DataFrame:
         return pd.DataFrame(columns=["Office", "Customer", "MonthDate", "Volume"])
     df = df.copy()
     office_col = first_existing(df, ["Office", "OFFICE"])
-    cust_col = first_existing(df, ["Customer", "CUSTOMER"])
+    cust_col = first_existing(df, ["Customer", "CUSTOMER", "Customer Name"])
     if not office_col or not cust_col:
         return pd.DataFrame(columns=["Office", "Customer", "MonthDate", "Volume"])
     month_cols = [c for c in df.columns if parse_month(c) is not pd.NaT and not pd.isna(parse_month(c))]
@@ -2594,10 +2734,10 @@ def prepare_resolution(df: pd.DataFrame) -> pd.DataFrame:
     office_col = first_existing(d, ["OFFICE", "Office"])
     month_col = first_existing(d, ["Month"])
     total_col = first_existing(
-        d, ["Total abnormality/month", "Total abnormality"]
+        d, ["Total abnormality/month", "Total abnormality", "Total Exception Case"]
     )
     resolved_col = first_existing(
-        d, ["No of abnormality resolved by CS", "Resolved"]
+        d, ["No of abnormality resolved by CS", "Resolved", "No of Exception Case Resolved by CS"]
     )
 
     if not office_col or not month_col or not total_col or not resolved_col:
@@ -2665,7 +2805,7 @@ def prepare_yvf(df: pd.DataFrame) -> pd.DataFrame:
         d, ["Total YVF booking/month", "Total YVF booking"]
     )
     iff_col = first_existing(
-        d, ["Total IFF shipment/month", "Total IFF shipment"]
+        d, ["Total IFF shipment/month", "Total IFF shipment", "Total IFF Booking"]
     )
 
     if not office_col or not yvf_col or not iff_col:
@@ -3975,8 +4115,21 @@ def main():
         workload = prepare_workload(raw["workload"])
         fte = prepare_fte(raw["fte"])
         shipment, shipment_mode = prepare_shipment(raw["shipment"])
+
+        # New MASTER DATA SOURCE stores shipment-by-segment volume in
+        # "4. Workload by Activity" (C Volume), while the old workbook stored
+        # transportation-mode columns inside "Shipment volume".
+        # Build the same canonical Mode/Volume table only when direct mode data is absent.
+        if shipment_mode.empty and not workload.empty and "Core Volume" in workload.columns:
+            _mode = workload[["Office", "MonthDate", "Segment", "Core Volume"]].copy()
+            _mode["Volume"] = pd.to_numeric(_mode["Core Volume"], errors="coerce").fillna(0)
+            _mode = _mode[_mode["Volume"] > 0]
+            shipment_mode = _mode.rename(columns={"Segment": "Mode"})[
+                ["Office", "MonthDate", "Mode", "Volume"]
+            ].reset_index(drop=True)
+
         customer = prepare_customer(raw)
-        # Section 2 customer ranking/detail must use Customer Volume-N&S only.
+        # Section 2 customer ranking/detail uses the mapped customer-volume source: 11. Vol. by Customer.
         customer_ns = customer_wide_to_long(raw["customer_ns"])
         resolution = prepare_resolution(raw["resolution"])
         yvf = prepare_yvf(raw["yvf"])
