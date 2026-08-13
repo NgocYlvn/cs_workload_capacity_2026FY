@@ -4531,7 +4531,7 @@ def main():
         customer_detail_volume_table(f_customer_ns)
 
 
-    section_title("3. Workload Per FTE")
+    section_title("3. Workload by PIC")
 
     # KPI source: sheet "2. FTE Workload".
     # Single source of truth for Section 3:
@@ -4645,7 +4645,7 @@ def main():
         st.markdown(
             f"""
             <div class="pic-kpi-card">
-                <div class="pic-kpi-label">FTE Workload</div>
+                <div class="pic-kpi-label">FTE Workload (%)</div>
                 <div class="pic-kpi-value" style="
                     font-size:38px !important;
                     font-weight:800 !important;
