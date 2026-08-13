@@ -5789,8 +5789,8 @@ def main():
                               background:{status_bg};
                               font-size:30px !important;
                               font-weight:800 !important;
-                              padding:10px 24px !important;
-                              min-width:180px;
+                              padding:10px 32px !important;
+                              min-width:220px;
                               text-align:center;
                           ">
                         {status_text}
