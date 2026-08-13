@@ -3675,12 +3675,20 @@ def mode_detail_table(mode_df: pd.DataFrame):
     detail["Rank"] = np.arange(1, len(detail) + 1)
     detail["Share"] = detail["Volume"] / total
     display = detail.rename(columns={"Volume": "Shipment Volume"})[["Rank", "Mode", "Shipment Volume", "Share"]].copy()
+
+    # Compact height: only show the rows that actually exist instead of
+    # reserving the full chart height and leaving blank rows underneath.
+    mode_table_height = min(SHIPMENT_PAIR_HEIGHT, 38 + 35 * len(display))
+
     st.dataframe(
-        display, use_container_width=True, hide_index=True, height=SHIPMENT_PAIR_HEIGHT,
+        display,
+        use_container_width=True,
+        hide_index=True,
+        height=mode_table_height,
         column_config={
             "Rank": st.column_config.NumberColumn("Rank", width="small", format="%d"),
             "Mode": st.column_config.TextColumn("Mode", width="small"),
-            "Shipment Volume": st.column_config.NumberColumn("Shipment Volume", width="medium", format="%,.0f"),
+            "Shipment Volume": st.column_config.NumberColumn("Shipment Volume", width="large", format="%,.0f"),
             "Share": st.column_config.NumberColumn("Share", width="small", format="percent"),
         },
     )
@@ -3717,18 +3725,18 @@ def chart_top_customers(df: pd.DataFrame):
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
 def customer_detail_volume_table(df: pd.DataFrame):
-    """Full customer ranking paired with the Top 20 chart; scrollable and no TOTAL row."""
+    """Full customer ranking paired with the Top 15 chart; scrollable and no TOTAL row."""
     ranking = build_customer_ranking(df)
     if ranking.empty:
         st.info("No customer detail data available for selected filters.")
         return
 
-    pair_panel_title("Customer Detail Volume")
+    pair_panel_title("Customer Volume Detail")
     st.dataframe(
         ranking,
         use_container_width=True,
         hide_index=True,
-        height=SHIPMENT_PAIR_HEIGHT,  # same height as paired Top 10 chart; vertical scroll keeps the full list accessible
+        height=SHIPMENT_PAIR_HEIGHT,  # keep full-height scrollable detail for all customers
         column_config={
             "Rank": st.column_config.NumberColumn("Rank", width="small", format="%d"),
             "Customer": st.column_config.TextColumn("Customer", width="large"),
