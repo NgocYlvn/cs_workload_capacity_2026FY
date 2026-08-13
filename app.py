@@ -4175,13 +4175,18 @@ def render_cover_page() -> None:
 section[data-testid="stSidebar"]{display:none!important}
 [data-testid="stSidebarCollapsedControl"]{display:none!important}
 header[data-testid="stHeader"]{background:transparent!important;height:0!important}
+[data-testid="stAppViewContainer"]{height:100dvh!important;overflow:hidden!important}
+[data-testid="stAppViewBlockContainer"]{height:100dvh!important;overflow:hidden!important}
+.main{height:100dvh!important;overflow:hidden!important}
+footer{display:none!important}
 .block-container{max-width:none!important;width:100%!important;padding:0!important;margin:0!important}
-.stApp{background:#06183F!important;min-height:100vh!important}
+.stApp{background:#06183F!important;height:100dvh!important;min-height:0!important;overflow:hidden!important}
 
 .cover-stage{
     position:relative;
     width:100%;
-    min-height:100vh;
+    height:100dvh;
+    min-height:0;
     overflow:hidden;
     background:linear-gradient(135deg,#031532 0%,#06183F 48%,#082759 100%);
     font-family:Inter,"Segoe UI",Arial,sans-serif;
@@ -4189,14 +4194,15 @@ header[data-testid="stHeader"]{background:transparent!important;height:0!importa
 
 .cover-panel{
     position:absolute;
-    top:3.2vh;
+    top:18px;
+    bottom:18px;
     left:2.2vw;
-    width:min(55vw,760px);
-    min-width:590px;
-    height:calc(100vh - 6.4vh);
-    min-height:700px;
+    width:min(50.5vw,760px);
+    min-width:570px;
+    height:auto;
+    min-height:0;
     box-sizing:border-box;
-    padding:30px 38px 28px;
+    padding:24px 36px 22px;
     border-radius:24px;
     background:linear-gradient(145deg,#FFFFFF 0%,#FCFDFE 100%);
     border:1px solid rgba(255,255,255,.72);
@@ -4205,17 +4211,17 @@ header[data-testid="stHeader"]{background:transparent!important;height:0!importa
 }
 
 .cover-logo-real{
-    width:170px;
+    width:180px;
     height:auto;
     display:block;
-    margin:0 0 48px 0;
+    margin:0 0 clamp(24px,3.6vh,38px) 0;
 }
 
 .cover-title{
     margin:0;
     max-width:650px;
     color:#06183F;
-    font-size:clamp(52px,4.9vw,72px);
+    font-size:clamp(46px,3.65vw,66px);
     line-height:.98;
     letter-spacing:-.035em;
     font-weight:850;
@@ -4227,22 +4233,22 @@ header[data-testid="stHeader"]{background:transparent!important;height:0!importa
     height:5px;
     border-radius:999px;
     background:#E6761B;
-    margin:24px 0 17px 2px;
+    margin:clamp(14px,2.2vh,22px) 0 clamp(10px,1.6vh,16px) 2px;
 }
 
 .cover-subtitle{
     color:#4F5B6A;
-    font-size:23px;
-    line-height:1.28;
+    font-size:clamp(18px,1.45vw,23px);
+    line-height:1.24;
     font-weight:500;
     max-width:440px;
-    margin-bottom:22px;
+    margin-bottom:clamp(12px,1.8vh,20px);
 }
 
 .cover-separator{
     height:1px;
     background:#D8E1EA;
-    margin:0 0 18px;
+    margin:0 0 clamp(12px,1.8vh,18px);
 }
 
 .cover-pillars{
@@ -4269,9 +4275,9 @@ header[data-testid="stHeader"]{background:transparent!important;height:0!importa
 }
 
 .cover-icon{
-    width:58px;
-    height:58px;
-    margin:0 auto 10px;
+    width:clamp(48px,3.4vw,58px);
+    height:clamp(48px,3.4vw,58px);
+    margin:0 auto 8px;
     border-radius:50%;
     display:flex;
     align-items:center;
@@ -4297,7 +4303,7 @@ header[data-testid="stHeader"]{background:transparent!important;height:0!importa
 
 .cover-pillar-title{
     color:#06183F;
-    font-size:13px;
+    font-size:clamp(11px,.82vw,13px);
     font-weight:800;
     line-height:1.15;
     text-transform:uppercase;
@@ -4306,28 +4312,28 @@ header[data-testid="stHeader"]{background:transparent!important;height:0!importa
 
 .cover-pillar-note{
     color:#4F5B6A;
-    font-size:11px;
+    font-size:clamp(9px,.70vw,11px);
     line-height:1.35;
     font-weight:500;
 }
 
 .cover-cta{
     position:absolute;
-    left:38px;
-    bottom:30px;
+    left:36px;
+    bottom:22px;
     display:inline-flex;
     align-items:center;
     justify-content:space-between;
     gap:18px;
-    min-width:305px;
-    height:56px;
+    min-width:300px;
+    height:52px;
     padding:0 20px;
     box-sizing:border-box;
     border-radius:9px;
     background:linear-gradient(180deg,#FF7F0A 0%,#EE6500 100%);
     color:#fff!important;
     text-decoration:none!important;
-    font-size:21px;
+    font-size:20px;
     font-weight:800;
     box-shadow:0 8px 18px rgba(230,118,27,.28);
 }
@@ -4356,7 +4362,7 @@ header[data-testid="stHeader"]{background:transparent!important;height:0!importa
     right:0;
     top:0;
     width:55vw;
-    height:100vh;
+    height:100dvh;
     z-index:2;
     pointer-events:none;
     overflow:visible;
@@ -4365,7 +4371,7 @@ header[data-testid="stHeader"]{background:transparent!important;height:0!importa
 .cover-right-footer{
     position:absolute;
     right:4vw;
-    bottom:5.6vh;
+    bottom:3.2vh;
     display:flex;
     align-items:center;
     gap:18px;
@@ -4428,6 +4434,23 @@ header[data-testid="stHeader"]{background:transparent!important;height:0!importa
     border-top:8px solid #005BAC;
     transform:rotate(-.2deg);
     opacity:.86;
+}
+
+
+@media(max-height:820px) and (min-width:901px){
+    .cover-panel{top:14px;bottom:14px;padding:20px 34px 18px}
+    .cover-logo-real{width:165px;margin-bottom:22px}
+    .cover-title{font-size:clamp(44px,3.3vw,60px)}
+    .cover-title-accent{margin:14px 0 11px 2px}
+    .cover-subtitle{font-size:19px;margin-bottom:12px}
+    .cover-separator{margin-bottom:12px}
+    .cover-icon{width:50px;height:50px}
+    .cover-icon svg{width:27px;height:27px}
+    .cover-pillar-title{font-size:11px;margin-bottom:5px}
+    .cover-pillar-note{font-size:9px;line-height:1.25}
+    .cover-pillar:not(:last-child)::after{top:30px;height:78px}
+    .cover-cta{bottom:18px;height:50px;min-width:300px;font-size:19px}
+    .cover-right-footer{bottom:2.4vh;font-size:16px}
 }
 
 @media(max-width:900px){
