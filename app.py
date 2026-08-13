@@ -33,7 +33,7 @@ st.set_page_config(
 )
 
 APP_TITLE = "CS CAPACITY & PRODUCTIVITY"
-APP_SUBTITLE = ""
+APP_SUBTITLE = "Capacity, Workload & Productivity Insights"
 DEFAULT_FILE = "(Not for Office Input) MASTER DATA SOURCE.xlsm"
 CAPACITY_HOURS_PER_FTE = 8 * 0.95 * 22  # 167.2 hours/FTE/month
 STANDARD_OFFICES = ["HAN", "HAD", "HLC", "HCM"]
@@ -1389,38 +1389,63 @@ st.markdown(
 
 # ============================================================
 # HOME / SIDEBAR / HEADER POLISH — YUSEN EXECUTIVE FORMAT
-# UI only — keeps all existing text, filters, business logic and calculations unchanged
+# Consolidated UI layer for Sidebar + Main Header + Filter Summary + KPI hierarchy
+# UI only — business logic, calculations, filters and data mappings are unchanged
 # ============================================================
 st.markdown(
     f"""
     <style>
-    /* Wider, cleaner sidebar inspired by the approved HOME format */
+    /* ------------------------------------------------------------
+       LAPTOP-FIRST MAIN CANVAS
+       ------------------------------------------------------------ */
+    .block-container {{
+        max-width: 1680px !important;
+        padding-top: 0.85rem !important;
+        padding-left: 1.05rem !important;
+        padding-right: 1.05rem !important;
+        padding-bottom: 1.5rem !important;
+    }}
+
+    /* ------------------------------------------------------------
+       SIDEBAR — 270px executive navigation / filter rail
+       ------------------------------------------------------------ */
     section[data-testid="stSidebar"] {{
+        width: 270px !important;
+        min-width: 270px !important;
+        max-width: 270px !important;
         background: linear-gradient(180deg, #041532 0%, #06183F 100%) !important;
-        border-right: 1px solid rgba(255,255,255,0.06) !important;
+        border-right: 1px solid rgba(255,255,255,0.07) !important;
     }}
+
     section[data-testid="stSidebar"] > div:first-child {{
-        padding-top: 1.0rem !important;
-        padding-left: 1.15rem !important;
-        padding-right: 1.15rem !important;
+        width: 270px !important;
+        padding-top: 0.75rem !important;
+        padding-left: 0.95rem !important;
+        padding-right: 0.95rem !important;
+        padding-bottom: 1rem !important;
     }}
+
     .sidebar-brand {{
         display:flex;
         align-items:center;
-        gap:10px;
+        gap:9px;
+        min-height:52px;
         color:#FFFFFF;
         font-weight:800;
-        font-size:22px;
-        line-height:1;
-        margin:2px 0 18px 2px;
-        letter-spacing:-0.02em;
+        font-size:18px;
+        line-height:1.05;
+        margin:0 0 10px 1px;
+        letter-spacing:-0.015em;
     }}
+
     .sidebar-brand-mark {{
-        width:36px;
+        width:34px;
         height:22px;
         position:relative;
         display:inline-block;
+        flex:0 0 34px;
     }}
+
     .sidebar-brand-mark::before,
     .sidebar-brand-mark::after {{
         content:"";
@@ -1431,103 +1456,145 @@ st.markdown(
         background:#FFFFFF;
         transform:skewX(-28deg);
     }}
-    .sidebar-brand-mark::before {{ width:34px; top:4px; }}
-    .sidebar-brand-mark::after {{ width:27px; top:13px; left:6px; }}
+    .sidebar-brand-mark::before {{ width:33px; top:4px; }}
+    .sidebar-brand-mark::after {{ width:26px; top:13px; left:6px; }}
 
-    /* HOME action */
+    /* HOME */
     section[data-testid="stSidebar"] div[data-testid="stButton"] > button {{
-        min-height:48px !important;
+        min-height:46px !important;
+        height:46px !important;
         background:#FFFFFF !important;
         color:#06183F !important;
         border:1px solid #D5E1EA !important;
-        border-radius:10px !important;
+        border-radius:9px !important;
         font-size:13px !important;
         font-weight:700 !important;
-        box-shadow:0 4px 14px rgba(0,0,0,0.10) !important;
-        margin-bottom:14px !important;
+        box-shadow:0 3px 10px rgba(0,0,0,0.09) !important;
+        margin:0 0 12px 0 !important;
     }}
+
+    section[data-testid="stSidebar"] div[data-testid="stButton"] > button *,
+    section[data-testid="stSidebar"] .stButton > button * {{
+        color:#06183F !important;
+    }}
+
     section[data-testid="stSidebar"] div[data-testid="stButton"] > button:hover {{
         color:#E6761B !important;
         border-color:#E6761B !important;
         background:#FFFFFF !important;
     }}
 
-    /* Sidebar section heading */
+    section[data-testid="stSidebar"] div[data-testid="stButton"] > button:hover * {{
+        color:#E6761B !important;
+    }}
+
+    /* FILTERS heading */
     .sidebar-filter-title {{
         display:flex;
         align-items:center;
-        gap:10px;
+        gap:9px;
         color:#FFFFFF;
-        font-size:16px;
+        font-size:17px;
+        line-height:1.2;
         font-weight:800;
-        margin:6px 0 2px 0;
+        margin:5px 0 2px 0;
         letter-spacing:0.01em;
     }}
+
     .sidebar-filter-title::after {{
         content:"";
-        width:26px;
+        width:25px;
         height:3px;
         border-radius:999px;
         background:#E6761B;
         display:block;
     }}
+
     .sidebar-filter-caption {{
         color:#D5EAF8;
-        font-size:10px;
-        font-weight:600;
-        margin-bottom:14px;
+        font-size:11.5px;
+        line-height:1.3;
+        font-weight:500;
+        margin:0 0 11px 0;
     }}
 
+    /* Field labels */
     section[data-testid="stSidebar"] label {{
         color:#FFFFFF !important;
-        font-size:11px !important;
-        font-weight:750 !important;
+        font-size:12.5px !important;
+        line-height:1.25 !important;
+        font-weight:700 !important;
         letter-spacing:0.015em !important;
         margin-bottom:5px !important;
     }}
+
+    /* Select boxes */
     section[data-testid="stSidebar"] div[data-baseweb="select"] > div {{
-        min-height:44px !important;
+        min-height:43px !important;
+        height:43px !important;
         background:#FFFFFF !important;
         border:1px solid #D5E1EA !important;
         border-radius:9px !important;
         box-shadow:none !important;
     }}
+
     section[data-testid="stSidebar"] div[data-baseweb="select"] span,
-    section[data-testid="stSidebar"] div[data-baseweb="select"] input,
+    section[data-testid="stSidebar"] div[data-baseweb="select"] input {{
+        color:#06183F !important;
+        font-size:13.5px !important;
+        font-weight:500 !important;
+        opacity:1 !important;
+    }}
+
     section[data-testid="stSidebar"] div[data-baseweb="select"] svg {{
         color:#06183F !important;
         fill:#06183F !important;
+        opacity:1 !important;
+    }}
+
+    section[data-testid="stSidebar"] [data-testid="stSelectbox"] {{
+        margin-bottom:0.40rem !important;
     }}
 
     section[data-testid="stSidebar"] hr {{
         border:0 !important;
         border-top:1px solid rgba(213,234,248,0.20) !important;
-        margin:16px 0 !important;
+        margin:12px 0 11px 0 !important;
     }}
 
-    /* Upload area as a premium white card */
+    /* Upload — compact white card */
     section[data-testid="stSidebar"] [data-testid="stFileUploader"] {{
-        margin-top:2px !important;
+        margin-top:1px !important;
     }}
+
     section[data-testid="stSidebar"] [data-testid="stFileUploader"] section {{
+        min-height:96px !important;
         background:#FFFFFF !important;
         border:1px solid #D5E1EA !important;
-        border-radius:10px !important;
-        padding:10px 10px !important;
-        box-shadow:0 3px 12px rgba(0,0,0,0.08) !important;
+        border-radius:9px !important;
+        padding:8px 9px !important;
+        box-shadow:0 2px 9px rgba(0,0,0,0.07) !important;
     }}
+
     section[data-testid="stSidebar"] [data-testid="stFileUploader"] section * {{
         color:#06183F !important;
+        opacity:1 !important;
+        font-size:11.5px !important;
     }}
+
     section[data-testid="stSidebar"] [data-testid="stFileUploader"] button {{
         background:#FFFFFF !important;
         color:#06183F !important;
         border:1px solid #B9CAD8 !important;
         border-radius:8px !important;
+        font-size:12px !important;
         font-weight:650 !important;
+        min-height:34px !important;
     }}
 
-    /* Main page: cleaner executive header */
+    /* ------------------------------------------------------------
+       MAIN HEADER — compact executive card
+       ------------------------------------------------------------ */
     .main-header {{
         position:relative !important;
         overflow:hidden !important;
@@ -1535,85 +1602,359 @@ st.markdown(
         border:1px solid #D5E1EA !important;
         border-left:5px solid #0DBAEE !important;
         border-radius:12px !important;
-        padding:17px 22px !important;
-        margin-bottom:12px !important;
-        box-shadow:0 4px 14px rgba(6,24,63,0.055) !important;
-    }}
-    .main-header::after {{
-        content:"↗";
-        position:absolute;
-        right:24px;
-        top:18px;
-        width:44px;
-        height:44px;
-        border-radius:12px;
-        display:flex;
-        align-items:center;
-        justify-content:center;
-        color:#E6761B;
-        background:#FFF2E8;
-        font-size:25px;
-        font-weight:700;
-    }}
-    .main-title {{
-        color:#06183F !important;
-        font-size:30px !important;
-        font-weight:800 !important;
-        letter-spacing:-0.025em !important;
-        padding-right:70px !important;
+        padding:14px 18px 13px 18px !important;
+        margin:0 0 9px 0 !important;
+        box-shadow:0 2px 8px rgba(6,24,63,0.045) !important;
     }}
 
+    /* Remove the old decorative arrow to preserve laptop width. */
+    .main-header::after {{
+        content:none !important;
+        display:none !important;
+    }}
+
+    .main-title {{
+        color:#06183F !important;
+        font-size:31px !important;
+        line-height:1.08 !important;
+        font-weight:800 !important;
+        letter-spacing:-0.025em !important;
+        padding-right:0 !important;
+        margin:0 !important;
+    }}
+
+    .subtitle {{
+        color:#5B6575 !important;
+        font-size:14px !important;
+        line-height:1.35 !important;
+        font-weight:450 !important;
+        margin-top:4px !important;
+    }}
+
+    /* ------------------------------------------------------------
+       SELECTED FILTER SUMMARY
+       ------------------------------------------------------------ */
     .filter-summary-card {{
         display:flex;
         align-items:center;
+        min-height:54px;
         gap:0;
-        background:#FFFFFF;
+        background:#F8FBFE;
         border:1px solid #D5E1EA;
-        border-radius:12px;
-        box-shadow:0 2px 8px rgba(6,24,63,0.035);
-        margin:0 0 14px 0;
-        padding:11px 18px;
+        border-radius:11px;
+        box-shadow:0 1px 5px rgba(6,24,63,0.025);
+        margin:0 0 12px 0;
+        padding:7px 14px;
     }}
+
     .filter-summary-item {{
-        min-width:190px;
-        padding:0 24px 0 0;
-        margin-right:24px;
-        border-right:1px solid #E8EEF3;
+        display:grid;
+        grid-template-columns:30px minmax(0,1fr);
+        grid-template-rows:auto auto;
+        column-gap:8px;
+        align-items:center;
+        min-width:210px;
+        padding:0 22px 0 0;
+        margin-right:22px;
+        border-right:1px solid #E4EBF1;
     }}
-    .filter-summary-item:last-child {{ border-right:0; }}
+
+    .filter-summary-item:last-child {{
+        border-right:0;
+        margin-right:0;
+    }}
+
+    .filter-summary-icon {{
+        grid-row:1 / span 2;
+        width:28px;
+        height:28px;
+        border-radius:7px;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        color:#06183F;
+        background:#EEF7FC;
+        border:1px solid #D5EAF8;
+    }}
+
+    .filter-summary-icon svg {{
+        width:16px;
+        height:16px;
+        fill:none;
+        stroke:currentColor;
+        stroke-width:1.8;
+        stroke-linecap:round;
+        stroke-linejoin:round;
+    }}
+
     .filter-summary-label {{
         color:#5B6575;
-        font-size:11px;
-        font-weight:650;
-        margin-bottom:2px;
+        font-size:11.5px;
+        line-height:1.2;
+        font-weight:600;
+        margin:0;
     }}
+
     .filter-summary-value {{
         color:#06183F;
-        font-size:14px;
+        font-size:13.5px;
+        line-height:1.2;
         font-weight:750;
+        margin-top:1px;
     }}
 
-    /* Section title and cards */
+    /* ------------------------------------------------------------
+       SECTION HIERARCHY
+       ------------------------------------------------------------ */
     .section-title {{
         color:#06183F !important;
-        border-left:4px solid #E6761B !important;
+        font-size:19px !important;
+        line-height:1.22 !important;
         font-weight:800 !important;
-    }}
-    .kpi-card,.hc-kpi-card,.shipment-kpi-card,.pic-kpi-card,
-    .pic-status-card,.workload-status-panel,[data-testid="stPlotlyChart"],[data-testid="stDataFrame"] {{
-        border-color:#D5E1EA !important;
-        box-shadow:0 3px 10px rgba(6,24,63,0.04) !important;
+        border-left:4px solid #E6761B !important;
+        padding-left:9px !important;
+        margin:18px 0 9px 0 !important;
     }}
 
-    @media (max-width: 1100px) {{
-        .main-header::after {{ display:none; }}
-        .filter-summary-card {{ flex-wrap:wrap; gap:8px 0; }}
-        .filter-summary-item {{ min-width:150px; }}
+    /* ------------------------------------------------------------
+       KPI / CARD HIERARCHY
+       ------------------------------------------------------------ */
+    .kpi-card,
+    .hc-kpi-card,
+    .shipment-kpi-card,
+    .pic-kpi-card,
+    .pic-status-card,
+    .workload-status-panel,
+    [data-testid="stPlotlyChart"],
+    [data-testid="stDataFrame"] {{
+        background:#FFFFFF !important;
+        border:1px solid #D5E1EA !important;
+        border-radius:11px !important;
+        box-shadow:0 2px 7px rgba(6,24,63,0.035) !important;
+    }}
+
+    .kpi-label,
+    .shipment-kpi-label,
+    .pic-kpi-label {{
+        color:#5B6575 !important;
+        font-size:13px !important;
+        line-height:1.22 !important;
+        font-weight:650 !important;
+        letter-spacing:0.015em !important;
+        text-transform:none !important;
+    }}
+
+    .kpi-value,
+    .hc-kpi-total,
+    .shipment-kpi-value,
+    .pic-kpi-value,
+    .pic-status-value {{
+        font-size:32px !important;
+        line-height:1.04 !important;
+        font-weight:780 !important;
+        letter-spacing:-0.02em !important;
+    }}
+
+    /* Section 1 HC cards — compact but fully readable */
+    .hc-kpi-card {{
+        height:158px !important;
+        min-height:158px !important;
+        padding:14px 14px 12px 14px !important;
+    }}
+
+    .hc-kpi-total {{
+        margin-top:8px !important;
+        margin-bottom:5px !important;
+    }}
+
+    .hc-detail-row {{
+        padding-top:9px !important;
+        gap:8px !important;
+    }}
+
+    .hc-detail-label {{
+        font-size:11.5px !important;
+        font-weight:650 !important;
+    }}
+
+    .hc-detail-value {{
+        font-size:19px !important;
+        font-weight:750 !important;
+        margin-top:2px !important;
+    }}
+
+    .hc-variance-formula {{
+        font-size:11.5px !important;
+        line-height:1.25 !important;
+        margin-top:7px !important;
+        margin-bottom:6px !important;
+    }}
+
+    .status-badge {{
+        font-size:11.5px !important;
+        line-height:1.2 !important;
+        font-weight:750 !important;
+    }}
+
+    /* Other KPI cards */
+    .shipment-kpi-card {{
+        height:124px !important;
+        min-height:124px !important;
+        padding:14px 14px !important;
+    }}
+
+    .pic-kpi-card {{
+        height:136px !important;
+        min-height:136px !important;
+        padding:15px 14px 13px 14px !important;
+    }}
+
+    .pic-kpi-label {{
+        min-height:34px !important;
+        height:34px !important;
+        font-size:13px !important;
+        margin:0 0 6px 0 !important;
+    }}
+
+    .pic-kpi-note,
+    .kpi-note,
+    .shipment-kpi-note {{
+        font-size:11px !important;
+        line-height:1.3 !important;
+    }}
+
+    /* ------------------------------------------------------------
+       TABLE READABILITY
+       ------------------------------------------------------------ */
+    .paired-detail-table {{
+        font-size:12px !important;
+    }}
+
+    .paired-detail-table thead th {{
+        font-size:12px !important;
+        font-weight:700 !important;
+        padding:7px 7px !important;
+    }}
+
+    .paired-detail-table tbody td {{
+        font-size:12px !important;
+        padding:6px 7px !important;
+    }}
+
+    .customer-name-cell {{
+        font-size:11.5px !important;
+    }}
+
+    .paired-detail-foot {{
+        font-size:11px !important;
+    }}
+
+    [data-testid="stDataFrame"] {{
+        font-size:12px !important;
+    }}
+
+    /* ------------------------------------------------------------
+       PLOTLY / CHART CARD DENSITY
+       ------------------------------------------------------------ */
+    [data-testid="stPlotlyChart"] {{
+        padding:6px 8px 3px 8px !important;
+    }}
+
+    /* ------------------------------------------------------------
+       LAPTOP 1366 × 768
+       Reduce whitespace, not core readability.
+       ------------------------------------------------------------ */
+    @media (max-width:1366px) {{
+        section[data-testid="stSidebar"],
+        section[data-testid="stSidebar"] > div:first-child {{
+            width:260px !important;
+            min-width:260px !important;
+            max-width:260px !important;
+        }}
+
+        .block-container {{
+            padding-top:0.65rem !important;
+            padding-left:0.80rem !important;
+            padding-right:0.80rem !important;
+            padding-bottom:1.25rem !important;
+        }}
+
+        .main-header {{
+            padding:12px 16px 11px 16px !important;
+            margin-bottom:7px !important;
+        }}
+
+        .main-title {{
+            font-size:29px !important;
+        }}
+
+        .subtitle {{
+            font-size:14px !important;
+        }}
+
+        .filter-summary-card {{
+            min-height:50px !important;
+            padding:6px 12px !important;
+            margin-bottom:10px !important;
+        }}
+
+        .filter-summary-item {{
+            min-width:185px !important;
+            padding-right:18px !important;
+            margin-right:18px !important;
+        }}
+
+        .section-title {{
+            font-size:18px !important;
+            margin-top:16px !important;
+            margin-bottom:8px !important;
+        }}
+
+        .hc-kpi-card {{
+            height:150px !important;
+            min-height:150px !important;
+            padding:12px 12px 10px 12px !important;
+        }}
+
+        .kpi-value,
+        .hc-kpi-total,
+        .shipment-kpi-value,
+        .pic-kpi-value,
+        .pic-status-value {{
+            font-size:30px !important;
+        }}
+
+        .kpi-label,
+        .shipment-kpi-label,
+        .pic-kpi-label {{
+            font-size:12.5px !important;
+        }}
+
+        .shipment-kpi-card {{
+            height:118px !important;
+            min-height:118px !important;
+        }}
+
+        .pic-kpi-card {{
+            height:130px !important;
+            min-height:130px !important;
+        }}
+    }}
+
+    @media (max-width:1100px) {{
+        .filter-summary-card {{
+            flex-wrap:wrap;
+            gap:7px 0;
+        }}
+        .filter-summary-item {{
+            min-width:165px;
+        }}
     }}
     </style>
     """,
     unsafe_allow_html=True,
 )
+
 
 # ============================================================
 # HELPER FUNCTIONS
@@ -4930,10 +5271,22 @@ def main():
         </div>
         <div class="filter-summary-card">
             <div class="filter-summary-item">
+                <div class="filter-summary-icon">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <rect x="3" y="5" width="18" height="16" rx="2"></rect>
+                        <path d="M8 3v4M16 3v4M3 10h18"></path>
+                    </svg>
+                </div>
                 <div class="filter-summary-label">Selected Month</div>
                 <div class="filter-summary-value">{month}</div>
             </div>
             <div class="filter-summary-item">
+                <div class="filter-summary-icon">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M4 21V7l8-4 8 4v14"></path>
+                        <path d="M8 21v-6h8v6M8 9h2M14 9h2M8 12h2M14 12h2"></path>
+                    </svg>
+                </div>
                 <div class="filter-summary-label">Selected Office</div>
                 <div class="filter-summary-value">{office}</div>
             </div>
