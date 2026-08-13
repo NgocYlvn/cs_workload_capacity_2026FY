@@ -1893,7 +1893,7 @@ st.markdown(
 
     /* FTE Workload Status — align status text with adjacent KPI value */
     .workload-status-text {{
-        font-size:30px !important;
+        font-size:32px !important;
         line-height:1.05 !important;
         font-weight:800 !important;
         padding:7px 18px !important;
