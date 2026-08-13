@@ -3655,10 +3655,10 @@ def chart_shipment_modes(mode_df: pd.DataFrame):
         hovertemplate="<b>%{y}</b><br>Shipment Volume: %{x:,.0f}<br>Share: %{customdata:.1%}<extra></extra>",
         customdata=plot_df["Share"],
     ))
-    fig.update_layout(title_text="", xaxis_title="Shipment Volume", yaxis_title="", bargap=0.26)
+    fig.update_layout(title_text="", xaxis_title=None, yaxis_title="", bargap=0.26)
     fig.update_yaxes(categoryorder="array", categoryarray=plot_df["Mode"].tolist(), automargin=True, tickfont=dict(size=UI["axis_size"]))
     fig.update_xaxes(automargin=True, rangemode="tozero", tickformat=",.0f")
-    fig = plotly_layout(fig, SHIPMENT_PAIR_HEIGHT, show_legend=False, margin_left=58, margin_right=105, margin_top=24, margin_bottom=52)
+    fig = plotly_layout(fig, SHIPMENT_PAIR_HEIGHT, show_legend=False, margin_left=58, margin_right=105, margin_top=12, margin_bottom=52)
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
 def mode_detail_table(mode_df: pd.DataFrame):
@@ -3706,11 +3706,11 @@ def chart_top_customers(df: pd.DataFrame):
         st.info("No customer volume data available for selected filters.")
         return
     ranking = build_customer_ranking(df)
-    top = ranking.head(20).sort_values("Shipment Volume", ascending=True)
-    pair_panel_title("Top 20 Customers by Shipment Volume")
+    top = ranking.head(15).sort_values("Shipment Volume", ascending=True)
+    pair_panel_title("Top 15 Customers by Shipment Volume")
     fig = px.bar(top, x="Shipment Volume", y="Customer", orientation="h", text="Shipment Volume", color_discrete_sequence=[COLORS["blue"]])
     fig.update_traces(texttemplate="%{text:,.0f}", textposition="outside", cliponaxis=False, hovertemplate="%{y}<br>Shipment Volume: %{x:,.0f}<extra></extra>")
-    fig.update_layout(title_text="", yaxis_title="", xaxis_title="Shipment Volume", bargap=0.18)
+    fig.update_layout(title_text="", yaxis_title="", xaxis_title=None, bargap=0.18)
     fig.update_yaxes(automargin=True, tickfont=dict(size=UI["axis_size"]))
     fig.update_xaxes(automargin=True)
     fig = plotly_layout(fig, SHIPMENT_PAIR_HEIGHT, show_legend=False, margin_left=155, margin_right=60, margin_top=22, margin_bottom=50)
