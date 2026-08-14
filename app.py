@@ -2370,18 +2370,16 @@ def render_hc_office_comparison(hc_filtered_all_offices: pd.DataFrame) -> None:
             required = weighted_period_avg(office_df, "Total Required HC")
             gap = required - actual
             util = hc_capacity_utilization(office_df)
-            # Office status is determined by HC Gap = Required HC - Actual HC.
-            # > 0: shortage / OVERLOAD / Red
-            # = 0: balanced / BALANCED / Blue
-            # < 0: redundant / REDUNDANT / Green
-            if pd.isna(gap):
+            # Office status is determined by Office Workload (utilization),
+            # using the standard workload thresholds:
+            # < 90%       -> LESS LOAD / Green
+            # 90% - 95%   -> BALANCED / Blue
+            # >95% - 100% -> HIGH LOAD / Orange
+            # >100%       -> OVERLOAD / Red
+            if pd.isna(util):
                 status_text, status_color, status_bg = "NO DATA", COLORS["muted"], COLORS["light_blue"]
-            elif gap > 0:
-                status_text, status_color, status_bg = "OVERLOAD", COLORS["red"], "#FEE2E2"
-            elif gap < 0:
-                status_text, status_color, status_bg = "REDUNDANT", COLORS["green"], "#DCFCE7"
             else:
-                status_text, status_color, status_bg = "BALANCED", COLORS["blue"], "#E0F2FE"
+                status_text, status_color, status_bg = status_from_util(util)
 
         gap_class = "negative" if (not pd.isna(gap) and gap > 0) else ("positive" if (not pd.isna(gap) and gap < 0) else "")
         gap_text = "N/A" if pd.isna(gap) else f"{gap:+,.2f}"
