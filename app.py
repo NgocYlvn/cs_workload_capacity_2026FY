@@ -5812,7 +5812,7 @@ def main():
 
     with hc4:
         hc_variance_card(
-            "HC Variance",
+            "HC Gap",
             hc_variance,
             "Required HC − Actual HC",
             variance_status[0],
