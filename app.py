@@ -4335,7 +4335,7 @@ def chart_office_capacity_trend(df: pd.DataFrame):
     )
 
     fig.update_layout(
-        title="HC Capacity vs. Requirement Trend",
+        title="HC Capacity Trend",
         yaxis_title="HC",
         hovermode="x unified",
     )
