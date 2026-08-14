@@ -4836,17 +4836,20 @@ def chart_service_matrix(
 
     plot_df = seg[seg["Allocation Time (h)"] > 0].copy()
     plot_df = plot_df.sort_values("Workload Share", ascending=False).reset_index(drop=True)
+    # Ordered overlapping bubble cluster.
+    # plot_df is already sorted by Workload Share descending.
+    # Rank 1 = center; remaining ranks are arranged around it in visual order.
     flower_positions = [
-        (0.00, 0.00),    # largest / center
-        (-1.72, 0.10),   # left
-        (1.72, 0.10),    # right
-        (-1.15, 1.42),   # upper-left
-        (1.15, 1.42),    # upper-right
-        (-1.15, -1.42),  # lower-left
-        (1.15, -1.42),   # lower-right
-        (0.00, 2.05),
-        (0.00, -2.05),
-        (2.25, -0.95),
+        (0.00, 0.00),    # Rank 1 - center
+        (-1.22, 0.02),   # Rank 2 - left
+        (1.20, 0.02),    # Rank 3 - right
+        (-0.72, 1.03),   # Rank 4 - upper-left
+        (0.72, 1.03),    # Rank 5 - upper-right
+        (0.72, -0.98),   # Rank 6 - lower-right
+        (-0.72, -0.98),  # Rank 7 - lower-left
+        (0.00, 1.72),    # fallback Rank 8
+        (0.00, -1.72),   # fallback Rank 9
+        (1.72, -0.72),   # fallback Rank 10
     ]
     plot_df["x"] = [flower_positions[i][0] for i in range(len(plot_df))]
     plot_df["y"] = [flower_positions[i][1] for i in range(len(plot_df))]
@@ -4872,11 +4875,11 @@ def chart_service_matrix(
     fig.update_layout(title=dict(text=""))
     fig.update_xaxes(
         visible=False, showgrid=False, zeroline=False, showticklabels=False,
-        title_text="", range=[-2.15, 2.15], fixedrange=True
+        title_text="", range=[-1.95, 1.95], fixedrange=True
     )
     fig.update_yaxes(
         visible=False, showgrid=False, zeroline=False, showticklabels=False,
-        title_text="", range=[-2.25, 2.25], scaleanchor="x", scaleratio=1, fixedrange=True
+        title_text="", range=[-1.85, 1.85], scaleanchor="x", scaleratio=1, fixedrange=True
     )
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
