@@ -3895,19 +3895,19 @@ def render_case_office_cards(
                       border-top:1px solid #E7ECF1;
                       padding-top:11px;">
                     <div style="text-align:center;border-right:1px solid #E7ECF1;">
-                      <div style="color:{activity_meta['C'][1]};font-size:12px;font-weight:800;">C</div>
+                      <div style="color:{activity_meta['C'][1]};font-size:14px;font-weight:800;">C</div>
                       <div style="color:{COLORS['navy']};font-size:16px;font-weight:750;margin-top:4px;">{vals['C']:,.0f}</div>
                     </div>
                     <div style="text-align:center;border-right:1px solid #E7ECF1;">
-                      <div style="color:{activity_meta['A'][1]};font-size:12px;font-weight:800;">A</div>
+                      <div style="color:{activity_meta['A'][1]};font-size:14px;font-weight:800;">A</div>
                       <div style="color:{COLORS['navy']};font-size:16px;font-weight:750;margin-top:4px;">{vals['A']:,.0f}</div>
                     </div>
                     <div style="text-align:center;border-right:1px solid #E7ECF1;">
-                      <div style="color:{activity_meta['S'][1]};font-size:12px;font-weight:800;">S</div>
+                      <div style="color:{activity_meta['S'][1]};font-size:14px;font-weight:800;">S</div>
                       <div style="color:{COLORS['navy']};font-size:16px;font-weight:750;margin-top:4px;">{vals['S']:,.0f}</div>
                     </div>
                     <div style="text-align:center;">
-                      <div style="color:{activity_meta['E'][1]};font-size:12px;font-weight:800;">E</div>
+                      <div style="color:{activity_meta['E'][1]};font-size:14px;font-weight:800;">E</div>
                       <div style="color:{COLORS['navy']};font-size:16px;font-weight:750;margin-top:4px;">{vals['E']:,.0f}</div>
                     </div>
                   </div>
