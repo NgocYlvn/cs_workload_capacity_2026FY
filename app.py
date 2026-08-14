@@ -26,14 +26,14 @@ import streamlit as st
 # ============================================================
 
 st.set_page_config(
-    page_title="CS CAPACITY & PRODUCTIVITY",
+    page_title="CS OPERATIONS PERFORMANCE DASHBOARD",
     page_icon="📊",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
-APP_TITLE = "CS CAPACITY & PRODUCTIVITY"
-APP_SUBTITLE = "Capacity, Workload & Productivity Insights"
+APP_TITLE = "CS OPERATIONS PERFORMANCE DASHBOARD"
+APP_SUBTITLE = "Capacity • Workload • Utilization • Performance"
 DEFAULT_FILE = "(Not for Office Input) MASTER DATA SOURCE.xlsm"
 CAPACITY_HOURS_PER_FTE = 8 * 0.95 * 22  # 167.2 hours/FTE/month
 STANDARD_OFFICES = ["HAN", "HAD", "HLC", "HCM"]
