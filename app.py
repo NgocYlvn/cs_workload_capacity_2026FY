@@ -4351,7 +4351,7 @@ def chart_office_capacity_trend(df: pd.DataFrame):
 
 def chart_workload_by_pic(fte_df: pd.DataFrame, selected_office: str):
     """
-    PIC Workload.
+    PIC Workload & Capacity Utilization.
 
     Business display rule:
     - PIC Workload (hrs) = CS FTE Factor × Available Standard Time / PIC.
