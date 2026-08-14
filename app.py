@@ -6090,11 +6090,11 @@ def main():
   <div style="color:#667085;font-size:11px;margin-top:6px;"></div>
   <div style="height:1px;background:#E6ECF2;margin:24px 0 18px 0;"></div>
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-    <span style="color:#667085;font-size:12px;">Top Segment</span>
+    <span style="color:#667085;font-size:12px;">Leading</span>
     <span style="color:#003B70;font-size:14px;font-weight:700;">{top_segment}</span>
   </div>
   <div style="display:flex;justify-content:space-between;align-items:center;">
-    <span style="color:#667085;font-size:12px;">Top Segment Share</span>
+    <span style="color:#667085;font-size:12px;"> Workload Share</span>
     <span style="color:#003B70;font-size:14px;font-weight:700;">{top_share:.1%}</span>
   </div>
   </div>
