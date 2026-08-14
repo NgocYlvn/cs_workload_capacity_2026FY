@@ -3739,94 +3739,193 @@ def workload_breakdown_table(df: pd.DataFrame) -> pd.DataFrame:
 
 
 
-def render_case_office_cards(df: pd.DataFrame):
-    """Section 5: one executive C/A/S/E workload card per Office."""
-    if df is None or df.empty or "Office" not in df.columns:
-        return
+def render_case_office_cards(
+    core_df: pd.DataFrame,
+    ancillary_df: pd.DataFrame,
+    supporting_df: pd.DataFrame,
+    exception_df: pd.DataFrame,
+):
+    """
+    Section 5 executive cards by Office.
 
-    d = df.copy()
-    component_cols = {
-        "C": "Core Workload (min)",
-        "A": "Ancillary Workload (min)",
-        "S": "Supporting Workload (min)",
-        "E": "Exception Workload (min)",
+    IMPORTANT:
+    - Cards use the four original C/A/S/E detail sources, not the summarized
+      Workload-by-Activity table.
+    - "Volume" in each detail source is summed by Office, therefore each office
+      shows its own C / A / S / E quantity and does not repeat the network total.
+    - HPH is displayed as HLC to follow the dashboard's standard office naming.
+    """
+
+    activity_sources = {
+        "C": core_df,
+        "A": ancillary_df,
+        "S": supporting_df,
+        "E": exception_df,
     }
-    for source_col in component_cols.values():
-        if source_col not in d.columns:
-            d[source_col] = 0.0
-        d[source_col] = pd.to_numeric(d[source_col], errors="coerce").fillna(0.0)
 
-    d["Office"] = d["Office"].astype(str).str.strip().str.upper()
-    d = d[d["Office"].ne("")]
-    if d.empty:
+    frames = []
+    for activity, source in activity_sources.items():
+        if source is None or source.empty:
+            continue
+        if "Office" not in source.columns or "Volume" not in source.columns:
+            continue
+
+        d = source[["Office", "Volume"]].copy()
+        d["Office"] = d["Office"].astype(str).str.strip().str.upper()
+        d["Office"] = d["Office"].replace({"HPH": "HLC"})
+        d["Volume"] = pd.to_numeric(d["Volume"], errors="coerce").fillna(0.0)
+        d = d[(d["Office"] != "") & (d["Volume"] > 0)]
+
+        if d.empty:
+            continue
+
+        g = d.groupby("Office", as_index=False)["Volume"].sum()
+        g["Activity"] = activity
+        frames.append(g)
+
+    if not frames:
         return
 
-    summary = d.groupby("Office", as_index=False)[list(component_cols.values())].sum()
-    present = summary["Office"].tolist()
+    long_summary = pd.concat(frames, ignore_index=True)
+
+    summary = (
+        long_summary.pivot_table(
+            index="Office",
+            columns="Activity",
+            values="Volume",
+            aggfunc="sum",
+            fill_value=0,
+        )
+        .reset_index()
+    )
+
+    for activity in ["C", "A", "S", "E"]:
+        if activity not in summary.columns:
+            summary[activity] = 0.0
+
+    summary["Total"] = summary[["C", "A", "S", "E"]].sum(axis=1)
+
+    present = summary["Office"].astype(str).tolist()
     offices = [o for o in STANDARD_OFFICES if o in present]
     offices += sorted([o for o in present if o not in offices])
+
     if not offices:
         return
 
     st.markdown(
-        f"""<div style="color:{COLORS['navy']};font-size:{UI['chart_title_size']}px;
-        font-weight:700;margin:4px 0 10px 2px;">C / A / S / E Workload by Office</div>""",
+        f"""
+        <div style="
+            color:{COLORS['navy']};
+            font-size:{UI['chart_title_size']}px;
+            font-weight:700;
+            margin:4px 0 10px 2px;">
+            C / A / S / E Activity by Office
+        </div>
+        """,
         unsafe_allow_html=True,
     )
 
     card_cols = st.columns(len(offices), gap="medium")
+
+    activity_meta = {
+        "C": ("Core", COLORS["blue"]),
+        "A": ("Ancillary", COLORS["green"]),
+        "S": ("Supporting", COLORS["amber"]),
+        "E": ("Exception", COLORS["red"]),
+    }
+
     for card_col, office in zip(card_cols, offices):
         row = summary.loc[summary["Office"] == office].iloc[0]
-        vals = {k: float(row[v]) / 60 for k, v in component_cols.items()}
-        total = sum(vals.values())
+
+        vals = {
+            activity: float(pd.to_numeric(row.get(activity, 0), errors="coerce") or 0)
+            for activity in ["C", "A", "S", "E"]
+        }
+        total = float(sum(vals.values()))
 
         with card_col:
             st.markdown(
                 f"""
-                <div style="background:#FFFFFF;border:1px solid {COLORS['border']};
-                    border-top:4px solid {COLORS['navy']};border-radius:12px;
-                    padding:14px 16px 13px;min-height:168px;box-sizing:border-box;
+                <div style="
+                    background:#FFFFFF;
+                    border:1px solid {COLORS['border']};
+                    border-top:4px solid {COLORS['navy']};
+                    border-radius:12px;
+                    padding:14px 16px 13px;
+                    min-height:168px;
+                    box-sizing:border-box;
                     box-shadow:0 2px 7px rgba(0,59,112,0.045);">
-                  <div style="display:flex;justify-content:space-between;align-items:flex-start;
-                      gap:10px;margin-bottom:10px;">
-                    <div style="color:{COLORS['navy']};font-size:18px;font-weight:800;">
+
+                  <div style="
+                      display:flex;
+                      justify-content:space-between;
+                      align-items:flex-start;
+                      gap:10px;
+                      margin-bottom:10px;">
+                    <div style="
+                        color:{COLORS['navy']};
+                        font-size:18px;
+                        font-weight:800;">
                       {html.escape(office)}
                     </div>
+
                     <div style="text-align:right;">
-                      <div style="color:#667085;font-size:10.5px;font-weight:600;">TOTAL WORKLOAD</div>
-                      <div style="color:{COLORS['navy']};font-size:20px;font-weight:800;margin-top:2px;">
-                        {total:,.1f}
+                      <div style="
+                          color:#667085;
+                          font-size:10.5px;
+                          font-weight:600;">
+                        TOTAL ACTIVITY
                       </div>
-                      <div style="color:#667085;font-size:10px;">hours</div>
+                      <div style="
+                          color:{COLORS['navy']};
+                          font-size:20px;
+                          font-weight:800;
+                          margin-top:2px;">
+                        {total:,.0f}
+                      </div>
                     </div>
                   </div>
-                  <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));
-                      border-top:1px solid #E7ECF1;padding-top:11px;">
+
+                  <div style="
+                      display:grid;
+                      grid-template-columns:repeat(4,minmax(0,1fr));
+                      border-top:1px solid #E7ECF1;
+                      padding-top:11px;">
                     <div style="text-align:center;border-right:1px solid #E7ECF1;">
-                      <div style="color:{COLORS['blue']};font-size:12px;font-weight:800;">C</div>
-                      <div style="color:{COLORS['navy']};font-size:16px;font-weight:750;margin-top:4px;">{vals['C']:,.1f}</div>
+                      <div style="color:{activity_meta['C'][1]};font-size:12px;font-weight:800;">C</div>
+                      <div style="color:{COLORS['navy']};font-size:16px;font-weight:750;margin-top:4px;">{vals['C']:,.0f}</div>
                     </div>
                     <div style="text-align:center;border-right:1px solid #E7ECF1;">
-                      <div style="color:{COLORS['green']};font-size:12px;font-weight:800;">A</div>
-                      <div style="color:{COLORS['navy']};font-size:16px;font-weight:750;margin-top:4px;">{vals['A']:,.1f}</div>
+                      <div style="color:{activity_meta['A'][1]};font-size:12px;font-weight:800;">A</div>
+                      <div style="color:{COLORS['navy']};font-size:16px;font-weight:750;margin-top:4px;">{vals['A']:,.0f}</div>
                     </div>
                     <div style="text-align:center;border-right:1px solid #E7ECF1;">
-                      <div style="color:{COLORS['amber']};font-size:12px;font-weight:800;">S</div>
-                      <div style="color:{COLORS['navy']};font-size:16px;font-weight:750;margin-top:4px;">{vals['S']:,.1f}</div>
+                      <div style="color:{activity_meta['S'][1]};font-size:12px;font-weight:800;">S</div>
+                      <div style="color:{COLORS['navy']};font-size:16px;font-weight:750;margin-top:4px;">{vals['S']:,.0f}</div>
                     </div>
                     <div style="text-align:center;">
-                      <div style="color:{COLORS['red']};font-size:12px;font-weight:800;">E</div>
-                      <div style="color:{COLORS['navy']};font-size:16px;font-weight:750;margin-top:4px;">{vals['E']:,.1f}</div>
+                      <div style="color:{activity_meta['E'][1]};font-size:12px;font-weight:800;">E</div>
+                      <div style="color:{COLORS['navy']};font-size:16px;font-weight:750;margin-top:4px;">{vals['E']:,.0f}</div>
                     </div>
                   </div>
-                  <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));
-                      margin-top:4px;color:#667085;font-size:9.5px;text-align:center;">
-                    <div>Core</div><div>Ancillary</div><div>Supporting</div><div>Exception</div>
+
+                  <div style="
+                      display:grid;
+                      grid-template-columns:repeat(4,minmax(0,1fr));
+                      margin-top:4px;
+                      color:#667085;
+                      font-size:9.5px;
+                      text-align:center;">
+                    <div>Core</div>
+                    <div>Ancillary</div>
+                    <div>Supporting</div>
+                    <div>Exception</div>
                   </div>
                 </div>
                 """,
                 unsafe_allow_html=True,
             )
+
 
 
 def chart_case_allocation(df: pd.DataFrame):
@@ -6241,7 +6340,12 @@ def main():
     )
 
     # C/A/S/E summary cards by Office — same executive idea as the HC office cards.
-    render_case_office_cards(f_workload)
+    render_case_office_cards(
+        f_core_detail,
+        f_ancillary_detail,
+        f_supporting_detail,
+        f_exception_detail,
+    )
 
     # Summary table + C/A/S/E allocation chart
     wb_chart, wb_table = st.columns([0.43, 0.57], gap="medium")
