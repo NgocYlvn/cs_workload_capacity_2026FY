@@ -5256,7 +5256,8 @@ footer{display:none!important}
 }
 
 .cover-title-accent{
-    width:72px;
+    width:100%;
+    max-width:100%;
     height:5px;
     border-radius:999px;
     background:#E6761B;
