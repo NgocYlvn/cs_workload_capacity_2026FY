@@ -4497,7 +4497,7 @@ def chart_workload_by_pic(fte_df: pd.DataFrame, selected_office: str):
     fig.update_layout(
         title=dict(
             text=(
-                "PIC Workload & Capacity Utilization"
+                "PIC Workload"
                 f"<br><span style='font-size:11px;color:#667085;font-weight:400'>{subtitle}</span>"
             ),
             x=0.0,
