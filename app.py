@@ -4844,24 +4844,34 @@ def chart_service_matrix(
     # 1 center, 2 left, 3 right, 4 upper-left, 5 upper-right,
     # 6 lower-right, 7 lower-left/bottom.
     # Coordinates are intentionally close so bubbles overlap visibly.
-    # Ranked compact cluster.
-    # plot_df is sorted by Workload Share descending.
-    # Visual reading order after the two dominant bubbles:
-    # Rank 3 -> Rank 4 -> Rank 5 -> Rank 6 -> Rank 7 clockwise.
-    flower_positions = [
-        (0.10, 0.00),     # Rank 1 - center / dominant
-        (-0.56, 0.00),    # Rank 2 - left / dominant, overlaps Rank 1
-        (0.68, 0.10),     # Rank 3 - right
-        (0.34, 0.58),     # Rank 4 - upper-right
-        (-0.30, 0.58),    # Rank 5 - upper-left
-        (-0.28, -0.58),   # Rank 6 - lower-left
-        (0.38, -0.58),    # Rank 7 - lower-right
-        (0.00, 0.92),     # fallback Rank 8
-        (0.00, -0.92),    # fallback Rank 9
-        (0.88, -0.35),    # fallback Rank 10
+    # Dynamic ranked overlapping bubble cluster.
+    # IMPORTANT: positions are assigned by CURRENT RANK, not by Segment name.
+    # Therefore the layout automatically changes with Office / Month / filters.
+    #
+    # plot_df is already sorted by Workload Share descending:
+    # Rank 1 -> center
+    # Rank 2 -> left
+    # Rank 3 -> upper-left
+    # Rank 4 -> top
+    # Rank 5 -> upper-right
+    # Rank 6 -> lower-right
+    # Rank 7 -> lower-left
+    rank_positions = [
+        (0.00, 0.00),     # Rank 1
+        (-0.58, 0.00),    # Rank 2
+        (-0.38, 0.52),    # Rank 3
+        (0.05, 0.66),     # Rank 4
+        (0.50, 0.42),     # Rank 5
+        (0.50, -0.38),    # Rank 6
+        (-0.22, -0.58),   # Rank 7
+        (-0.64, -0.34),   # fallback Rank 8
+        (0.00, -0.72),    # fallback Rank 9
+        (0.72, 0.00),     # fallback Rank 10
     ]
-    plot_df["x"] = [flower_positions[i][0] for i in range(len(plot_df))]
-    plot_df["y"] = [flower_positions[i][1] for i in range(len(plot_df))]
+
+    plot_df["Rank"] = np.arange(1, len(plot_df) + 1)
+    plot_df["x"] = [rank_positions[i][0] for i in range(len(plot_df))]
+    plot_df["y"] = [rank_positions[i][1] for i in range(len(plot_df))]
     max_share = float(plot_df["Workload Share"].max())
     plot_df["Bubble Size"] = 74 + (plot_df["Workload Share"] / max_share) * 100 if max_share > 0 else 88
     segment_color_map = {svc: CORPORATE_PALETTE[i % len(CORPORATE_PALETTE)] for i, svc in enumerate(SERVICE_ORDER)}
