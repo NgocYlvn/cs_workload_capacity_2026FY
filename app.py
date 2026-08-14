@@ -3873,7 +3873,7 @@ def render_case_office_cards(
                           color:#667085;
                           font-size:10.5px;
                           font-weight:600;">
-                        TOTAL ACTIVITY
+                        TOTAL ACTIVITY VOLUME
                       </div>
                       <div style="
                           color:{COLORS['navy']};
