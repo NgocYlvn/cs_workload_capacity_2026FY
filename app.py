@@ -5976,7 +5976,7 @@ def main():
             "Total Available Time",
             fmt_num(total_available, 1)
             if not pd.isna(total_available) else "N/A",
-            "95% × 8 × 22 × PIC",
+            "95% × 8 × 22 × PIC (hour)",
         )
 
     with p2:
