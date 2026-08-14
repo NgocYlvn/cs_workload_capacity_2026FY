@@ -176,14 +176,16 @@ st.markdown(
         color: {COLORS['text']};
     }}
 
-    /* Reduce top whitespace and move dashboard content upward */
-    .block-container {{
-        padding-top: 0.15rem !important;
-    }}
+/* Reduce top whitespace and move dashboard content upward */
+[data-testid="stMainBlockContainer"],
+.block-container {
+    padding-top: 0rem !important;
+    margin-top: -3.5rem !important;
+}
 
-    .main-header {{
-        margin-top: 0 !important;
-    }}
+.main-header {
+    margin-top: 0 !important;
+}
     section[data-testid="stSidebar"] {{
         background: {COLORS['navy']};
     }}
