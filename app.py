@@ -2447,7 +2447,7 @@ def render_fte_office_comparison(fte_filtered_all_offices: pd.DataFrame, selecte
                 [
                     ("Available Time", "N/A" if pd.isna(available) else fmt_num(available, 0), ""),
                     ("Actual Time", "N/A" if pd.isna(actual) else fmt_num(actual, 0), ""),
-                    ("Gap", "N/A" if pd.isna(variance) else fmt_num(variance, 1), variance_class),
+                    ("Gap", "N/A" if pd.isna(variance) else fmt_num(variance, 0), variance_class),
                     ("Status", status_text.title(), ""),
                 ],
                 status_text, status_color, status_bg,
