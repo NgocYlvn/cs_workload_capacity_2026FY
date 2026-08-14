@@ -5869,22 +5869,13 @@ def main():
     with sk4:
         st.empty()
 
-    # Row 1: both charts on the same row.
-    # Customer chart gets slightly more width because customer names are longer.
-    mode_chart_col, customer_chart_col = st.columns([0.42, 0.58], gap="medium")
-
-    with mode_chart_col:
-        chart_shipment_modes(f_mode)
+    # Customer shipment analysis:
+    # Remove Transportation Mode chart/detail from the dashboard.
+    # Show Top 15 Customers chart and Customer Volume Detail on the same row.
+    customer_chart_col, customer_detail_col = st.columns([0.58, 0.42], gap="medium")
 
     with customer_chart_col:
         chart_top_customers(f_customer_ns)
-
-    # Row 2: both detail tables on the same row.
-    # Customer detail gets more width for long customer names.
-    mode_detail_col, customer_detail_col = st.columns([0.42, 0.58], gap="medium")
-
-    with mode_detail_col:
-        mode_detail_table(f_mode)
 
     with customer_detail_col:
         customer_detail_volume_table(f_customer_ns)
