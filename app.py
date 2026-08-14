@@ -5245,7 +5245,7 @@ def chart_resolution(df: pd.DataFrame):
     fig.add_trace(go.Bar(x=agg["Month"], y=agg["Total Abnormality"], name="Total Exception Case", marker_color=BUSINESS_COLORS["supporting"], text=agg["Total Abnormality"], texttemplate="%{text:,.0f}", textposition="outside", cliponaxis=False))
     fig.add_trace(go.Bar(x=agg["Month"], y=agg["Resolved"], name="Resolved by CS", marker_color=BUSINESS_COLORS["actual"], text=agg["Resolved"], texttemplate="%{text:,.0f}", textposition="outside", cliponaxis=False))
     fig.add_trace(go.Scatter(x=agg["Month"], y=agg["Resolution Rate"], name="CS Resolution Rate", mode="lines+markers+text", line=dict(color=COLORS["green"], width=3), marker=dict(size=7), text=agg["Resolution Rate"], texttemplate="%{text:.1%}", textposition="top center", yaxis="y2"))
-    fig.update_layout(title_text="", barmode="group", yaxis=dict(title="Cases", rangemode="tozero"), yaxis2=dict(title="Resolution Rate", overlaying="y", side="right", tickformat=".0%", range=[0, 1.00], showgrid=False))
+    fig.update_layout(title_text="", barmode="group", yaxis=dict(title="Cases", rangemode="tozero"), yaxis2=dict(title="Resolution Rate", overlaying="y", side="right", tickformat=".0%", range=[0, 1.20], showgrid=False))
     fig = plotly_layout(fig, 390, show_legend=True, legend_position="top", margin_left=58, margin_right=68, margin_top=38, margin_bottom=44)
     fig.update_xaxes(type="category", categoryorder="array", categoryarray=agg["Month"].tolist())
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
