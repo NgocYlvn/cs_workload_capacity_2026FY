@@ -4146,11 +4146,14 @@ def render_activity_detail_table(
     if months_with_data:
         st.caption("Months with data: " + ", ".join(months_with_data))
 
-    # Compact detail table: keep the four operational fields narrow and balanced.
-    compact_config = {
-        "Office": st.column_config.TextColumn("Office", width=55),
-        "Month": st.column_config.TextColumn("Month", width=65),
-        "Code": st.column_config.TextColumn("Code", width="medium"),
+    # Responsive detail table:
+    # - Office / Month / Code / Volume stay compact.
+    # - Code Description receives the remaining width.
+    # - The dataframe fills the whole panel, avoiding the large blank area on the right.
+    responsive_config = {
+        "Office": st.column_config.TextColumn("Office", width="small"),
+        "Month": st.column_config.TextColumn("Month", width="small"),
+        "Code": st.column_config.TextColumn("Code", width="small"),
         "Code Description": st.column_config.TextColumn(
             "Code Description", width="large"
         ),
@@ -4161,10 +4164,10 @@ def render_activity_detail_table(
 
     st.dataframe(
         d,
-        use_container_width=False,
+        use_container_width=True,
         hide_index=True,
         height=min(420, max(160, 38 + len(d) * 34)),
-        column_config={c: compact_config[c] for c in d.columns if c in compact_config},
+        column_config={c: responsive_config[c] for c in d.columns if c in responsive_config},
     )
 
 
