@@ -237,8 +237,8 @@ st.markdown(
         border: 1px solid {COLORS['border']};
         border-left: 7px solid {COLORS['blue']};
         border-radius: 14px;
-        padding: 18px 22px;
-        margin-bottom: 14px;
+        padding: 10px 16px;
+        margin-bottom: 8px;
         box-shadow: 0 2px 10px rgba(0,0,0,0.04);
     }}
     .main-title {{
