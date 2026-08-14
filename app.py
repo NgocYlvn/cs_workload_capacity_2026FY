@@ -5086,7 +5086,7 @@ def render_cs_solution_table(df: pd.DataFrame):
             "Office": st.column_config.TextColumn("Office", width=70),
             "Month": st.column_config.TextColumn("Month", width=80),
             "Total Abnormality": st.column_config.NumberColumn(
-                "Total Abnormalities", width="medium", format="%,.0f"
+                "Total Exception Case", width="medium", format="%,.0f"
             ),
             "Resolved": st.column_config.NumberColumn(
                 "Resolved by CS", width="medium", format="%,.0f"
@@ -6196,7 +6196,7 @@ def main():
         cs1, cs2, cs3 = st.columns(3, gap="medium")
         with cs1:
             kpi_card(
-                "Total Abnormalities",
+                "Total Exception Case",
                 fmt_int(total_abn),
                 "",
             )
