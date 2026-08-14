@@ -2447,7 +2447,7 @@ def render_fte_office_comparison(fte_filtered_all_offices: pd.DataFrame, selecte
                 [
                     ("Available Time", "N/A" if pd.isna(available) else fmt_num(available, 0), ""),
                     ("Actual Time", "N/A" if pd.isna(actual) else fmt_num(actual, 0), ""),
-                    ("Gap", "N/A" if pd.isna(variance) else fmt_num(variance, 0), variance_class),
+                    ("Gap", "N/A" if pd.isna(variance) else fmt_num(variance, 1), variance_class),
                     ("Status", status_text.title(), ""),
                 ],
                 status_text, status_color, status_bg,
@@ -3873,7 +3873,7 @@ def render_case_office_cards(
                           color:#667085;
                           font-size:10.5px;
                           font-weight:600;">
-                        TOTAL ACTIVITY VOLUME
+                        TOTAL ACTIVITY
                       </div>
                       <div style="
                           color:{COLORS['navy']};
@@ -4148,8 +4148,8 @@ def render_activity_detail_table(
 
     # Compact detail table: keep the four operational fields narrow and balanced.
     compact_config = {
-        "Office": st.column_config.TextColumn("Office", width=70),
-        "Month": st.column_config.TextColumn("Month", width=80),
+        "Office": st.column_config.TextColumn("Office", width=55),
+        "Month": st.column_config.TextColumn("Month", width=65),
         "Code": st.column_config.TextColumn("Code", width="medium"),
         "Code Description": st.column_config.TextColumn(
             "Code Description", width="large"
@@ -5275,13 +5275,13 @@ def render_cs_solution_table(df: pd.DataFrame):
             "Office": st.column_config.TextColumn("Office", width=70),
             "Month": st.column_config.TextColumn("Month", width=80),
             "Total Abnormality": st.column_config.NumberColumn(
-                "Total Exception Case", width="medium", format="%,.0f"
+                "Total Exception Case", width=135, format="%,.0f"
             ),
             "Resolved": st.column_config.NumberColumn(
-                "Resolved by CS", width="medium", format="%,.0f"
+                "Resolved by CS", width=120, format="%,.0f"
             ),
             "Resolution Rate (%)": st.column_config.NumberColumn(
-                "CS Resolution Rate", width=120, format="%.2f%%"
+                "CS Resolution Rate", width=115, format="%.2f%%"
             ),
         },
     )
