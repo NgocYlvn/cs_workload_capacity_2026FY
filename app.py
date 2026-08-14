@@ -4146,28 +4146,24 @@ def render_activity_detail_table(
     if months_with_data:
         st.caption("Months with data: " + ", ".join(months_with_data))
 
-    # Responsive detail table:
-    # - Office / Month / Code / Volume stay compact.
-    # - Code Description receives the remaining width.
-    # - The dataframe fills the whole panel, avoiding the large blank area on the right.
-    responsive_config = {
-        "Office": st.column_config.TextColumn("Office", width="small"),
-        "Month": st.column_config.TextColumn("Month", width="small"),
-        "Code": st.column_config.TextColumn("Code", width="small"),
-        "Code Description": st.column_config.TextColumn(
-            "Code Description", width="large"
-        ),
+    # Activity Detail table:
+    # No fixed width is applied. Streamlit determines each column width from content.
+    auto_fit_config = {
+        "Office": st.column_config.TextColumn("Office"),
+        "Month": st.column_config.TextColumn("Month"),
+        "Code": st.column_config.TextColumn("Code"),
+        "Code Description": st.column_config.TextColumn("Code Description"),
         "Volume": st.column_config.NumberColumn(
-            "Volume", format="%,.0f", width="small"
+            "Volume", format="%,.0f"
         ),
     }
 
     st.dataframe(
         d,
-        use_container_width=True,
+        use_container_width=False,
         hide_index=True,
         height=min(420, max(160, 38 + len(d) * 34)),
-        column_config={c: responsive_config[c] for c in d.columns if c in responsive_config},
+        column_config={c: auto_fit_config[c] for c in d.columns if c in auto_fit_config},
     )
 
 
