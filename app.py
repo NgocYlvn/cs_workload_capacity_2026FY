@@ -5043,7 +5043,7 @@ def render_cs_solution_table(df: pd.DataFrame):
     if df is None or df.empty:
         st.info("No CS Resolution data available for selected filters.")
         return
-    pair_panel_title("CS Resolution")
+    pair_panel_title("CS Resolution by Office")
     d = df.copy().sort_values(["Office", "MonthDate"])
     d["Month"] = d["MonthDate"].dt.strftime("%b-%y")
     display = d[["Office", "Month", "Total Abnormality", "Resolved", "Resolution Rate"]].copy()
