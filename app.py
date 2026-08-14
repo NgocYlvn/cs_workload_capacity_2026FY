@@ -3875,7 +3875,7 @@ def render_case_office_cards(
                     <div style="text-align:right;">
                       <div style="
                           color:#667085;
-                          font-size:11.5px;
+                          font-size:10px;
                           font-weight:600;">
                         TOTAL ACTIVITY
                       </div>
@@ -3895,20 +3895,20 @@ def render_case_office_cards(
                       border-top:1px solid #E7ECF1;
                       padding-top:11px;">
                     <div style="text-align:center;border-right:1px solid #E7ECF1;">
-                      <div style="color:{activity_meta['C'][1]};font-size:14px;font-weight:800;">C</div>
-                      <div style="color:{COLORS['navy']};font-size:18px;font-weight:750;margin-top:4px;">{vals['C']:,.0f}</div>
+                      <div style="color:{activity_meta['C'][1]};font-size:10px;font-weight:700;">C</div>
+                      <div style="color:{COLORS['navy']};font-size:15px;font-weight:750;margin-top:4px;">{vals['C']:,.0f}</div>
                     </div>
                     <div style="text-align:center;border-right:1px solid #E7ECF1;">
-                      <div style="color:{activity_meta['A'][1]};font-size:14px;font-weight:800;">A</div>
-                      <div style="color:{COLORS['navy']};font-size:18px;font-weight:750;margin-top:4px;">{vals['A']:,.0f}</div>
+                      <div style="color:{activity_meta['A'][1]};font-size:10px;font-weight:700;">A</div>
+                      <div style="color:{COLORS['navy']};font-size:15px;font-weight:750;margin-top:4px;">{vals['A']:,.0f}</div>
                     </div>
                     <div style="text-align:center;border-right:1px solid #E7ECF1;">
-                      <div style="color:{activity_meta['S'][1]};font-size:14px;font-weight:800;">S</div>
-                      <div style="color:{COLORS['navy']};font-size:18px;font-weight:750;margin-top:4px;">{vals['S']:,.0f}</div>
+                      <div style="color:{activity_meta['S'][1]};font-size:10px;font-weight:700;">S</div>
+                      <div style="color:{COLORS['navy']};font-size:15px;font-weight:750;margin-top:4px;">{vals['S']:,.0f}</div>
                     </div>
                     <div style="text-align:center;">
-                      <div style="color:{activity_meta['E'][1]};font-size:14px;font-weight:800;">E</div>
-                      <div style="color:{COLORS['navy']};font-size:18px;font-weight:750;margin-top:4px;">{vals['E']:,.0f}</div>
+                      <div style="color:{activity_meta['E'][1]};font-size:10px;font-weight:700;">E</div>
+                      <div style="color:{COLORS['navy']};font-size:15px;font-weight:750;margin-top:4px;">{vals['E']:,.0f}</div>
                     </div>
                   </div>
 
@@ -3917,7 +3917,7 @@ def render_case_office_cards(
                       grid-template-columns:repeat(4,minmax(0,1fr));
                       margin-top:4px;
                       color:#667085;
-                      font-size:11px;
+                      font-size:9.5px;
                       text-align:center;">
                     <div>Core</div>
                     <div>Ancillary</div>
