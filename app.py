@@ -3844,8 +3844,7 @@ def render_case_office_cards(
         total = float(sum(vals.values()))
 
         with card_col:
-            st.markdown(
-                f"""
+            card_html = f"""
                 <div style="
                     background:#FFFFFF;
                     border:1px solid {COLORS['border']};
@@ -3922,9 +3921,9 @@ def render_case_office_cards(
                     <div>Exception</div>
                   </div>
                 </div>
-                """,
-                unsafe_allow_html=True,
-            )
+                """
+            card_html = "\n".join(line.lstrip() for line in card_html.splitlines())
+            st.markdown(card_html, unsafe_allow_html=True)
 
 
 
