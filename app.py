@@ -3825,7 +3825,11 @@ def render_case_office_cards(
         unsafe_allow_html=True,
     )
 
-    card_cols = st.columns(len(offices), gap="medium")
+    # Keep Office cards compact when filters return fewer than 4 offices.
+    # All Offices: 4 cards fill the row as before.
+    # Single Office: card uses only 1/4 row width instead of stretching full width.
+    slot_count = max(4, len(offices))
+    card_cols = st.columns(slot_count, gap="medium")[:len(offices)]
 
     activity_meta = {
         "C": ("Core", COLORS["blue"]),
