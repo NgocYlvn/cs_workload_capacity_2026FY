@@ -6108,7 +6108,7 @@ def main():
     segment_workload_table(f_workload, f_mode)
 
     
-    section_title("5. Workload Breakdown by Activity")
+    section_title("5. Workload Breakdown by Activity vs Segment")
 
     st.markdown(
         """
