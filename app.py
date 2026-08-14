@@ -5876,7 +5876,7 @@ def main():
     # Sidebar order: Month -> Office -> Upload file. No Year and no Reset button.
     # UI only: styled to match the approved Yusen executive HOME format.
     with st.sidebar:
-        if st.button("⌂  HOME", use_container_width=True, key="back_to_cover_btn"):
+        if st.button("HOME", icon=":material/home:", use_container_width=True, key="back_to_cover_btn"):
             st.session_state["dashboard_entered"] = False
             st.rerun()
         st.markdown('<div class="sidebar-filter-title">FILTERS</div><div class="sidebar-filter-spacer"></div>', unsafe_allow_html=True)
@@ -6625,15 +6625,15 @@ st.markdown(
     <style>
     /* Give FILTERS a little more breathing room before MONTH */
     .sidebar-filter-spacer {
-        height: 8px !important;
-        min-height: 8px !important;
+        height: 14px !important;
+        min-height: 14px !important;
     }
 
     /* Push Upload + Version area lower on normal laptop screens.
        This is visual spacing only; upload/filter logic is unchanged. */
     .sidebar-bottom-anchor {
-        height: clamp(70px, 12vh, 145px) !important;
-        min-height: 70px !important;
+        height: clamp(150px, 28vh, 360px) !important;
+        min-height: 150px !important;
     }
 
     /* Keep the lower block visually compact once it reaches the bottom area */
@@ -6643,15 +6643,15 @@ st.markdown(
     }
 
     .sidebar-footer {
-        margin-top: 30px !important;
+        margin-top: 26px !important;
         padding-top: 12px !important;
     }
 
     /* On shorter screens, reduce the spacer automatically to avoid clipping */
     @media (max-height: 760px) {
         .sidebar-bottom-anchor {
-            height: 48px !important;
-            min-height: 48px !important;
+            height: 95px !important;
+            min-height: 95px !important;
         }
         .sidebar-footer {
             margin-top: 20px !important;
@@ -6660,8 +6660,8 @@ st.markdown(
 
     @media (max-height: 650px) {
         .sidebar-bottom-anchor {
-            height: 24px !important;
-            min-height: 24px !important;
+            height: 48px !important;
+            min-height: 48px !important;
         }
         .sidebar-footer {
             margin-top: 14px !important;
