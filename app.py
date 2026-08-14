@@ -4844,22 +4844,26 @@ def chart_service_matrix(
     # 1 center, 2 left, 3 right, 4 upper-left, 5 upper-right,
     # 6 lower-right, 7 lower-left/bottom.
     # Coordinates are intentionally close so bubbles overlap visibly.
+    # Ranked compact cluster.
+    # plot_df is sorted by Workload Share descending.
+    # Visual reading order after the two dominant bubbles:
+    # Rank 3 -> Rank 4 -> Rank 5 -> Rank 6 -> Rank 7 clockwise.
     flower_positions = [
-        (0.00, 0.00),     # Rank 1 - center
-        (-0.66, 0.00),    # Rank 2 - left, overlaps center
-        (0.68, 0.03),     # Rank 3 - right, overlaps center
-        (-0.38, 0.62),    # Rank 4 - upper-left
-        (0.38, 0.62),     # Rank 5 - upper-right
-        (0.42, -0.58),    # Rank 6 - lower-right
-        (-0.34, -0.64),   # Rank 7 - lower-left / bottom
-        (0.00, 0.98),     # fallback Rank 8
-        (0.00, -0.98),    # fallback Rank 9
-        (0.92, -0.42),    # fallback Rank 10
+        (0.10, 0.00),     # Rank 1 - center / dominant
+        (-0.56, 0.00),    # Rank 2 - left / dominant, overlaps Rank 1
+        (0.68, 0.10),     # Rank 3 - right
+        (0.34, 0.58),     # Rank 4 - upper-right
+        (-0.30, 0.58),    # Rank 5 - upper-left
+        (-0.28, -0.58),   # Rank 6 - lower-left
+        (0.38, -0.58),    # Rank 7 - lower-right
+        (0.00, 0.92),     # fallback Rank 8
+        (0.00, -0.92),    # fallback Rank 9
+        (0.88, -0.35),    # fallback Rank 10
     ]
     plot_df["x"] = [flower_positions[i][0] for i in range(len(plot_df))]
     plot_df["y"] = [flower_positions[i][1] for i in range(len(plot_df))]
     max_share = float(plot_df["Workload Share"].max())
-    plot_df["Bubble Size"] = 72 + (plot_df["Workload Share"] / max_share) * 110 if max_share > 0 else 88
+    plot_df["Bubble Size"] = 74 + (plot_df["Workload Share"] / max_share) * 100 if max_share > 0 else 88
     segment_color_map = {svc: CORPORATE_PALETTE[i % len(CORPORATE_PALETTE)] for i, svc in enumerate(SERVICE_ORDER)}
 
     fig = go.Figure()
@@ -4880,11 +4884,11 @@ def chart_service_matrix(
     fig.update_layout(title=dict(text=""))
     fig.update_xaxes(
         visible=False, showgrid=False, zeroline=False, showticklabels=False,
-        title_text="", range=[-1.28, 1.28], fixedrange=True
+        title_text="", range=[-1.12, 1.12], fixedrange=True
     )
     fig.update_yaxes(
         visible=False, showgrid=False, zeroline=False, showticklabels=False,
-        title_text="", range=[-1.12, 1.12], scaleanchor="x", scaleratio=1, fixedrange=True
+        title_text="", range=[-1.00, 1.00], scaleanchor="x", scaleratio=1, fixedrange=True
     )
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
