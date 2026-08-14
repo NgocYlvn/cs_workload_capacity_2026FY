@@ -5100,7 +5100,7 @@ def render_cs_solution_table(df: pd.DataFrame):
     )
 
 def chart_yvf(df: pd.DataFrame):
-    """YVF booking share of Total IFF Shipments."""
+    """YVF booking share of Total IFF Bookings."""
     if df is None or df.empty:
         st.info("No YVF data available for selected filters.")
         return
@@ -5117,7 +5117,7 @@ def chart_yvf(df: pd.DataFrame):
     fig = go.Figure(
         data=[
             go.Pie(
-                labels=["YVF Bookings", "IFF Shipments"],
+                labels=["YVF Bookings", "IFF Bookings"],
                 values=[total_yvf, remaining_iff],
                 hole=0.58,
                 sort=False,
@@ -5160,7 +5160,7 @@ def render_yvf_table(df: pd.DataFrame):
     column_cfg = {
         "Office": st.column_config.TextColumn("Office", width=70),
         "YVF Booking": st.column_config.NumberColumn("Total YVF Bookings", width="medium", format="%,.0f"),
-        "IFF Shipment": st.column_config.NumberColumn("Total IFF Shipments", width="medium", format="%,.0f"),
+        "IFF Shipment": st.column_config.NumberColumn("Total IFF Bookings", width="medium", format="%,.0f"),
         "YVF Booking Ratio": st.column_config.NumberColumn("YVF Booking Ratio", width=110, format="%.1f%%"),
     }
     if has_month:
