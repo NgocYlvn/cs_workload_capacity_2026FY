@@ -4887,7 +4887,7 @@ def segment_workload_table(df: pd.DataFrame, mode_df: pd.DataFrame):
         st.info("No segment workload data available for selected filters.")
         return
 
-    pair_panel_title("Segment Workload Summary")
+    pair_panel_title("Segment Workload Breakdown")
     display = (
         seg.copy()
         .sort_values("Workload Share", ascending=False)
