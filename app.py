@@ -5025,7 +5025,7 @@ def chart_resolution(df: pd.DataFrame):
     if df is None or df.empty:
         st.info("No CS Resolution data available for selected filters.")
         return
-    pair_panel_title("CS Resolution Trend by Month")
+    pair_panel_title("CS Resolution Trend")
     agg = df.groupby("MonthDate", as_index=False).agg(**{"Total Abnormality": ("Total Abnormality", "sum"), "Resolved": ("Resolved", "sum")}).sort_values("MonthDate")
     agg["Resolution Rate"] = np.where(agg["Total Abnormality"] > 0, agg["Resolved"] / agg["Total Abnormality"], np.nan)
     agg["Month"] = agg["MonthDate"].dt.strftime("%b-%y")
@@ -5043,7 +5043,7 @@ def render_cs_solution_table(df: pd.DataFrame):
     if df is None or df.empty:
         st.info("No CS Resolution data available for selected filters.")
         return
-    pair_panel_title("CS Resolution Detail")
+    pair_panel_title("CS Resolution")
     d = df.copy().sort_values(["Office", "MonthDate"])
     d["Month"] = d["MonthDate"].dt.strftime("%b-%y")
     display = d[["Office", "Month", "Total Abnormality", "Resolved", "Resolution Rate"]].copy()
@@ -5089,7 +5089,7 @@ def chart_yvf(df: pd.DataFrame):
     if d.empty:
         st.info("No YVF data available for selected filters.")
         return
-    pair_panel_title("YVF Booking Share of Total IFF Shipments")
+    pair_panel_title("YVF Booking Adoption")
     total_yvf = float(d["YVF Booking"].sum()); total_iff = float(d["IFF Shipment"].sum())
     remaining_iff = max(total_iff - total_yvf, 0.0); ratio = safe_div(total_yvf, total_iff)
     fig = go.Figure(
@@ -5128,7 +5128,7 @@ def render_yvf_table(df: pd.DataFrame):
     if d.empty:
         st.info("No YVF data available for selected filters.")
         return
-    pair_panel_title("YVF Performance Detail")
+    pair_panel_title("YVF Performance by Office")
     has_month = "MonthDate" in d.columns and d["MonthDate"].notna().any()
     if has_month:
         d = d.sort_values(["MonthDate", "Office"]).copy(); d["Month"] = d["MonthDate"].dt.strftime("%b-%y")
@@ -6160,7 +6160,7 @@ def main():
     with casetab_e:
         render_activity_detail_table(f_exception_detail, "Exception Handling")
 
-    section_title("6. CS Resolution")
+    section_title("6. CS Resolution Rate")
 
     # Executive KPIs sourced from sheet "CS Resolutions Rate".
     if not f_resolution.empty:
@@ -6207,7 +6207,7 @@ def main():
     with cs_table:
         render_cs_solution_table(f_resolution)
 
-    section_title("7. YVF Promoter Effectiveness")
+    section_title("7. YVF Promotion Effectiveness")
 
     # Show only one common message when no YVF data is available.
     # Chart and detail table are rendered only when filtered YVF data exists.
@@ -6227,7 +6227,7 @@ def main():
             )
         with y2:
             kpi_card(
-                "Total IFF Shipments",
+                "Total IFF Bookings",
                 fmt_int(iff),
                 "",
             )
