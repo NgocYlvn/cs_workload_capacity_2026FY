@@ -5050,7 +5050,7 @@ def chart_resolution(df: pd.DataFrame):
     agg["Resolution Rate"] = np.where(agg["Total Abnormality"] > 0, agg["Resolved"] / agg["Total Abnormality"], np.nan)
     agg["Month"] = agg["MonthDate"].dt.strftime("%b-%y")
     fig = go.Figure()
-    fig.add_trace(go.Bar(x=agg["Month"], y=agg["Total Abnormality"], name="Total Abnormalities", marker_color=BUSINESS_COLORS["supporting"], text=agg["Total Abnormality"], texttemplate="%{text:,.0f}", textposition="outside", cliponaxis=False))
+    fig.add_trace(go.Bar(x=agg["Month"], y=agg["Total Abnormality"], name="Total Exception Case", marker_color=BUSINESS_COLORS["supporting"], text=agg["Total Abnormality"], texttemplate="%{text:,.0f}", textposition="outside", cliponaxis=False))
     fig.add_trace(go.Bar(x=agg["Month"], y=agg["Resolved"], name="Resolved by CS", marker_color=BUSINESS_COLORS["actual"], text=agg["Resolved"], texttemplate="%{text:,.0f}", textposition="outside", cliponaxis=False))
     fig.add_trace(go.Scatter(x=agg["Month"], y=agg["Resolution Rate"], name="CS Resolution Rate", mode="lines+markers+text", line=dict(color=COLORS["green"], width=3), marker=dict(size=7), text=agg["Resolution Rate"], texttemplate="%{text:.1%}", textposition="top center", yaxis="y2"))
     fig.update_layout(title_text="", barmode="group", yaxis=dict(title="Cases", rangemode="tozero"), yaxis2=dict(title="Resolution Rate", overlaying="y", side="right", tickformat=".0%", range=[0, 1.00], showgrid=False))
