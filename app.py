@@ -3738,6 +3738,97 @@ def workload_breakdown_table(df: pd.DataFrame) -> pd.DataFrame:
     return agg[cols]
 
 
+
+def render_case_office_cards(df: pd.DataFrame):
+    """Section 5: one executive C/A/S/E workload card per Office."""
+    if df is None or df.empty or "Office" not in df.columns:
+        return
+
+    d = df.copy()
+    component_cols = {
+        "C": "Core Workload (min)",
+        "A": "Ancillary Workload (min)",
+        "S": "Supporting Workload (min)",
+        "E": "Exception Workload (min)",
+    }
+    for source_col in component_cols.values():
+        if source_col not in d.columns:
+            d[source_col] = 0.0
+        d[source_col] = pd.to_numeric(d[source_col], errors="coerce").fillna(0.0)
+
+    d["Office"] = d["Office"].astype(str).str.strip().str.upper()
+    d = d[d["Office"].ne("")]
+    if d.empty:
+        return
+
+    summary = d.groupby("Office", as_index=False)[list(component_cols.values())].sum()
+    present = summary["Office"].tolist()
+    offices = [o for o in STANDARD_OFFICES if o in present]
+    offices += sorted([o for o in present if o not in offices])
+    if not offices:
+        return
+
+    st.markdown(
+        f"""<div style="color:{COLORS['navy']};font-size:{UI['chart_title_size']}px;
+        font-weight:700;margin:4px 0 10px 2px;">C / A / S / E Workload by Office</div>""",
+        unsafe_allow_html=True,
+    )
+
+    card_cols = st.columns(len(offices), gap="medium")
+    for card_col, office in zip(card_cols, offices):
+        row = summary.loc[summary["Office"] == office].iloc[0]
+        vals = {k: float(row[v]) / 60 for k, v in component_cols.items()}
+        total = sum(vals.values())
+
+        with card_col:
+            st.markdown(
+                f"""
+                <div style="background:#FFFFFF;border:1px solid {COLORS['border']};
+                    border-top:4px solid {COLORS['navy']};border-radius:12px;
+                    padding:14px 16px 13px;min-height:168px;box-sizing:border-box;
+                    box-shadow:0 2px 7px rgba(0,59,112,0.045);">
+                  <div style="display:flex;justify-content:space-between;align-items:flex-start;
+                      gap:10px;margin-bottom:10px;">
+                    <div style="color:{COLORS['navy']};font-size:18px;font-weight:800;">
+                      {html.escape(office)}
+                    </div>
+                    <div style="text-align:right;">
+                      <div style="color:#667085;font-size:10.5px;font-weight:600;">TOTAL WORKLOAD</div>
+                      <div style="color:{COLORS['navy']};font-size:20px;font-weight:800;margin-top:2px;">
+                        {total:,.1f}
+                      </div>
+                      <div style="color:#667085;font-size:10px;">hours</div>
+                    </div>
+                  </div>
+                  <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));
+                      border-top:1px solid #E7ECF1;padding-top:11px;">
+                    <div style="text-align:center;border-right:1px solid #E7ECF1;">
+                      <div style="color:{COLORS['blue']};font-size:12px;font-weight:800;">C</div>
+                      <div style="color:{COLORS['navy']};font-size:16px;font-weight:750;margin-top:4px;">{vals['C']:,.1f}</div>
+                    </div>
+                    <div style="text-align:center;border-right:1px solid #E7ECF1;">
+                      <div style="color:{COLORS['green']};font-size:12px;font-weight:800;">A</div>
+                      <div style="color:{COLORS['navy']};font-size:16px;font-weight:750;margin-top:4px;">{vals['A']:,.1f}</div>
+                    </div>
+                    <div style="text-align:center;border-right:1px solid #E7ECF1;">
+                      <div style="color:{COLORS['amber']};font-size:12px;font-weight:800;">S</div>
+                      <div style="color:{COLORS['navy']};font-size:16px;font-weight:750;margin-top:4px;">{vals['S']:,.1f}</div>
+                    </div>
+                    <div style="text-align:center;">
+                      <div style="color:{COLORS['red']};font-size:12px;font-weight:800;">E</div>
+                      <div style="color:{COLORS['navy']};font-size:16px;font-weight:750;margin-top:4px;">{vals['E']:,.1f}</div>
+                    </div>
+                  </div>
+                  <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));
+                      margin-top:4px;color:#667085;font-size:9.5px;text-align:center;">
+                    <div>Core</div><div>Ancillary</div><div>Supporting</div><div>Exception</div>
+                  </div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+
 def chart_case_allocation(df: pd.DataFrame):
     """C/A/S/E workload composition by Segment, displayed in hours."""
     summary = workload_breakdown_table(df)
@@ -6148,6 +6239,9 @@ def main():
         """,
         unsafe_allow_html=True,
     )
+
+    # C/A/S/E summary cards by Office — same executive idea as the HC office cards.
+    render_case_office_cards(f_workload)
 
     # Summary table + C/A/S/E allocation chart
     wb_chart, wb_table = st.columns([0.43, 0.57], gap="medium")
