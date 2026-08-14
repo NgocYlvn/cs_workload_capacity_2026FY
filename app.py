@@ -2354,7 +2354,7 @@ def _office_comparison_heading(title: str) -> None:
 
 def render_hc_office_comparison(hc_filtered_all_offices: pd.DataFrame) -> None:
     # Reuse existing HC source-of-truth functions and status thresholds.
-    _office_comparison_heading("Office Comparison — Capacity")
+    _office_comparison_heading("Utilization by Office")
     cols = st.columns(4, gap="small")
     for col, office_name in zip(cols, STANDARD_OFFICES):
         if hc_filtered_all_offices is not None and not hc_filtered_all_offices.empty and "Office" in hc_filtered_all_offices.columns:
