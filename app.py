@@ -4921,7 +4921,7 @@ def segment_workload_table(df: pd.DataFrame, mode_df: pd.DataFrame):
         display, use_container_width=True, hide_index=True, height=390,
         column_config={
             "Segment": st.column_config.TextColumn("Segment", width=70),
-            "Shipment Volume": st.column_config.NumberColumn("Shipment Volume", width="medium", format="%,.0f"),
+            "Shipment Volume": st.column_config.NumberColumn("Volume", width="medium", format="%,.0f"),
             "Allocation Time (h)": st.column_config.NumberColumn("Actual Working Time (Hours)", width="medium", format="%,.1f"),
             "Required FTE": st.column_config.NumberColumn("Required FTE", width="small", format="%.2f"),
             "Workload Share (%)": st.column_config.NumberColumn("Workload Share (%)", width="medium", format="%.1f%%"),
