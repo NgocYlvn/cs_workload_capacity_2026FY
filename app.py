@@ -4062,7 +4062,7 @@ def prepare_yvf(df: pd.DataFrame) -> pd.DataFrame:
     """
     base_cols = [
         "Office", "MonthDate",
-        "YVF Booking", "IFF Booking", "YVF Booking Ratio",
+        "YVF Booking", "IFF Shipment", "YVF Booking Ratio",
     ]
     if df is None or df.empty:
         return pd.DataFrame(columns=base_cols)
@@ -4075,7 +4075,7 @@ def prepare_yvf(df: pd.DataFrame) -> pd.DataFrame:
         d, ["Total YVF booking/month", "Total YVF booking"]
     )
     iff_col = first_existing(
-        d, ["Total IFF Booking/month", "Total IFF Booking", "Total IFF Booking"]
+        d, ["Total IFF shipment/month", "Total IFF shipment", "Total IFF Booking"]
     )
 
     if not office_col or not yvf_col or not iff_col:
@@ -4089,13 +4089,13 @@ def prepare_yvf(df: pd.DataFrame) -> pd.DataFrame:
 
     # Preserve blanks first so empty/future periods are not converted to zeros.
     d["YVF Booking"] = pd.to_numeric(d[yvf_col], errors="coerce")
-    d["IFF Booking"] = pd.to_numeric(d[iff_col], errors="coerce")
+    d["IFF Shipment"] = pd.to_numeric(d[iff_col], errors="coerce")
 
     d = d[
         (d["Office"] != "")
         & (
             d["YVF Booking"].notna()
-            | d["IFF Booking"].notna()
+            | d["IFF Shipment"].notna()
         )
     ].copy()
 
@@ -4103,11 +4103,11 @@ def prepare_yvf(df: pd.DataFrame) -> pd.DataFrame:
         return pd.DataFrame(columns=base_cols)
 
     d["YVF Booking"] = d["YVF Booking"].fillna(0)
-    d["IFF Booking"] = d["IFF Booking"].fillna(0)
+    d["IFF Shipment"] = d["IFF Shipment"].fillna(0)
 
     d["YVF Booking Ratio"] = np.where(
-        d["IFF Booking"] > 0,
-        d["YVF Booking"] / d["IFF Booking"],
+        d["IFF Shipment"] > 0,
+        d["YVF Booking"] / d["IFF Shipment"],
         np.nan,
     )
 
@@ -5100,24 +5100,24 @@ def render_cs_solution_table(df: pd.DataFrame):
     )
 
 def chart_yvf(df: pd.DataFrame):
-    """YVF booking share of Total IFF Booking."""
+    """YVF booking share of Total IFF Shipments."""
     if df is None or df.empty:
         st.info("No YVF data available for selected filters.")
         return
     d = df.copy()
     d["YVF Booking"] = pd.to_numeric(d["YVF Booking"], errors="coerce").fillna(0)
-    d["IFF Booking"] = pd.to_numeric(d["IFF Booking"], errors="coerce").fillna(0)
-    d = d[(d["YVF Booking"] != 0) | (d["IFF Booking"] != 0)].copy()
+    d["IFF Shipment"] = pd.to_numeric(d["IFF Shipment"], errors="coerce").fillna(0)
+    d = d[(d["YVF Booking"] != 0) | (d["IFF Shipment"] != 0)].copy()
     if d.empty:
         st.info("No YVF data available for selected filters.")
         return
     pair_panel_title("YVF Booking Adoption")
-    total_yvf = float(d["YVF Booking"].sum()); total_iff = float(d["Booking"].sum())
+    total_yvf = float(d["YVF Booking"].sum()); total_iff = float(d["IFF Shipment"].sum())
     remaining_iff = max(total_iff - total_yvf, 0.0); ratio = safe_div(total_yvf, total_iff)
     fig = go.Figure(
         data=[
             go.Pie(
-                labels=["YVF Bookings", "Booking"],
+                labels=["YVF Bookings", "IFF Shipments"],
                 values=[total_yvf, remaining_iff],
                 hole=0.58,
                 sort=False,
