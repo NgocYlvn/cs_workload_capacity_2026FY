@@ -5222,13 +5222,14 @@ footer{display:none!important}
     position:absolute;
     top:10px;
     bottom:14px;
-    left:2.2vw;
-    width:min(50.5vw,760px);
-    min-width:570px;
+    left:1.2vw;
+    width:74vw;
+    max-width:none;
+    min-width:760px;
     height:auto;
     min-height:0;
     box-sizing:border-box;
-    padding:18px 36px 20px;
+    padding:22px 44px 24px;
     border-radius:24px;
     background:linear-gradient(145deg,#FFFFFF 0%,#FCFDFE 100%);
     border:1px solid rgba(255,255,255,.72);
@@ -5281,29 +5282,30 @@ footer{display:none!important}
     display:grid;
     grid-template-columns:repeat(4,minmax(0,1fr));
     gap:0;
-    margin-top:2px;
+    margin-top:30px;
+    padding:10px 12px 0;
 }
 
 .cover-pillar{
     position:relative;
     text-align:center;
-    padding:0 10px;
+    padding:0 22px;
 }
 
 .cover-pillar:not(:last-child)::after{
     content:"";
     position:absolute;
     right:0;
-    top:35px;
+    top:44px;
     width:1px;
-    height:92px;
+    height:118px;
     background:#DDE5EC;
 }
 
 .cover-icon{
-    width:clamp(48px,3.4vw,58px);
-    height:clamp(48px,3.4vw,58px);
-    margin:0 auto 8px;
+    width:72px;
+    height:72px;
+    margin:0 auto 12px;
     border-radius:50%;
     display:flex;
     align-items:center;
@@ -5313,8 +5315,8 @@ footer{display:none!important}
 }
 
 .cover-icon svg{
-    width:31px;
-    height:31px;
+    width:39px;
+    height:39px;
     stroke:currentColor;
     fill:none;
     stroke-width:1.9;
@@ -5329,17 +5331,17 @@ footer{display:none!important}
 
 .cover-pillar-title{
     color:#06183F;
-    font-size:clamp(10px,.78vw,13px);
+    font-size:16px;
     font-weight:800;
-    line-height:1.15;
+    line-height:1.18;
     text-transform:uppercase;
-    margin-bottom:7px;
+    margin-bottom:9px;
 }
 
 .cover-pillar-note{
     color:#4F5B6A;
-    font-size:clamp(9px,.70vw,11px);
-    line-height:1.35;
+    font-size:13px;
+    line-height:1.42;
     font-weight:500;
 }
 
@@ -5465,17 +5467,19 @@ footer{display:none!important}
 
 
 @media(max-height:820px) and (min-width:901px){
-    .cover-panel{top:8px;bottom:10px;padding:16px 34px 16px}
+    .cover-panel{top:8px;bottom:10px;padding:18px 40px 18px;width:74vw;min-width:760px}
     .cover-logo-real{width:165px;margin-bottom:14px}
     .cover-title{font-size:clamp(44px,3.3vw,60px)}
     .cover-title-accent{margin:14px 0 11px 2px}
     .cover-subtitle{font-size:19px;margin-bottom:12px}
     .cover-separator{margin-bottom:12px}
-    .cover-icon{width:50px;height:50px}
-    .cover-icon svg{width:27px;height:27px}
-    .cover-pillar-title{font-size:11px;margin-bottom:5px}
-    .cover-pillar-note{font-size:9px;line-height:1.25}
-    .cover-pillar:not(:last-child)::after{top:30px;height:78px}
+    .cover-icon{width:64px;height:64px}
+    .cover-icon svg{width:35px;height:35px}
+    .cover-pillar-title{font-size:14px;margin-bottom:7px}
+    .cover-pillar-note{font-size:11.5px;line-height:1.35}
+    .cover-pillars{margin-top:22px;padding:8px 8px 0}
+    .cover-pillar{padding:0 16px}
+    .cover-pillar:not(:last-child)::after{top:40px;height:104px}
     .cover-cta{bottom:18px;height:50px;min-width:300px;font-size:19px}
     .cover-right-footer{right:24px;bottom:20px;font-size:12px}
 }
