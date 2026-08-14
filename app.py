@@ -55,17 +55,17 @@ SERVICE_LABELS = {
 # are NOT asserted here as official corporate-brand specifications.
 # ============================================================
 YUSEN_THEME = {
-    "primary": "#06183D",          # Yusen Navy - primary
+    "primary": "#06183F",          # Yusen Navy - primary
     "primary_dark": "#041532",     # deeper navy for sidebar gradient
     "secondary": "#0DBAEE",        # Yusen Cyan - supporting/data series
     "secondary_mid": "#3F5B81",    # Mid Blue
     "secondary_light": "#D5EAF8",  # Light Blue
     "secondary_pale": "#EEF7FC",
-    "accent": "#FF6D10",           # Yusen Orange - accent/attention
+    "accent": "#E6761B",           # Yusen Orange - accent/attention
     "accent_pale": "#FFF2E8",
     "background": "#F6F8FB",
     "surface": "#FFFFFF",
-    "text_primary": "#06183D",
+    "text_primary": "#06183F",
     "text_secondary": "#5B6575",
     "border": "#D5E1EA",
     "grid": "#E8EEF3",
@@ -1425,7 +1425,7 @@ st.markdown(
         width: 248px !important;
         min-width: 248px !important;
         max-width: 248px !important;
-        background: linear-gradient(180deg, #041532 0%, #06183D 100%) !important;
+        background: linear-gradient(180deg, #041532 0%, #06183F 100%) !important;
         border-right: 1px solid rgba(255,255,255,0.07) !important;
     }}
 
@@ -1479,7 +1479,7 @@ st.markdown(
         min-height:41px !important;
         height:41px !important;
         background:#FFFFFF !important;
-        color:#06183D !important;
+        color:#06183F !important;
         border:1px solid #D5E1EA !important;
         border-radius:9px !important;
         font-size:13px !important;
@@ -1490,17 +1490,17 @@ st.markdown(
 
     section[data-testid="stSidebar"] div[data-testid="stButton"] > button *,
     section[data-testid="stSidebar"] .stButton > button * {{
-        color:#06183D !important;
+        color:#06183F !important;
     }}
 
     section[data-testid="stSidebar"] div[data-testid="stButton"] > button:hover {{
-        color:#FF6D10 !important;
-        border-color:#FF6D10 !important;
+        color:#E6761B !important;
+        border-color:#E6761B !important;
         background:#FFFFFF !important;
     }}
 
     section[data-testid="stSidebar"] div[data-testid="stButton"] > button:hover * {{
-        color:#FF6D10 !important;
+        color:#E6761B !important;
     }}
 
     /* FILTERS heading */
@@ -1521,7 +1521,7 @@ st.markdown(
         width:20px;
         height:2px;
         border-radius:999px;
-        background:#FF6D10;
+        background:#E6761B;
         display:block;
     }}
 
@@ -1556,15 +1556,15 @@ st.markdown(
 
     section[data-testid="stSidebar"] div[data-baseweb="select"] span,
     section[data-testid="stSidebar"] div[data-baseweb="select"] input {{
-        color:#06183D !important;
+        color:#06183F !important;
         font-size:13.5px !important;
         font-weight:500 !important;
         opacity:1 !important;
     }}
 
     section[data-testid="stSidebar"] div[data-baseweb="select"] svg {{
-        color:#06183D !important;
-        fill:#06183D !important;
+        color:#06183F !important;
+        fill:#06183F !important;
         opacity:1 !important;
     }}
 
@@ -1593,14 +1593,14 @@ st.markdown(
     }}
 
     section[data-testid="stSidebar"] [data-testid="stFileUploader"] section * {{
-        color:#06183D !important;
+        color:#06183F !important;
         opacity:1 !important;
         font-size:11.5px !important;
     }}
 
     section[data-testid="stSidebar"] [data-testid="stFileUploader"] button {{
         background:#FFFFFF !important;
-        color:#06183D !important;
+        color:#06183F !important;
         border:1px solid #B9CAD8 !important;
         border-radius:8px !important;
         font-size:12px !important;
@@ -1625,7 +1625,7 @@ st.markdown(
         letter-spacing:-0.01em;
     }}
     .sidebar-footer .footer-sep {{
-        color:#FF6D10;
+        color:#E6761B;
         opacity:0.95;
         font-weight:700;
     }}
@@ -1665,7 +1665,7 @@ st.markdown(
     }}
 
     .main-title {{
-        color:#06183D !important;
+        color:#06183F !important;
         font-size:28px !important;
         line-height:1.06 !important;
         font-weight:800 !important;
@@ -1723,7 +1723,7 @@ st.markdown(
         display:flex;
         align-items:center;
         justify-content:center;
-        color:#06183D;
+        color:#06183F;
         background:#EEF7FC;
         border:1px solid #D5EAF8;
     }}
@@ -1747,7 +1747,7 @@ st.markdown(
     }}
 
     .filter-summary-value {{
-        color:#06183D;
+        color:#06183F;
         font-size:13.5px;
         line-height:1.2;
         font-weight:750;
@@ -1758,11 +1758,11 @@ st.markdown(
        SECTION HIERARCHY
        ------------------------------------------------------------ */
     .section-title {{
-        color:#06183D !important;
+        color:#06183F !important;
         font-size:19px !important;
         line-height:1.22 !important;
         font-weight:800 !important;
-        border-left:4px solid #FF6D10 !important;
+        border-left:4px solid #E6761B !important;
         padding-left:9px !important;
         margin:18px 0 9px 0 !important;
     }}
@@ -2096,13 +2096,13 @@ st.markdown(
     f"""
     <style>
     .office-comparison-heading {{
-        display:flex; align-items:center; gap:8px; color:#06183D;
+        display:flex; align-items:center; gap:8px; color:#06183F;
         font-size:15px; line-height:1.2; font-weight:750;
         margin:10px 0 8px 1px;
     }}
     .office-comparison-heading::before {{
         content:""; width:22px; height:3px; border-radius:999px;
-        background:#FF6D10; display:inline-block;
+        background:#E6761B; display:inline-block;
     }}
     .office-compare-card {{
         --office-status:#3F5B81; --office-status-bg:#EEF3F8;
@@ -2116,7 +2116,7 @@ st.markdown(
         gap:8px; margin-bottom:9px;
     }}
     .office-compare-name {{
-        color:#06183D; font-size:18px; line-height:1; font-weight:800;
+        color:#06183F; font-size:18px; line-height:1; font-weight:800;
     }}
     .office-compare-status {{
         display:inline-flex; align-items:center; justify-content:center;
@@ -2133,7 +2133,7 @@ st.markdown(
         color:#667085; font-size:10.5px; line-height:1.15; font-weight:600;
     }}
     .office-compare-primary-value {{
-        color:#06183D; font-size:24px; line-height:1; font-weight:800;
+        color:#06183F; font-size:24px; line-height:1; font-weight:800;
         letter-spacing:-0.02em; white-space:nowrap;
     }}
     .office-compare-grid {{
@@ -2145,7 +2145,7 @@ st.markdown(
         margin-bottom:2px; white-space:nowrap;
     }}
     .office-compare-metric-value {{
-        color:#06183D; font-size:14px; line-height:1.15; font-weight:750;
+        color:#06183F; font-size:14px; line-height:1.15; font-weight:750;
         font-variant-numeric:tabular-nums; white-space:nowrap;
     }}
     .office-compare-metric-value.negative {{ color:#D92D20; }}
@@ -2518,11 +2518,11 @@ def ui_icon_svg(kind: str, color: str, bg: str, circle_class: str = "kpi-icon-ci
 def hc_icon_for_label(label: str) -> str:
     key = str(label).upper()
     if "APPROVED" in key:
-        return ui_icon_svg("people", "#06183D", "#EEF3F8")
+        return ui_icon_svg("people", "#06183F", "#EEF3F8")
     if "ACTUAL" in key:
         return ui_icon_svg("people_active", "#0DBAEE", "#E8F8FD")
     if "REQUIRED" in key:
-        return ui_icon_svg("people_required", "#FF6D10", "#FFF2E8")
+        return ui_icon_svg("people_required", "#E6761B", "#FFF2E8")
     return ui_icon_svg("balance", "#6EA52B", "#F1F8E8")
 
 
@@ -2531,10 +2531,10 @@ def general_kpi_icon(label: str) -> str:
     if "shipment" in key:
         return ui_icon_svg("package", "#0DBAEE", "#E8F8FD")
     if "customer" in key:
-        return ui_icon_svg("customers", "#06183D", "#EEF3F8")
+        return ui_icon_svg("customers", "#06183F", "#EEF3F8")
     if "workload" in key or "working time" in key or "available time" in key:
         return ui_icon_svg("clipboard", "#0DBAEE", "#E8F8FD")
-    return ui_icon_svg("clipboard", "#06183D", "#EEF3F8")
+    return ui_icon_svg("clipboard", "#06183F", "#EEF3F8")
 
 
 def kpi_card(label: str, value: str, note: str = "", status: Optional[Tuple[str, str, str]] = None):
@@ -3816,7 +3816,7 @@ def render_case_office_cards(
         f"""
         <div style="
             color:{COLORS['navy']};
-            font-size:24px;
+            font-size:{UI['chart_title_size']}px;
             font-weight:700;
             margin:4px 0 10px 2px;">
             C / A / S / E Activity by Office
@@ -3867,7 +3867,7 @@ def render_case_office_cards(
                       margin-bottom:10px;">
                     <div style="
                         color:{COLORS['navy']};
-                        font-size:24px;
+                        font-size:18px;
                         font-weight:800;">
                       {html.escape(office)}
                     </div>
@@ -3875,13 +3875,13 @@ def render_case_office_cards(
                     <div style="text-align:right;">
                       <div style="
                           color:#667085;
-                          font-size:10px;
+                          font-size:10.5px;
                           font-weight:600;">
                         TOTAL ACTIVITY
                       </div>
                       <div style="
                           color:{COLORS['navy']};
-                          font-size:24px;
+                          font-size:20px;
                           font-weight:800;
                           margin-top:2px;">
                         {total:,.0f}
@@ -3895,20 +3895,20 @@ def render_case_office_cards(
                       border-top:1px solid #E7ECF1;
                       padding-top:11px;">
                     <div style="text-align:center;border-right:1px solid #E7ECF1;">
-                      <div style="color:{activity_meta['C'][1]};font-size:10px;font-weight:700;">C</div>
-                      <div style="color:{COLORS['navy']};font-size:15px;font-weight:750;margin-top:4px;">{vals['C']:,.0f}</div>
+                      <div style="color:{activity_meta['C'][1]};font-size:12px;font-weight:800;">C</div>
+                      <div style="color:{COLORS['navy']};font-size:16px;font-weight:750;margin-top:4px;">{vals['C']:,.0f}</div>
                     </div>
                     <div style="text-align:center;border-right:1px solid #E7ECF1;">
-                      <div style="color:{activity_meta['A'][1]};font-size:10px;font-weight:700;">A</div>
-                      <div style="color:{COLORS['navy']};font-size:15px;font-weight:750;margin-top:4px;">{vals['A']:,.0f}</div>
+                      <div style="color:{activity_meta['A'][1]};font-size:12px;font-weight:800;">A</div>
+                      <div style="color:{COLORS['navy']};font-size:16px;font-weight:750;margin-top:4px;">{vals['A']:,.0f}</div>
                     </div>
                     <div style="text-align:center;border-right:1px solid #E7ECF1;">
-                      <div style="color:{activity_meta['S'][1]};font-size:10px;font-weight:700;">S</div>
-                      <div style="color:{COLORS['navy']};font-size:15px;font-weight:750;margin-top:4px;">{vals['S']:,.0f}</div>
+                      <div style="color:{activity_meta['S'][1]};font-size:12px;font-weight:800;">S</div>
+                      <div style="color:{COLORS['navy']};font-size:16px;font-weight:750;margin-top:4px;">{vals['S']:,.0f}</div>
                     </div>
                     <div style="text-align:center;">
-                      <div style="color:{activity_meta['E'][1]};font-size:10px;font-weight:700;">E</div>
-                      <div style="color:{COLORS['navy']};font-size:15px;font-weight:750;margin-top:4px;">{vals['E']:,.0f}</div>
+                      <div style="color:{activity_meta['E'][1]};font-size:12px;font-weight:800;">E</div>
+                      <div style="color:{COLORS['navy']};font-size:16px;font-weight:750;margin-top:4px;">{vals['E']:,.0f}</div>
                     </div>
                   </div>
 
@@ -5394,7 +5394,7 @@ header[data-testid="stHeader"]{display:none!important;height:0!important}
 .main{height:100dvh!important;overflow:hidden!important;padding:0!important;margin:0!important}
 footer{display:none!important}
 .block-container{max-width:none!important;width:100%!important;padding:0!important;margin:0!important}
-.stApp{background:#06183D!important;height:100dvh!important;min-height:0!important;overflow:hidden!important}
+.stApp{background:#06183F!important;height:100dvh!important;min-height:0!important;overflow:hidden!important}
 
 .cover-stage{
     position:fixed;
@@ -5404,7 +5404,7 @@ footer{display:none!important}
     min-height:0;
     overflow:hidden;
     z-index:999;
-    background:linear-gradient(135deg,#031532 0%,#06183D 48%,#082759 100%);
+    background:linear-gradient(135deg,#031532 0%,#06183F 48%,#082759 100%);
     font-family:Inter,"Segoe UI",Arial,sans-serif;
 }
 
@@ -5437,7 +5437,7 @@ footer{display:none!important}
 .cover-title{
     margin:0;
     max-width:650px;
-    color:#06183D;
+    color:#06183F;
     font-size:clamp(46px,3.65vw,66px);
     line-height:.98;
     letter-spacing:-.035em;
@@ -5450,7 +5450,7 @@ footer{display:none!important}
     max-width:100%;
     height:5px;
     border-radius:999px;
-    background:#FF6D10;
+    background:#E6761B;
     margin:clamp(14px,2.2vh,22px) 0 clamp(10px,1.6vh,16px) 2px;
 }
 
@@ -5515,13 +5515,13 @@ footer{display:none!important}
     stroke-linejoin:round;
 }
 
-.icon-capacity{background:#06183D}
+.icon-capacity{background:#06183F}
 .icon-workload{background:#0DBAEE}
 .icon-productivity{background:#F57C00}
 .icon-insights{background:#45B84A}
 
 .cover-pillar-title{
-    color:#06183D;
+    color:#06183F;
     font-size:16px;
     font-weight:800;
     line-height:1.18;
@@ -5594,7 +5594,7 @@ footer{display:none!important}
     display:flex;
     align-items:center;
     gap:11px;
-    color:#06183D;
+    color:#06183F;
     font-size:13px;
     font-weight:700;
     z-index:12;
@@ -5607,7 +5607,7 @@ footer{display:none!important}
     display:flex;
     align-items:center;
     justify-content:center;
-    color:#06183D;
+    color:#06183F;
 }
 
 .cover-headset svg{
@@ -5621,7 +5621,7 @@ footer{display:none!important}
 .footer-divider{
     width:1.5px;
     height:22px;
-    background:#FF6D10;
+    background:#E6761B;
 }
 
 .cover-wave-1,.cover-wave-2,.cover-wave-3{
@@ -5643,7 +5643,7 @@ footer{display:none!important}
 .cover-wave-2{
     height:125px;
     bottom:-88px;
-    border-top:7px solid #FF6D10;
+    border-top:7px solid #E6761B;
     transform:rotate(1.7deg);
     opacity:.98;
 }
