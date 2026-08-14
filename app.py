@@ -4839,22 +4839,27 @@ def chart_service_matrix(
     # Ordered overlapping bubble cluster.
     # plot_df is already sorted by Workload Share descending.
     # Rank 1 = center; remaining ranks are arranged around it in visual order.
+    # Compact overlapping bubble cluster.
+    # plot_df is sorted by Workload Share descending:
+    # 1 center, 2 left, 3 right, 4 upper-left, 5 upper-right,
+    # 6 lower-right, 7 lower-left/bottom.
+    # Coordinates are intentionally close so bubbles overlap visibly.
     flower_positions = [
-        (0.00, 0.00),    # Rank 1 - center
-        (-1.22, 0.02),   # Rank 2 - left
-        (1.20, 0.02),    # Rank 3 - right
-        (-0.72, 1.03),   # Rank 4 - upper-left
-        (0.72, 1.03),    # Rank 5 - upper-right
-        (0.72, -0.98),   # Rank 6 - lower-right
-        (-0.72, -0.98),  # Rank 7 - lower-left
-        (0.00, 1.72),    # fallback Rank 8
-        (0.00, -1.72),   # fallback Rank 9
-        (1.72, -0.72),   # fallback Rank 10
+        (0.00, 0.00),     # Rank 1 - center
+        (-0.66, 0.00),    # Rank 2 - left, overlaps center
+        (0.68, 0.03),     # Rank 3 - right, overlaps center
+        (-0.38, 0.62),    # Rank 4 - upper-left
+        (0.38, 0.62),     # Rank 5 - upper-right
+        (0.42, -0.58),    # Rank 6 - lower-right
+        (-0.34, -0.64),   # Rank 7 - lower-left / bottom
+        (0.00, 0.98),     # fallback Rank 8
+        (0.00, -0.98),    # fallback Rank 9
+        (0.92, -0.42),    # fallback Rank 10
     ]
     plot_df["x"] = [flower_positions[i][0] for i in range(len(plot_df))]
     plot_df["y"] = [flower_positions[i][1] for i in range(len(plot_df))]
     max_share = float(plot_df["Workload Share"].max())
-    plot_df["Bubble Size"] = 66 + (plot_df["Workload Share"] / max_share) * 96 if max_share > 0 else 82
+    plot_df["Bubble Size"] = 72 + (plot_df["Workload Share"] / max_share) * 110 if max_share > 0 else 88
     segment_color_map = {svc: CORPORATE_PALETTE[i % len(CORPORATE_PALETTE)] for i, svc in enumerate(SERVICE_ORDER)}
 
     fig = go.Figure()
@@ -4865,7 +4870,7 @@ def chart_service_matrix(
             text=[f"<b>{svc}</b><br>{r['Workload Share']:.1%}"],
             textposition="middle center",
             textfont=dict(family=UI["font_family"], size=11, color="#FFFFFF" if r["Workload Share"] >= 0.06 else COLORS["navy"]),
-            marker=dict(size=[r["Bubble Size"]], color=segment_color_map.get(svc, COLORS["blue"]), opacity=0.94, line=dict(color="#FFFFFF", width=2.5)),
+            marker=dict(size=[r["Bubble Size"]], color=segment_color_map.get(svc, COLORS["blue"]), opacity=0.94, line=dict(color="#FFFFFF", width=2.0)),
             customdata=[[r["Shipment Volume"], r["Allocation Time (h)"], r["Required FTE"], r["Workload Share"]]],
             hovertemplate=(f"<b>{svc}</b><br>Shipment Volume: %{{customdata[0]:,.0f}}<br>Allocation Time: %{{customdata[1]:,.1f}} hrs<br>Required FTE: %{{customdata[2]:,.2f}}<br>Workload Share: %{{customdata[3]:.1%}}<extra></extra>"),
             showlegend=False,
@@ -4875,11 +4880,11 @@ def chart_service_matrix(
     fig.update_layout(title=dict(text=""))
     fig.update_xaxes(
         visible=False, showgrid=False, zeroline=False, showticklabels=False,
-        title_text="", range=[-1.95, 1.95], fixedrange=True
+        title_text="", range=[-1.28, 1.28], fixedrange=True
     )
     fig.update_yaxes(
         visible=False, showgrid=False, zeroline=False, showticklabels=False,
-        title_text="", range=[-1.85, 1.85], scaleanchor="x", scaleratio=1, fixedrange=True
+        title_text="", range=[-1.12, 1.12], scaleanchor="x", scaleratio=1, fixedrange=True
     )
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
