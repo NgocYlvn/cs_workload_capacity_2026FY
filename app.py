@@ -5776,12 +5776,13 @@ def main():
     required_pic = weighted_period_avg(f_hc, "Required HC PIC") if not f_hc.empty else 0.0
 
     hc_variance = required_hc - actual_hc
-    if hc_variance > 0.05:
-        variance_status = ("VACANCY GAP", COLORS["amber"], "#FEF3C7")
-    elif hc_variance < -0.05:
-        variance_status = ("ABOVE APPROVED", COLORS["red"], "#FEE2E2")
+    
+    if hc_variance > 0:
+        variance_status = ("OVERLOAD", COLORS["red"], "#FEE2E2")
+    elif hc_variance < 0:
+        variance_status = ("REDUNDANT", COLORS["green"], "#DCFCE7")
     else:
-        variance_status = ("ON PLAN", COLORS["green"], "#DCFCE7")
+        variance_status = ("BALANCED", COLORS["blue"], "#E0F2FE")
 
     hc1, hc2, hc3, hc4 = st.columns(4, gap="medium")
 
@@ -5811,7 +5812,7 @@ def main():
 
     with hc4:
         hc_variance_card(
-            "HC Gap,
+            "HC Variance",
             hc_variance,
             "Required HC − Actual HC",
             variance_status[0],
