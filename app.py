@@ -5879,9 +5879,10 @@ def main():
         if st.button("⌂  HOME", use_container_width=True, key="back_to_cover_btn"):
             st.session_state["dashboard_entered"] = False
             st.rerun()
-        st.markdown('<div class="sidebar-filter-title">FILTERS</div>', unsafe_allow_html=True)
+        st.markdown('<div class="sidebar-filter-title">FILTERS</div><div class="sidebar-filter-spacer"></div>', unsafe_allow_html=True)
         month = st.selectbox("MONTH", month_options, key="month_filter")
         office = st.selectbox("OFFICE", office_options, key="office_filter")
+        st.markdown('<div class="sidebar-bottom-anchor"></div>', unsafe_allow_html=True)
         st.markdown("---")
         uploaded = st.file_uploader(
             "UPLOAD EXCEL FILE",
@@ -6607,6 +6608,63 @@ st.markdown(
 
         .sidebar-footer {
             font-size: 9.8px !important;
+        }
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+
+# ============================================================
+# SIDEBAR POSITIONING FINAL — UI ONLY
+# HOME icon / filter breathing room / lower upload & footer
+# ============================================================
+st.markdown(
+    """
+    <style>
+    /* Give FILTERS a little more breathing room before MONTH */
+    .sidebar-filter-spacer {
+        height: 8px !important;
+        min-height: 8px !important;
+    }
+
+    /* Push Upload + Version area lower on normal laptop screens.
+       This is visual spacing only; upload/filter logic is unchanged. */
+    .sidebar-bottom-anchor {
+        height: clamp(70px, 12vh, 145px) !important;
+        min-height: 70px !important;
+    }
+
+    /* Keep the lower block visually compact once it reaches the bottom area */
+    section[data-testid="stSidebar"] hr {
+        margin-top: 8px !important;
+        margin-bottom: 12px !important;
+    }
+
+    .sidebar-footer {
+        margin-top: 30px !important;
+        padding-top: 12px !important;
+    }
+
+    /* On shorter screens, reduce the spacer automatically to avoid clipping */
+    @media (max-height: 760px) {
+        .sidebar-bottom-anchor {
+            height: 48px !important;
+            min-height: 48px !important;
+        }
+        .sidebar-footer {
+            margin-top: 20px !important;
+        }
+    }
+
+    @media (max-height: 650px) {
+        .sidebar-bottom-anchor {
+            height: 24px !important;
+            min-height: 24px !important;
+        }
+        .sidebar-footer {
+            margin-top: 14px !important;
         }
     }
     </style>
