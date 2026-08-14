@@ -2430,7 +2430,7 @@ def _fte_office_summary(office_fte: pd.DataFrame, selected_month: str) -> Tuple[
 
 def render_fte_office_comparison(fte_filtered_all_offices: pd.DataFrame, selected_month: str) -> None:
     # Reuse exact Section 3 FTE formula / month handling.
-    _office_comparison_heading("Office Comparison — Workload per FTE")
+    _office_comparison_heading("Office Workload per FTE")
     cols = st.columns(4, gap="small")
     for col, office_name in zip(cols, STANDARD_OFFICES):
         if fte_filtered_all_offices is not None and not fte_filtered_all_offices.empty and "Office" in fte_filtered_all_offices.columns:
@@ -5984,7 +5984,7 @@ def main():
             "Total Actual Working Time",
             fmt_num(total_actual_working, 1)
             if not pd.isna(total_actual_working) else "N/A",
-            "C + A + S + E",
+            "C + A + S + E (hour)",
         )
 
     with p3:
@@ -6003,7 +6003,7 @@ def main():
                 ">
                     {fte_value}
                 </div>
-                <div class="pic-kpi-note">Actual Time ÷ Available Time</div>
+                <div class="pic-kpi-note">Actual Time vs Available Time</div>
             </div>
             """,
             unsafe_allow_html=True,
