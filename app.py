@@ -5413,7 +5413,7 @@ footer{display:none!important}
     top:10px;
     bottom:14px;
     left:1.2vw;
-    width:60vw;
+    width:56vw;
     max-width:none;
     min-width:760px;
     height:auto;
