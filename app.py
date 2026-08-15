@@ -2443,7 +2443,7 @@ def render_fte_office_comparison(fte_filtered_all_offices: pd.DataFrame, selecte
             _office_compare_card(
                 office_name,
                 "FTE Workload",
-                "N/A" if pd.isna(workload) else fmt_pct(workload),
+                "N/A" if pd.isna(workload) else f"{int(np.ceil(workload * 100))}%",
                 [
                     ("Available Time", "N/A" if pd.isna(available) else fmt_num(available, 0), ""),
                     ("Actual Time", "N/A" if pd.isna(actual) else fmt_num(actual, 0), ""),
