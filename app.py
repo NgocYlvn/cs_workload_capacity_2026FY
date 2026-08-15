@@ -5428,10 +5428,10 @@ footer{display:none!important}
 }
 
 .cover-logo-real{
-    width:180px;
+    width:192px;
     height:auto;
     display:block;
-    margin:0 0 clamp(16px,2.2vh,26px) 0;
+    margin:0 0 clamp(12px,1.7vh,20px) 0;
 }
 
 .cover-title{
@@ -5473,7 +5473,7 @@ footer{display:none!important}
     display:grid;
     grid-template-columns:repeat(4,minmax(0,1fr));
     gap:0;
-    margin-top:30px;
+    margin-top:38px;
     padding:10px 12px 0;
 }
 
@@ -5487,9 +5487,9 @@ footer{display:none!important}
     content:"";
     position:absolute;
     right:0;
-    top:44px;
+    top:48px;
     width:1px;
-    height:118px;
+    height:92px;
     background:#DDE5EC;
 }
 
@@ -5531,15 +5531,15 @@ footer{display:none!important}
 
 .cover-pillar-note{
     color:#4F5B6A;
-    font-size:13px;
-    line-height:1.42;
+    font-size:14px;
+    line-height:1.40;
     font-weight:500;
 }
 
 .cover-cta{
     position:absolute;
     left:36px;
-    bottom:22px;
+    bottom:32px;
     display:inline-flex;
     align-items:center;
     justify-content:space-between;
@@ -5602,8 +5602,8 @@ footer{display:none!important}
 }
 
 .cover-headset{
-    width:28px;
-    height:28px;
+    width:30px;
+    height:30px;
     display:flex;
     align-items:center;
     justify-content:center;
@@ -5611,8 +5611,8 @@ footer{display:none!important}
 }
 
 .cover-headset svg{
-    width:26px;
-    height:26px;
+    width:28px;
+    height:28px;
     stroke:currentColor;
     fill:none;
     stroke-width:1.8;
@@ -5659,7 +5659,7 @@ footer{display:none!important}
 
 @media(max-height:820px) and (min-width:901px){
     .cover-panel{top:8px;bottom:10px;padding:18px 40px 18px;width:74vw;min-width:760px}
-    .cover-logo-real{width:165px;margin-bottom:14px}
+    .cover-logo-real{width:176px;margin-bottom:11px}
     .cover-title{font-size:clamp(44px,3.3vw,60px)}
     .cover-title-accent{margin:14px 0 11px 2px}
     .cover-subtitle{font-size:19px;margin-bottom:12px}
@@ -5667,12 +5667,12 @@ footer{display:none!important}
     .cover-icon{width:64px;height:64px}
     .cover-icon svg{width:35px;height:35px}
     .cover-pillar-title{font-size:14px;margin-bottom:7px}
-    .cover-pillar-note{font-size:11.5px;line-height:1.35}
-    .cover-pillars{margin-top:22px;padding:8px 8px 0}
+    .cover-pillar-note{font-size:12.5px;line-height:1.38}
+    .cover-pillars{margin-top:30px;padding:8px 8px 0}
     .cover-pillar{padding:0 16px}
-    .cover-pillar:not(:last-child)::after{top:40px;height:104px}
-    .cover-cta{bottom:18px;height:50px;min-width:300px;font-size:19px}
-    .cover-right-footer{right:24px;bottom:20px;font-size:12px}
+    .cover-pillar:not(:last-child)::after{top:42px;height:84px}
+    .cover-cta{bottom:26px;height:50px;min-width:300px;font-size:19px}
+    .cover-right-footer{right:24px;bottom:26px;font-size:12px}
 }
 
 @media(max-width:900px){
