@@ -6386,7 +6386,7 @@ def main():
     with casetab_e:
         render_activity_detail_table(f_exception_detail, "Exception Handling")
 
-    section_title("6. CS Resolution Rate")
+    section_title("6. Control Tower effectiveness = CS Resolutions Rate")
 
     # Definition note — UI only; no business logic/calculation changes.
     st.markdown(
