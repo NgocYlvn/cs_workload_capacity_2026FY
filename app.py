@@ -6399,7 +6399,7 @@ def main():
             padding:10px 14px;
             margin:0 0 12px 0;
             color:#334155;
-            font-size:12px;
+            font-size:14px;
             line-height:1.5;
         ">
             <strong style="color:#06183F;">Definition:</strong>
