@@ -6388,6 +6388,28 @@ def main():
 
     section_title("6. CS Resolution Rate")
 
+    # Definition note — UI only; no business logic/calculation changes.
+    st.markdown(
+        """
+        <div style="
+            background:#F8FAFC;
+            border:1px solid #D5E1EA;
+            border-left:4px solid #0DBAEE;
+            border-radius:10px;
+            padding:10px 14px;
+            margin:0 0 12px 0;
+            color:#334155;
+            font-size:12px;
+            line-height:1.5;
+        ">
+            <strong style="color:#06183F;">Definition:</strong>
+            CS Resolution Rate = % of customer requests/issues fully resolved by CS without handing off the resolution to another BU.
+            Requests merely forwarded to BUs and relayed back to customers are not considered CS resolutions.
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
     # Executive KPIs sourced from sheet "CS Resolutions Rate".
     if not f_resolution.empty:
         total_abn = float(f_resolution["Total Abnormality"].sum())
