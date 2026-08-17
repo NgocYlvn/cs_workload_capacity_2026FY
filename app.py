@@ -5658,7 +5658,7 @@ footer{display:none!important}
 
 
 @media(max-height:820px) and (min-width:901px){
-    .cover-panel{top:8px;bottom:10px;padding:18px 40px 18px;width:58vw;min-width:760px}
+    .cover-panel{top:8px;bottom:10px;padding:18px 40px 18px;width:62vw;min-width:760px}
     .cover-logo-real{width:176px;margin-bottom:11px}
     .cover-title{font-size:clamp(44px,3.3vw,60px)}
     .cover-title-accent{margin:14px 0 11px 2px}
