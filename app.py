@@ -5048,22 +5048,24 @@ def chart_service_matrix(
     # Rank 7 -> lower-left
     rank_positions = [
         (0.00, 0.00),     # Rank 1
-        (-0.58, 0.00),    # Rank 2
-        (-0.38, 0.52),    # Rank 3
-        (0.05, 0.66),     # Rank 4
-        (0.50, 0.42),     # Rank 5
-        (0.50, -0.38),    # Rank 6
-        (-0.22, -0.58),   # Rank 7
-        (-0.64, -0.34),   # fallback Rank 8
-        (0.00, -0.72),    # fallback Rank 9
-        (0.72, 0.00),     # fallback Rank 10
+        (-0.66, 0.00),    # Rank 2: left
+        (-0.46, 0.55),    # Rank 3: upper-left
+        (0.02, 0.72),     # Rank 4: top
+        (0.58, 0.48),     # Rank 5: upper-right
+        (0.60, -0.45),    # Rank 6: lower-right
+        (-0.34, -0.66),   # Rank 7: lower-left
+        (-0.70, -0.40),   # fallback Rank 8
+        (0.08, -0.78),    # fallback Rank 9
+        (0.78, 0.00),     # fallback Rank 10
     ]
 
     plot_df["Rank"] = np.arange(1, len(plot_df) + 1)
     plot_df["x"] = [rank_positions[i][0] for i in range(len(plot_df))]
     plot_df["y"] = [rank_positions[i][1] for i in range(len(plot_df))]
     max_share = float(plot_df["Workload Share"].max())
-    plot_df["Bubble Size"] = 74 + (plot_df["Workload Share"] / max_share) * 100 if max_share > 0 else 88
+    # Keep the size difference meaningful without letting the largest bubble
+    # dominate the card or squeeze the surrounding labels.
+    plot_df["Bubble Size"] = 70 + (plot_df["Workload Share"] / max_share) * 88 if max_share > 0 else 88
     segment_color_map = {svc: CORPORATE_PALETTE[i % len(CORPORATE_PALETTE)] for i, svc in enumerate(SERVICE_ORDER)}
 
     def bubble_text_color(hex_color: str) -> str:
@@ -5087,7 +5089,7 @@ def chart_service_matrix(
 
     plot_df["Bubble Color"] = plot_df["Segment"].map(segment_color_map).fillna(COLORS["blue"])
     plot_df["Text Color"] = plot_df["Bubble Color"].map(bubble_text_color)
-    plot_df["Text Size"] = np.where(plot_df["Bubble Size"] < 90, 9, np.where(plot_df["Bubble Size"] < 112, 10, 11))
+    plot_df["Text Size"] = np.where(plot_df["Bubble Size"] < 88, 10, np.where(plot_df["Bubble Size"] < 112, 11, 12))
 
     fig = go.Figure()
     # Draw all bubbles first; labels are drawn afterwards on the top layer so
@@ -5114,15 +5116,15 @@ def chart_service_matrix(
             showlegend=False,
         ))
 
-    fig = plotly_layout(fig, 340, show_legend=False, margin_left=24, margin_right=24, margin_top=8, margin_bottom=8)
+    fig = plotly_layout(fig, 350, show_legend=False, margin_left=14, margin_right=14, margin_top=8, margin_bottom=8)
     fig.update_layout(title=dict(text=""))
     fig.update_xaxes(
         visible=False, showgrid=False, zeroline=False, showticklabels=False,
-        title_text="", range=[-1.30, 1.30], fixedrange=True
+        title_text="", range=[-1.12, 1.12], fixedrange=True
     )
     fig.update_yaxes(
         visible=False, showgrid=False, zeroline=False, showticklabels=False,
-        title_text="", range=[-1.12, 1.12], scaleanchor="x", scaleratio=1, fixedrange=True
+        title_text="", range=[-1.05, 1.05], fixedrange=True
     )
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
