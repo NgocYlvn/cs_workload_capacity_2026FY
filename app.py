@@ -6441,11 +6441,11 @@ def main():
             border-radius:10px;
             padding:10px 14px;
             margin:0 0 12px 0;
-            color:#334155;
+            color:#C2410C;
             font-size:14px;
             line-height:1.5;
         ">
-            <strong style="color:#06183F;">Definition:</strong>
+            <strong style="color:#C2410C;">Definition:</strong>
             CS Resolution Rate = % of customer requests/issues fully resolved by CS without handing off the resolution to another BU.
             Requests merely forwarded to BUs and relayed back to customers are not considered CS resolutions.
         </div>
