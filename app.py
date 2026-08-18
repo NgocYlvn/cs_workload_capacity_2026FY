@@ -5241,19 +5241,20 @@ def chart_resolution(df: pd.DataFrame):
     agg = df.groupby("MonthDate", as_index=False).agg(**{"Total Abnormality": ("Total Abnormality", "sum"), "Resolved": ("Resolved", "sum")}).sort_values("MonthDate")
     agg["Resolution Rate"] = np.where(agg["Total Abnormality"] > 0, agg["Resolved"] / agg["Total Abnormality"], np.nan)
     agg["Month"] = agg["MonthDate"].dt.strftime("%b-%y")
+    # Use numeric x positions so the resolution-rate marker stays exactly at
+    # the horizontal centre of its corresponding "Resolved by CS" bar.
+    month_x = np.arange(len(agg), dtype=float)
+    bar_offset = 0.18
+    bar_width = 0.34
+    total_x = month_x - bar_offset
+    resolved_x = month_x + bar_offset
     fig = go.Figure()
-    fig.add_trace(go.Bar(x=agg["Month"], y=agg["Total Abnormality"], name="Total Exception Case", marker_color=BUSINESS_COLORS["supporting"], text=agg["Total Abnormality"], texttemplate="%{text:,.0f}", textposition="outside", cliponaxis=False))
-    fig.add_trace(go.Bar(x=agg["Month"], y=agg["Resolved"], name="Resolved by CS", marker_color=BUSINESS_COLORS["actual"], text=agg["Resolved"], texttemplate="%{text:,.0f}", textposition="outside", cliponaxis=False))
-    fig.add_trace(go.Scatter(x=agg["Month"], y=agg["Resolution Rate"], name="CS Resolution Rate", mode="lines+markers+text", line=dict(color="#F97316",width=3),marker=dict(
-    size=8,color="#F97316",
-    line=dict(
-        color="white",
-        width=1.5
-    )
-),, marker=dict(size=7), text=agg["Resolution Rate"], texttemplate="%{text:.1%}", textposition="top center", yaxis="y2"))
-    fig.update_layout(title_text="", barmode="group", yaxis=dict(title="Cases", rangemode="tozero"), yaxis2=dict(title="Resolution Rate", overlaying="y", side="right", tickformat=".0%", range=[0, 1.20], showgrid=False))
+    fig.add_trace(go.Bar(x=total_x, width=bar_width, y=agg["Total Abnormality"], name="Total Exception Case", marker_color=BUSINESS_COLORS["supporting"], text=agg["Total Abnormality"], texttemplate="%{text:,.0f}", textposition="outside", cliponaxis=False, customdata=agg["Month"], hovertemplate="%{customdata}<br>Total Exception Case: %{y:,.0f}<extra></extra>"))
+    fig.add_trace(go.Bar(x=resolved_x, width=bar_width, y=agg["Resolved"], name="Resolved by CS", marker_color=BUSINESS_COLORS["actual"], text=agg["Resolved"], texttemplate="%{text:,.0f}", textposition="outside", cliponaxis=False, customdata=agg["Month"], hovertemplate="%{customdata}<br>Resolved by CS: %{y:,.0f}<extra></extra>"))
+    fig.add_trace(go.Scatter(x=resolved_x, y=agg["Resolution Rate"], name="CS Resolution Rate", mode="lines+markers+text", line=dict(color="#F97316", width=3), marker=dict(size=8, color="#F97316", line=dict(color="#FFFFFF", width=1.5)), text=agg["Resolution Rate"], texttemplate="%{text:.1%}", textposition="top center", yaxis="y2", customdata=agg["Month"], hovertemplate="%{customdata}<br>CS Resolution Rate: %{y:.1%}<extra></extra>"))
+    fig.update_layout(title_text="", barmode="overlay", yaxis=dict(title="Cases", rangemode="tozero"), yaxis2=dict(title="Resolution Rate", overlaying="y", side="right", tickformat=".0%", range=[0, 1.20], showgrid=False))
     fig = plotly_layout(fig, 390, show_legend=True, legend_position="top", margin_left=58, margin_right=68, margin_top=38, margin_bottom=44)
-    fig.update_xaxes(type="category", categoryorder="array", categoryarray=agg["Month"].tolist())
+    fig.update_xaxes(tickmode="array", tickvals=month_x, ticktext=agg["Month"].tolist(), range=[-0.55, len(agg) - 0.45])
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
 def render_cs_solution_table(df: pd.DataFrame):
