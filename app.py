@@ -5048,15 +5048,15 @@ def chart_service_matrix(
     # Rank 7 -> lower-left
     rank_positions = [
         (0.00, 0.00),     # Rank 1
-        (-0.66, 0.00),    # Rank 2: left
-        (-0.46, 0.55),    # Rank 3: upper-left
-        (0.02, 0.72),     # Rank 4: top
-        (0.58, 0.48),     # Rank 5: upper-right
-        (0.60, -0.45),    # Rank 6: lower-right
-        (-0.34, -0.66),   # Rank 7: lower-left
-        (-0.70, -0.40),   # fallback Rank 8
-        (0.08, -0.78),    # fallback Rank 9
-        (0.78, 0.00),     # fallback Rank 10
+        (-0.34, 0.00),    # Rank 2: attached on the left
+        (-0.22, 0.38),    # Rank 3: attached upper-left
+        (0.02, 0.48),     # Rank 4: attached on top
+        (0.30, 0.34),     # Rank 5: attached upper-right
+        (0.28, -0.28),    # Rank 6: attached lower-right
+        (-0.18, -0.42),   # Rank 7: attached lower-left
+        (-0.38, -0.28),   # fallback Rank 8
+        (0.04, -0.52),    # fallback Rank 9
+        (0.40, 0.00),     # fallback Rank 10
     ]
 
     plot_df["Rank"] = np.arange(1, len(plot_df) + 1)
