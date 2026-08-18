@@ -5066,17 +5066,51 @@ def chart_service_matrix(
     plot_df["Bubble Size"] = 74 + (plot_df["Workload Share"] / max_share) * 100 if max_share > 0 else 88
     segment_color_map = {svc: CORPORATE_PALETTE[i % len(CORPORATE_PALETTE)] for i, svc in enumerate(SERVICE_ORDER)}
 
+    def bubble_text_color(hex_color: str) -> str:
+        """Choose white or navy according to the bubble fill contrast."""
+        color = str(hex_color).lstrip("#")
+        if len(color) != 6:
+            return COLORS["navy"]
+
+        def relative_luminance(rgb):
+            channels = [value / 12.92 if value <= 0.04045 else ((value + 0.055) / 1.055) ** 2.4 for value in rgb]
+            return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2]
+
+        bubble_rgb = tuple(int(color[i:i + 2], 16) / 255 for i in (0, 2, 4))
+        navy_hex = COLORS["navy"].lstrip("#")
+        navy_rgb = tuple(int(navy_hex[i:i + 2], 16) / 255 for i in (0, 2, 4))
+        bubble_luminance = relative_luminance(bubble_rgb)
+        navy_luminance = relative_luminance(navy_rgb)
+        white_contrast = 1.05 / (bubble_luminance + 0.05)
+        navy_contrast = (max(bubble_luminance, navy_luminance) + 0.05) / (min(bubble_luminance, navy_luminance) + 0.05)
+        return "#FFFFFF" if white_contrast >= navy_contrast else COLORS["navy"]
+
+    plot_df["Bubble Color"] = plot_df["Segment"].map(segment_color_map).fillna(COLORS["blue"])
+    plot_df["Text Color"] = plot_df["Bubble Color"].map(bubble_text_color)
+    plot_df["Text Size"] = np.where(plot_df["Bubble Size"] < 90, 9, np.where(plot_df["Bubble Size"] < 112, 10, 11))
+
     fig = go.Figure()
+    # Draw all bubbles first; labels are drawn afterwards on the top layer so
+    # overlapping bubbles cannot cover or hide any segment text.
     for _, r in plot_df.iterrows():
         svc = r["Segment"]
         fig.add_trace(go.Scatter(
-            x=[r["x"]], y=[r["y"]], mode="markers+text", name=svc,
-            text=[f"<b>{svc}</b><br>{r['Workload Share']:.1%}"],
-            textposition="middle center",
-            textfont=dict(family=UI["font_family"], size=11, color="#FFFFFF" if r["Workload Share"] >= 0.06 else COLORS["navy"]),
-            marker=dict(size=[r["Bubble Size"]], color=segment_color_map.get(svc, COLORS["blue"]), opacity=0.94, line=dict(color="#FFFFFF", width=2.0)),
+            x=[r["x"]], y=[r["y"]], mode="markers", name=svc,
+            marker=dict(size=[r["Bubble Size"]], color=r["Bubble Color"], opacity=0.94, line=dict(color="#FFFFFF", width=2.0)),
             customdata=[[r["Shipment Volume"], r["Allocation Time (h)"], r["Required FTE"], r["Workload Share"]]],
             hovertemplate=(f"<b>{svc}</b><br>Shipment Volume: %{{customdata[0]:,.0f}}<br>Allocation Time: %{{customdata[1]:,.1f}} hrs<br>Required FTE: %{{customdata[2]:,.2f}}<br>Workload Share: %{{customdata[3]:.1%}}<extra></extra>"),
+            showlegend=False,
+        ))
+
+    for _, r in plot_df.iterrows():
+        svc = r["Segment"]
+        fig.add_trace(go.Scatter(
+            x=[r["x"]], y=[r["y"]], mode="text",
+            text=[f"<b>{svc}</b><br>{r['Workload Share']:.1%}"],
+            textposition="middle center",
+            textfont=dict(family=UI["font_family"], size=int(r["Text Size"]), color=r["Text Color"]),
+            cliponaxis=False,
+            hoverinfo="skip",
             showlegend=False,
         ))
 
@@ -5084,11 +5118,11 @@ def chart_service_matrix(
     fig.update_layout(title=dict(text=""))
     fig.update_xaxes(
         visible=False, showgrid=False, zeroline=False, showticklabels=False,
-        title_text="", range=[-1.12, 1.12], fixedrange=True
+        title_text="", range=[-1.30, 1.30], fixedrange=True
     )
     fig.update_yaxes(
         visible=False, showgrid=False, zeroline=False, showticklabels=False,
-        title_text="", range=[-1.00, 1.00], scaleanchor="x", scaleratio=1, fixedrange=True
+        title_text="", range=[-1.12, 1.12], scaleanchor="x", scaleratio=1, fixedrange=True
     )
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
