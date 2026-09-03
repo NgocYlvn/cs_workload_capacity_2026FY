@@ -4051,13 +4051,26 @@ def chart_exception_by_criteria(df: pd.DataFrame):
     total = float(agg["Volume"].sum())
     agg["Share"] = np.where(total > 0, agg["Volume"] / total, 0.0)
 
+    # Use a monochromatic Yusen Blue scale: largest value is darkest.
+    yusen_blue_shades = [
+        YUSEN_THEME["primary"],
+        "#2E73AA",
+        "#8EB7D8",
+    ]
+    criteria_by_volume = agg.sort_values("Volume", ascending=False)["Criteria"].tolist()
+    shade_map = {
+        criteria: yusen_blue_shades[min(index, len(yusen_blue_shades) - 1)]
+        for index, criteria in enumerate(criteria_by_volume)
+    }
+    agg["Bar Color"] = agg["Criteria"].map(shade_map)
+
     chart_height = max(330, min(620, 42 * len(agg) + 135))
     fig = go.Figure(
         go.Bar(
             x=agg["Volume"],
             y=agg["Criteria"],
             orientation="h",
-            marker_color=COLORS["red"],
+            marker_color=agg["Bar Color"],
             text=agg["Volume"],
             texttemplate="%{text:,.0f}",
             textposition="outside",
