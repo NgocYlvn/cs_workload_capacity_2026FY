@@ -4019,11 +4019,10 @@ def chart_case_allocation(df: pd.DataFrame):
     )
 
 
-def chart_exception_by_criteria(df: pd.DataFrame):
-    """Filtered Exception Handling volume and share by Criteria."""
+def exception_criteria_summary(df: pd.DataFrame) -> pd.DataFrame:
+    """Aggregate filtered Exception Handling volume and share by Criteria."""
     if df is None or df.empty or "Criteria" not in df.columns or "Volume" not in df.columns:
-        st.info("No Exception Handling criteria data available for the selected filters.")
-        return
+        return pd.DataFrame(columns=["Criteria", "Volume", "Share"])
 
     d = df[["Criteria", "Volume"]].copy()
     d["Criteria"] = (
@@ -4040,8 +4039,7 @@ def chart_exception_by_criteria(df: pd.DataFrame):
     ]
 
     if d.empty:
-        st.info("No Exception Handling criteria data available for the selected filters.")
-        return
+        return pd.DataFrame(columns=["Criteria", "Volume", "Share"])
 
     agg = (
         d.groupby("Criteria", as_index=False)["Volume"]
@@ -4050,29 +4048,32 @@ def chart_exception_by_criteria(df: pd.DataFrame):
     )
     total = float(agg["Volume"].sum())
     agg["Share"] = np.where(total > 0, agg["Volume"] / total, 0.0)
+    return agg
 
-    # Use a monochromatic Yusen Blue scale: largest value is darkest.
-    yusen_blue_shades = [
-        YUSEN_THEME["primary"],
-        "#2E73AA",
-        "#8EB7D8",
-    ]
-    criteria_by_volume = agg.sort_values("Volume", ascending=False)["Criteria"].tolist()
-    shade_map = {
-        criteria: yusen_blue_shades[min(index, len(yusen_blue_shades) - 1)]
-        for index, criteria in enumerate(criteria_by_volume)
-    }
-    agg["Bar Color"] = agg["Criteria"].map(shade_map)
 
-    chart_height = max(330, min(620, 42 * len(agg) + 135))
+def chart_exception_by_criteria(df: pd.DataFrame):
+    """Compact horizontal chart of Exception Handling by Criteria."""
+    agg = exception_criteria_summary(df)
+    if agg.empty:
+        st.info("No Exception Handling criteria data available for the selected filters.")
+        return
+
+    agg["Label"] = agg.apply(
+        lambda row: (
+            f"{row['Volume']:,.0f} ({row['Share']:.1%})"
+            .replace(".", ",")
+        ),
+        axis=1,
+    )
+
     fig = go.Figure(
         go.Bar(
             x=agg["Volume"],
             y=agg["Criteria"],
             orientation="h",
-            marker_color=agg["Bar Color"],
-            text=agg["Volume"],
-            texttemplate="%{text:,.0f}",
+            marker_color=COLORS["blue"],
+            text=agg["Label"],
+            texttemplate="%{text}",
             textposition="outside",
             cliponaxis=False,
             customdata=agg[["Share"]],
@@ -4084,18 +4085,44 @@ def chart_exception_by_criteria(df: pd.DataFrame):
         )
     )
     fig.update_layout(title=dict(text="Exception Handling by Criteria"))
-    fig.update_xaxes(title_text="Exception Volume", rangemode="tozero")
+    fig.update_xaxes(title_text="", rangemode="tozero")
     fig.update_yaxes(title_text="", automargin=True)
     fig = plotly_layout(
         fig,
-        chart_height,
+        280,
         show_legend=False,
-        margin_left=150,
-        margin_right=70,
-        margin_top=64,
-        margin_bottom=44,
+        margin_left=72,
+        margin_right=110,
+        margin_top=56,
+        margin_bottom=28,
     )
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+
+
+def render_exception_criteria_summary(df: pd.DataFrame):
+    """Compact summary table paired with the Exception Criteria chart."""
+    agg = exception_criteria_summary(df)
+    pair_panel_title("Criteria Summary")
+
+    if agg.empty:
+        st.info("No Exception Handling criteria data available for the selected filters.")
+        return
+
+    display = agg.sort_values("Volume", ascending=False).copy()
+    display["Volume"] = display["Volume"].round(0)
+    display["Share (%)"] = display["Share"] * 100
+
+    st.dataframe(
+        display[["Criteria", "Volume", "Share (%)"]],
+        use_container_width=True,
+        hide_index=True,
+        height=224,
+        column_config={
+            "Criteria": st.column_config.TextColumn("Criteria"),
+            "Volume": st.column_config.NumberColumn("Exception Volume", format="%,.0f"),
+            "Share (%)": st.column_config.NumberColumn("Share", format="%.1f%%"),
+        },
+    )
 
 
 
@@ -6506,7 +6533,11 @@ def main():
     with casetab_s:
         render_activity_detail_table(f_supporting_detail, "Supporting Activity")
     with casetab_e:
-        chart_exception_by_criteria(f_exception_detail)
+        exception_chart_col, exception_summary_col = st.columns([0.58, 0.42], gap="medium")
+        with exception_chart_col:
+            chart_exception_by_criteria(f_exception_detail)
+        with exception_summary_col:
+            render_exception_criteria_summary(f_exception_detail)
         render_activity_detail_table(f_exception_detail, "Exception Handling")
 
     section_title("6. Control Tower effectiveness = CS Resolutions Rate")
