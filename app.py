@@ -4019,6 +4019,72 @@ def chart_case_allocation(df: pd.DataFrame):
     )
 
 
+def chart_exception_by_criteria(df: pd.DataFrame):
+    """Filtered Exception Handling volume and share by Criteria."""
+    if df is None or df.empty or "Criteria" not in df.columns or "Volume" not in df.columns:
+        st.info("No Exception Handling criteria data available for the selected filters.")
+        return
+
+    d = df[["Criteria", "Volume"]].copy()
+    d["Criteria"] = (
+        d["Criteria"]
+        .fillna("")
+        .astype(str)
+        .str.strip()
+        .str.replace(r"\s+", " ", regex=True)
+    )
+    d["Volume"] = pd.to_numeric(d["Volume"], errors="coerce").fillna(0.0)
+    d = d[
+        (~d["Criteria"].str.lower().isin(["", "nan", "none"]))
+        & (d["Volume"] > 0)
+    ]
+
+    if d.empty:
+        st.info("No Exception Handling criteria data available for the selected filters.")
+        return
+
+    agg = (
+        d.groupby("Criteria", as_index=False)["Volume"]
+        .sum()
+        .sort_values("Volume", ascending=True)
+    )
+    total = float(agg["Volume"].sum())
+    agg["Share"] = np.where(total > 0, agg["Volume"] / total, 0.0)
+
+    chart_height = max(330, min(620, 42 * len(agg) + 135))
+    fig = go.Figure(
+        go.Bar(
+            x=agg["Volume"],
+            y=agg["Criteria"],
+            orientation="h",
+            marker_color=COLORS["red"],
+            text=agg["Volume"],
+            texttemplate="%{text:,.0f}",
+            textposition="outside",
+            cliponaxis=False,
+            customdata=agg[["Share"]],
+            hovertemplate=(
+                "Criteria: %{y}<br>"
+                "Exception Volume: %{x:,.0f}<br>"
+                "Share: %{customdata[0]:.1%}<extra></extra>"
+            ),
+        )
+    )
+    fig.update_layout(title=dict(text="Exception Handling by Criteria"))
+    fig.update_xaxes(title_text="Exception Volume", rangemode="tozero")
+    fig.update_yaxes(title_text="", automargin=True)
+    fig = plotly_layout(
+        fig,
+        chart_height,
+        show_legend=False,
+        margin_left=150,
+        margin_right=70,
+        margin_top=64,
+        margin_bottom=44,
+    )
+    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+
+
 
 def render_workload_breakdown_table(df: pd.DataFrame):
     """C/A/S/E workload detail in hours; no TOTAL row and no Ratio column."""
@@ -6427,6 +6493,7 @@ def main():
     with casetab_s:
         render_activity_detail_table(f_supporting_detail, "Supporting Activity")
     with casetab_e:
+        chart_exception_by_criteria(f_exception_detail)
         render_activity_detail_table(f_exception_detail, "Exception Handling")
 
     section_title("6. Control Tower effectiveness = CS Resolutions Rate")
