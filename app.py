@@ -4052,7 +4052,7 @@ def exception_criteria_summary(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def chart_exception_by_criteria(df: pd.DataFrame):
-    """Compact, lightly exploded donut chart of Exception Handling by Criteria."""
+    """Flower-style packed bubble chart of Exception Handling by Criteria."""
     agg = exception_criteria_summary(df)
     if agg.empty:
         st.info("No Exception Handling criteria data available for the selected filters.")
@@ -4060,53 +4060,94 @@ def chart_exception_by_criteria(df: pd.DataFrame):
 
     agg = agg.sort_values("Volume", ascending=False).reset_index(drop=True)
 
-    fig = go.Figure(
-        go.Pie(
-            labels=agg["Criteria"],
-            values=agg["Volume"],
-            hole=0.52,
-            sort=False,
-            direction="clockwise",
-            pull=[0.04] * len(agg),
-            marker=dict(
-                colors=["#0DBAEE", "#4CC9F0", "#9ADFF7"][:len(agg)],
-                line=dict(color=COLORS["white"], width=2),
-            ),
-            textinfo="label+value+percent",
-            texttemplate="<b>%{label}</b><br>%{value:,.0f} (%{percent:.1%})",
-            textposition="outside",
-            automargin=True,
-            hovertemplate=(
-                "Criteria: %{label}<br>"
-                "Exception Volume: %{value:,.0f}<br>"
-                "Share: %{percent:.1%}<extra></extra>"
-            ),
-        )
+    # Rank-based placement keeps the largest Criteria at the center and packs
+    # the remaining circles around it, matching the dashboard's flower chart.
+    rank_positions = [
+        (0.00, 0.00),
+        (-0.46, 0.10),
+        (0.42, 0.28),
+        (-0.26, 0.48),
+        (0.30, -0.38),
+        (-0.36, -0.36),
+        (0.55, -0.12),
+    ]
+    fallback_positions = [
+        (0.68 * np.cos(i * 2 * np.pi / max(len(agg), 1)),
+         0.58 * np.sin(i * 2 * np.pi / max(len(agg), 1)))
+        for i in range(len(agg))
+    ]
+    positions = [
+        rank_positions[i] if i < len(rank_positions) else fallback_positions[i]
+        for i in range(len(agg))
+    ]
+    agg["x"] = [p[0] for p in positions]
+    agg["y"] = [p[1] for p in positions]
+
+    max_share = float(agg["Share"].max())
+    agg["Bubble Size"] = (
+        54 + np.sqrt(agg["Share"] / max_share) * 112
+        if max_share > 0 else 90
     )
-    total_volume = float(agg["Volume"].sum())
-    fig.update_layout(
-        title=dict(text="Exception Handling by Criteria"),
-        annotations=[
-            dict(
-                text=f"<b>{total_volume:,.0f}</b><br><span style='font-size:10px'>TOTAL EXCEPTIONS</span>",
-                x=0.5,
-                y=0.5,
-                xref="paper",
-                yref="paper",
-                showarrow=False,
-                align="center",
-                font=dict(size=20, color=COLORS["navy"]),
+    blue_palette = ["#0DBAEE", "#56C9ED", "#A7E4F6", "#2E73AA", "#8EB7D8"]
+    agg["Bubble Color"] = [blue_palette[i % len(blue_palette)] for i in range(len(agg))]
+    agg["Text Color"] = np.where(
+        agg["Bubble Color"].isin(["#0DBAEE", "#2E73AA"]),
+        "#FFFFFF",
+        COLORS["navy"],
+    )
+    agg["Text Size"] = np.where(agg["Bubble Size"] < 75, 10, 12)
+
+    fig = go.Figure()
+    for _, row in agg.iterrows():
+        fig.add_trace(
+            go.Scatter(
+                x=[row["x"]],
+                y=[row["y"]],
+                mode="markers",
+                marker=dict(
+                    size=[row["Bubble Size"]],
+                    color=row["Bubble Color"],
+                    opacity=0.95,
+                    line=dict(color=COLORS["white"], width=2.5),
+                ),
+                customdata=[[row["Volume"], row["Share"]]],
+                hovertemplate=(
+                    f"<b>{row['Criteria']}</b><br>"
+                    "Exception Volume: %{customdata[0]:,.0f}<br>"
+                    "Share: %{customdata[1]:.1%}<extra></extra>"
+                ),
+                showlegend=False,
             )
-        ],
+        )
+
+    # Add labels last so overlapping bubbles never hide the text.
+    for _, row in agg.iterrows():
+        fig.add_trace(
+            go.Scatter(
+                x=[row["x"]],
+                y=[row["y"]],
+                mode="text",
+                text=[f"<b>{row['Criteria']}</b><br>{row['Share']:.1%}"],
+                textposition="middle center",
+                textfont=dict(
+                    family=UI["font_family"],
+                    size=int(row["Text Size"]),
+                    color=row["Text Color"],
+                ),
+                hoverinfo="skip",
+                showlegend=False,
+            )
+        )
+
+    fig = plotly_layout(fig, 300, show_legend=False, margin_left=8, margin_right=8, margin_top=42, margin_bottom=8)
+    fig.update_layout(title=dict(text="Exception Handling by Criteria"))
+    fig.update_xaxes(
+        visible=False, showgrid=False, zeroline=False, showticklabels=False,
+        title_text="", range=[-1.10, 1.10], fixedrange=True,
     )
-    fig = plotly_layout(
-        fig,
-        280,
-        show_legend=False,
-        margin_left=45,
-        margin_right=45,
-        margin_top=56,
-        margin_bottom=24,
+    fig.update_yaxes(
+        visible=False, showgrid=False, zeroline=False, showticklabels=False,
+        title_text="", range=[-0.90, 0.90], fixedrange=True,
     )
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
