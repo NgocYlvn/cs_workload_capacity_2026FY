@@ -4099,33 +4099,6 @@ def chart_exception_by_criteria(df: pd.DataFrame):
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
 
-def render_exception_criteria_summary(df: pd.DataFrame):
-    """Compact summary table paired with the Exception Criteria chart."""
-    agg = exception_criteria_summary(df)
-    pair_panel_title("Criteria Summary")
-
-    if agg.empty:
-        st.info("No Exception Handling criteria data available for the selected filters.")
-        return
-
-    display = agg.sort_values("Volume", ascending=False).copy()
-    display["Volume"] = display["Volume"].round(0)
-    display["Share (%)"] = display["Share"] * 100
-
-    st.dataframe(
-        display[["Criteria", "Volume", "Share (%)"]],
-        use_container_width=True,
-        hide_index=True,
-        height=224,
-        column_config={
-            "Criteria": st.column_config.TextColumn("Criteria"),
-            "Volume": st.column_config.NumberColumn("Exception Volume", format="%,.0f"),
-            "Share (%)": st.column_config.NumberColumn("Share", format="%.1f%%"),
-        },
-    )
-
-
-
 def render_workload_breakdown_table(df: pd.DataFrame):
     """C/A/S/E workload detail in hours; no TOTAL row and no Ratio column."""
     summary = workload_breakdown_table(df)
@@ -6533,11 +6506,9 @@ def main():
     with casetab_s:
         render_activity_detail_table(f_supporting_detail, "Supporting Activity")
     with casetab_e:
-        exception_chart_col, exception_summary_col = st.columns([0.58, 0.42], gap="medium")
+        exception_chart_col, _ = st.columns([0.58, 0.42], gap="medium")
         with exception_chart_col:
             chart_exception_by_criteria(f_exception_detail)
-        with exception_summary_col:
-            render_exception_criteria_summary(f_exception_detail)
         render_activity_detail_table(f_exception_detail, "Exception Handling")
 
     section_title("6. Control Tower effectiveness = CS Resolutions Rate")
