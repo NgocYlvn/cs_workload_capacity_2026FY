@@ -4052,49 +4052,61 @@ def exception_criteria_summary(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def chart_exception_by_criteria(df: pd.DataFrame):
-    """Compact horizontal chart of Exception Handling by Criteria."""
+    """Compact, lightly exploded donut chart of Exception Handling by Criteria."""
     agg = exception_criteria_summary(df)
     if agg.empty:
         st.info("No Exception Handling criteria data available for the selected filters.")
         return
 
-    agg["Label"] = agg.apply(
-        lambda row: (
-            f"{row['Volume']:,.0f} ({row['Share']:.1%})"
-            .replace(".", ",")
-        ),
-        axis=1,
-    )
+    agg = agg.sort_values("Volume", ascending=False).reset_index(drop=True)
 
     fig = go.Figure(
-        go.Bar(
-            x=agg["Volume"],
-            y=agg["Criteria"],
-            orientation="h",
-            marker_color=COLORS["blue"],
-            text=agg["Label"],
-            texttemplate="%{text}",
+        go.Pie(
+            labels=agg["Criteria"],
+            values=agg["Volume"],
+            hole=0.52,
+            sort=False,
+            direction="clockwise",
+            pull=[0.04] * len(agg),
+            marker=dict(
+                colors=["#0DBAEE", "#4CC9F0", "#9ADFF7"][:len(agg)],
+                line=dict(color=COLORS["white"], width=2),
+            ),
+            textinfo="label+value+percent",
+            texttemplate="<b>%{label}</b><br>%{value:,.0f} (%{percent:.1%})",
             textposition="outside",
-            cliponaxis=False,
-            customdata=agg[["Share"]],
+            automargin=True,
             hovertemplate=(
-                "Criteria: %{y}<br>"
-                "Exception Volume: %{x:,.0f}<br>"
-                "Share: %{customdata[0]:.1%}<extra></extra>"
+                "Criteria: %{label}<br>"
+                "Exception Volume: %{value:,.0f}<br>"
+                "Share: %{percent:.1%}<extra></extra>"
             ),
         )
     )
-    fig.update_layout(title=dict(text="Exception Handling by Criteria"))
-    fig.update_xaxes(title_text="", rangemode="tozero")
-    fig.update_yaxes(title_text="", automargin=True)
+    total_volume = float(agg["Volume"].sum())
+    fig.update_layout(
+        title=dict(text="Exception Handling by Criteria"),
+        annotations=[
+            dict(
+                text=f"<b>{total_volume:,.0f}</b><br><span style='font-size:10px'>TOTAL EXCEPTIONS</span>",
+                x=0.5,
+                y=0.5,
+                xref="paper",
+                yref="paper",
+                showarrow=False,
+                align="center",
+                font=dict(size=20, color=COLORS["navy"]),
+            )
+        ],
+    )
     fig = plotly_layout(
         fig,
         280,
         show_legend=False,
-        margin_left=72,
-        margin_right=110,
+        margin_left=45,
+        margin_right=45,
         margin_top=56,
-        margin_bottom=28,
+        margin_bottom=24,
     )
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
