@@ -1,6 +1,6 @@
 # ============================================================
 # CS WORKLOAD & CAPACITY DASHBOARD
-# BUILD: V49_HIGH_LOAD_BLUE_GRAY
+# BUILD: V48_EXCEPTION_PIE_OUTSIDE_LABELS
 # BUILD: SECTION2_CHART_DETAIL_V4
 # Python + Streamlit + Pandas + Plotly
 # Data source: (Not for Office Input) MASTER DATA SOURCE.xlsm
@@ -79,7 +79,6 @@ COLORS = {
     "red": "#D92D20",
     "green": "#95C947",
     "purple": "#7C3AED",
-    "high_load": "#95BBDA",
     "amber": YUSEN_THEME["accent"],
     "gray": "#98A2B3",
     "gray_dark": YUSEN_THEME["text_secondary"],
@@ -2322,7 +2321,7 @@ def status_from_util(util: float) -> Tuple[str, str, str]:
     if util <= 0.95:
         return "BALANCED", COLORS["blue"], "#DBEAFE"
     if util <= 1.00:
-        return "HIGH LOAD", COLORS["high_load"], "#F2F7FA"
+        return "HIGH LOAD", COLORS["purple"], "#EDE9FE"
     return "OVERLOAD", COLORS["red"], "#FEE2E2"
 
 
@@ -2376,7 +2375,7 @@ def render_hc_office_comparison(hc_filtered_all_offices: pd.DataFrame) -> None:
             # using the standard workload thresholds:
             # < 90%       -> LESS LOAD / Green
             # 90% - 95%   -> BALANCED / Blue
-            # >95% - 100% -> HIGH LOAD / Blue-gray
+            # >95% - 100% -> HIGH LOAD / Purple
             # >100%       -> OVERLOAD / Red
             if pd.isna(util):
                 status_text, status_color, status_bg = "NO DATA", COLORS["muted"], COLORS["light_blue"]
@@ -4640,7 +4639,7 @@ def chart_workload_by_pic(fte_df: pd.DataFrame, selected_office: str):
     - All Offices: show Top 10 PICs by Utilization across all offices.
     - Colors:
         >100%      = Red (Overload)
-        >95%–100%  = Blue-gray (High Load)
+        >95%–100%  = Purple (High Load)
         90%–95%    = Blue (Balanced)
         <90%       = Green (Less Load)
     """
@@ -4668,13 +4667,13 @@ def chart_workload_by_pic(fte_df: pd.DataFrame, selected_office: str):
     def _status(util):
         # Standard workload color rule:
         # >100% = Overload / Red
-        # >95%–100% = High Load / Blue-gray
+        # >95%–100% = High Load / Purple
         # 90%–95% = Balanced / Blue
         # <90% = Less Load / Green
         if util > 1.00:
             return "Overload", COLORS["red"]
         if util > 0.95:
-            return "High Load", COLORS["high_load"]
+            return "High Load", COLORS["purple"]
         if util >= 0.90:
             return "Balanced", COLORS["blue"]
         return "Less Load", COLORS["green"]
@@ -4846,7 +4845,7 @@ def chart_workload_by_pic(fte_df: pd.DataFrame, selected_office: str):
             white-space:normal;
             flex-wrap:wrap;">
             <span><span style="display:inline-block;width:9px;height:9px;background:{COLORS['red']};margin-right:5px;border-radius:2px;"></span>Overload &gt;100%</span>
-            <span><span style="display:inline-block;width:9px;height:9px;background:{COLORS['high_load']};margin-right:5px;border-radius:2px;"></span>High Load &gt;95–100%</span>
+            <span><span style="display:inline-block;width:9px;height:9px;background:{COLORS['purple']};margin-right:5px;border-radius:2px;"></span>High Load &gt;95–100%</span>
             <span><span style="display:inline-block;width:9px;height:9px;background:{COLORS['blue']};margin-right:5px;border-radius:2px;"></span>Balanced 90–95%</span>
             <span><span style="display:inline-block;width:9px;height:9px;background:{COLORS['green']};margin-right:5px;border-radius:2px;"></span>Less Load &lt;90%</span>
         </div>
