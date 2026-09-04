@@ -1,6 +1,6 @@
 # ============================================================
 # CS WORKLOAD & CAPACITY DASHBOARD
-# BUILD: V52_HIGH_LOAD_AMBER
+# BUILD: V53_EXCEPTION_PIE_SPACING
 # BUILD: SECTION2_CHART_DETAIL_V4
 # Python + Streamlit + Pandas + Plotly
 # Data source: (Not for Office Input) MASTER DATA SOURCE.xlsm
@@ -4061,6 +4061,9 @@ def chart_exception_by_criteria(df: pd.DataFrame):
             customdata=agg[["Share"]],
             sort=False,
             direction="clockwise",
+            # Slightly smaller/lower pie leaves room for outside labels above
+            # and separates the bottom label from the legend.
+            domain=dict(x=[0.08, 0.92], y=[0.16, 0.88]),
             textinfo="label+percent",
             texttemplate="<b>%{label}</b><br>%{percent:.1%}",
             # Place Criteria + percentage outside with leader lines so small
@@ -4087,8 +4090,8 @@ def chart_exception_by_criteria(df: pd.DataFrame):
     )
 
     fig = plotly_layout(
-        fig, 370, show_legend=True, legend_position="bottom",
-        margin_left=58, margin_right=58, margin_top=42, margin_bottom=76,
+        fig, 390, show_legend=True, legend_position="bottom",
+        margin_left=60, margin_right=60, margin_top=58, margin_bottom=90,
     )
     fig.update_layout(
         title=dict(text="Exception Handling by Criteria"),
@@ -4098,7 +4101,7 @@ def chart_exception_by_criteria(df: pd.DataFrame):
         legend=dict(
             orientation="h",
             yanchor="top",
-            y=-0.08,
+            y=-0.12,
             xanchor="center",
             x=0.5,
             title=dict(text="Criteria"),
