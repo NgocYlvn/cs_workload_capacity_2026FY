@@ -1,6 +1,6 @@
 # ============================================================
 # CS WORKLOAD & CAPACITY DASHBOARD
-# BUILD: V75_CUSTOMER_PANEL_ALIGNMENT
+# BUILD: V76_STABILITY_OPTIMIZATION
 # BUILD: SECTION2_CHART_DETAIL_V4
 # Python + Streamlit + Pandas + Plotly
 # Data source: (Not for Office Input) MASTER DATA SOURCE.xlsm
@@ -11,6 +11,8 @@ from __future__ import annotations
 import re
 import html
 import hashlib
+import logging
+import tempfile
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Tuple
 
@@ -35,6 +37,8 @@ st.set_page_config(
 APP_TITLE = "CS OPERATIONS PERFORMANCE DASHBOARD"
 APP_SUBTITLE = "Capacity • Workload • Utilization • Performance"
 DEFAULT_FILE = "(Not for Office Input) MASTER DATA SOURCE.xlsm"
+APP_DIR = Path(__file__).resolve().parent
+DEFAULT_FILE_PATH = APP_DIR / DEFAULT_FILE
 CAPACITY_HOURS_PER_FTE = 8 * 0.95 * 22  # 167.2 hours/FTE/month
 STANDARD_OFFICES = ["HAN", "HAD", "HLC", "HCM"]
 SERVICE_ORDER = ["AE", "AI", "OE", "OI", "CC", "TR", "WH"]
@@ -130,6 +134,12 @@ UI = {
 
 # Shared height for Shipment Volume chart/detail pairs
 SHIPMENT_PAIR_HEIGHT = 500
+
+logger = logging.getLogger(__name__)
+
+
+class WorkbookLoadError(RuntimeError):
+    """Raised when the selected workbook or one of its sheets cannot be read."""
 
 CORPORATE_PALETTE = [
     YUSEN_THEME["secondary"],
@@ -2182,7 +2192,7 @@ def safe_float(value) -> float:
             return 0.0
     try:
         return float(value)
-    except Exception:
+    except (TypeError, ValueError, OverflowError):
         return 0.0
 
 
@@ -2223,14 +2233,14 @@ def parse_month(value) -> pd.Timestamp | pd.NaT:
         try:
             dt = pd.to_datetime(text, format=fmt)
             return pd.Timestamp(year=dt.year, month=dt.month, day=1)
-        except Exception:
+        except (TypeError, ValueError, OverflowError):
             pass
     try:
         dt = pd.to_datetime(text, errors="coerce")
         if pd.isna(dt):
             return pd.NaT
         return pd.Timestamp(year=dt.year, month=dt.month, day=1)
-    except Exception:
+    except (TypeError, ValueError, OverflowError):
         return pd.NaT
 
 
@@ -2251,6 +2261,7 @@ def read_sheet(path: str | Path, sheet: str, header: int = 1) -> pd.DataFrame:
         df = df.dropna(how="all")
         return df
     except Exception:
+        logger.exception("Unable to read sheet %r from workbook %s", sheet, path)
         return pd.DataFrame()
 
 
@@ -2971,8 +2982,12 @@ def load_data(path: str, cache_token: str = "") -> Dict[str, pd.DataFrame]:
     try:
         xls = pd.ExcelFile(path, engine="openpyxl")
         available_sheets = set(xls.sheet_names)
-    except Exception:
-        return {key: pd.DataFrame() for key in SHEET_NAMES}
+    except Exception as exc:
+        logger.exception("Unable to open workbook %s", path)
+        raise WorkbookLoadError(
+            "Không thể mở file Excel đã chọn. Vui lòng kiểm tra định dạng "
+            "file, mật khẩu bảo vệ và cấu trúc workbook."
+        ) from exc
 
     for key, sheet in SHEET_NAMES.items():
         if sheet not in available_sheets:
@@ -2988,8 +3003,12 @@ def load_data(path: str, cache_token: str = "") -> Dict[str, pd.DataFrame]:
             df.columns = [clean_col(c) for c in df.columns]
             df = df.dropna(how="all")
             data[key] = df
-        except Exception:
-            data[key] = pd.DataFrame()
+        except Exception as exc:
+            logger.exception("Unable to read sheet %r from workbook %s", sheet, path)
+            raise WorkbookLoadError(
+                f"Không thể đọc sheet '{sheet}'. Vui lòng kiểm tra dữ liệu "
+                "hoặc định dạng của sheet này."
+            ) from exc
 
     return data
 
@@ -5957,6 +5976,7 @@ def render_cover_gate() -> None:
     try:
         enter_param = st.query_params.get("enter")
     except Exception:
+        logger.debug("Unable to read Streamlit query parameters", exc_info=True)
         enter_param = None
 
     if isinstance(enter_param, list):
@@ -5967,7 +5987,7 @@ def render_cover_gate() -> None:
         try:
             st.query_params.clear()
         except Exception:
-            pass
+            logger.debug("Unable to clear Streamlit query parameters", exc_info=True)
 
     if not st.session_state["dashboard_entered"]:
         render_cover_page()
@@ -5985,7 +6005,7 @@ def main():
     render_cover_gate()
 
     # Load default workbook first. Upload remains below Month / Office filters.
-    file_path = Path(DEFAULT_FILE)
+    file_path = DEFAULT_FILE_PATH
     cache_token = ""
 
     # If an uploaded workbook was already saved in this session, reuse the saved file.
@@ -6007,7 +6027,11 @@ def main():
         st.stop()
 
     with st.spinner("Loading and validating Excel data..."):
-        raw = load_data(str(file_path), cache_token)
+        try:
+            raw = load_data(str(file_path), cache_token)
+        except WorkbookLoadError as exc:
+            st.error(str(exc))
+            st.stop()
         hc = prepare_hc(raw["hc"])
         workload = prepare_workload(raw["workload"])
         fte = prepare_fte(raw["fte"])
@@ -6072,17 +6096,27 @@ def main():
         st.markdown("---")
         uploaded = st.file_uploader(
             "UPLOAD EXCEL FILE",
-            type=["xlsx", "xlsm", "xls"],
-            help="Nếu không upload, Dashboard sẽ đọc file mặc định trong cùng thư mục app.py.",
+            type=["xlsx", "xlsm"],
+            help=(
+                "Hỗ trợ định dạng .xlsx và .xlsm. Nếu không upload, Dashboard "
+                "sẽ đọc file mặc định trong cùng thư mục với file Python."
+            ),
             key="excel_uploader",
         )
         if uploaded is not None:
             new_bytes = uploaded.getvalue()
-            new_sig = hashlib.md5(new_bytes).hexdigest()
+            new_sig = hashlib.sha256(new_bytes).hexdigest()
 
             if st.session_state.get("dashboard_uploaded_sig") != new_sig:
-                tmp_path = Path("_uploaded_dashboard_data.xlsx")
-                tmp_path.write_bytes(new_bytes)
+                upload_dir = Path(tempfile.gettempdir()) / "cs_workload_dashboard"
+                upload_dir.mkdir(parents=True, exist_ok=True)
+                upload_suffix = Path(uploaded.name).suffix.lower()
+                tmp_path = upload_dir / f"workbook_{new_sig[:20]}{upload_suffix}"
+
+                # Content-addressed filenames prevent different user sessions
+                # from overwriting one another on the Streamlit server.
+                if not tmp_path.exists() or tmp_path.stat().st_size != len(new_bytes):
+                    tmp_path.write_bytes(new_bytes)
 
                 st.session_state["dashboard_uploaded_sig"] = new_sig
                 st.session_state["dashboard_uploaded_path"] = str(tmp_path)
