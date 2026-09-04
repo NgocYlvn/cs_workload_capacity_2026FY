@@ -1,6 +1,6 @@
 # ============================================================
 # CS WORKLOAD & CAPACITY DASHBOARD
-# BUILD: V48_EXCEPTION_PIE_OUTSIDE_LABELS
+# BUILD: V52_HIGH_LOAD_AMBER
 # BUILD: SECTION2_CHART_DETAIL_V4
 # Python + Streamlit + Pandas + Plotly
 # Data source: (Not for Office Input) MASTER DATA SOURCE.xlsm
@@ -78,7 +78,10 @@ COLORS = {
     "light_blue": YUSEN_THEME["secondary_pale"],
     "red": "#D92D20",
     "green": "#95C947",
-    "purple": "#7C3AED",
+    # Legacy alias retained for any older status branch still referencing
+    # COLORS["purple"]. It intentionally matches the approved High Load color.
+    "purple": "#F2B84B",
+    "high_load": "#F2B84B",
     "amber": YUSEN_THEME["accent"],
     "gray": "#98A2B3",
     "gray_dark": YUSEN_THEME["text_secondary"],
@@ -2321,7 +2324,7 @@ def status_from_util(util: float) -> Tuple[str, str, str]:
     if util <= 0.95:
         return "BALANCED", COLORS["blue"], "#DBEAFE"
     if util <= 1.00:
-        return "HIGH LOAD", COLORS["purple"], "#EDE9FE"
+        return "HIGH LOAD", COLORS["high_load"], "#FFF4D6"
     return "OVERLOAD", COLORS["red"], "#FEE2E2"
 
 
@@ -2375,7 +2378,7 @@ def render_hc_office_comparison(hc_filtered_all_offices: pd.DataFrame) -> None:
             # using the standard workload thresholds:
             # < 90%       -> LESS LOAD / Green
             # 90% - 95%   -> BALANCED / Blue
-            # >95% - 100% -> HIGH LOAD / Purple
+            # >95% - 100% -> HIGH LOAD / Amber
             # >100%       -> OVERLOAD / Red
             if pd.isna(util):
                 status_text, status_color, status_bg = "NO DATA", COLORS["muted"], COLORS["light_blue"]
@@ -4639,7 +4642,7 @@ def chart_workload_by_pic(fte_df: pd.DataFrame, selected_office: str):
     - All Offices: show Top 10 PICs by Utilization across all offices.
     - Colors:
         >100%      = Red (Overload)
-        >95%–100%  = Purple (High Load)
+        >95%–100%  = Amber (High Load)
         90%–95%    = Blue (Balanced)
         <90%       = Green (Less Load)
     """
@@ -4667,13 +4670,13 @@ def chart_workload_by_pic(fte_df: pd.DataFrame, selected_office: str):
     def _status(util):
         # Standard workload color rule:
         # >100% = Overload / Red
-        # >95%–100% = High Load / Purple
+        # >95%–100% = High Load / Amber
         # 90%–95% = Balanced / Blue
         # <90% = Less Load / Green
         if util > 1.00:
             return "Overload", COLORS["red"]
         if util > 0.95:
-            return "High Load", COLORS["purple"]
+            return "High Load", COLORS["high_load"]
         if util >= 0.90:
             return "Balanced", COLORS["blue"]
         return "Less Load", COLORS["green"]
@@ -4845,7 +4848,7 @@ def chart_workload_by_pic(fte_df: pd.DataFrame, selected_office: str):
             white-space:normal;
             flex-wrap:wrap;">
             <span><span style="display:inline-block;width:9px;height:9px;background:{COLORS['red']};margin-right:5px;border-radius:2px;"></span>Overload &gt;100%</span>
-            <span><span style="display:inline-block;width:9px;height:9px;background:{COLORS['purple']};margin-right:5px;border-radius:2px;"></span>High Load &gt;95–100%</span>
+            <span><span style="display:inline-block;width:9px;height:9px;background:{COLORS['high_load']};margin-right:5px;border-radius:2px;"></span>High Load &gt;95–100%</span>
             <span><span style="display:inline-block;width:9px;height:9px;background:{COLORS['blue']};margin-right:5px;border-radius:2px;"></span>Balanced 90–95%</span>
             <span><span style="display:inline-block;width:9px;height:9px;background:{COLORS['green']};margin-right:5px;border-radius:2px;"></span>Less Load &lt;90%</span>
         </div>
@@ -5149,9 +5152,17 @@ def chart_service_matrix(
     plot_df["x"] = [rank_positions[i][0] for i in range(len(plot_df))]
     plot_df["y"] = [rank_positions[i][1] for i in range(len(plot_df))]
     max_share = float(plot_df["Workload Share"].max())
-    # Keep the size difference meaningful without letting the largest bubble
-    # dominate the card or squeeze the surrounding labels.
-    plot_df["Bubble Size"] = 70 + (plot_df["Workload Share"] / max_share) * 88 if max_share > 0 else 88
+    # Plotly marker size is a diameter in pixels. Using the square root of the
+    # share makes each bubble's visible AREA proportional to Workload Share,
+    # which allows users to compare percentages accurately at a glance.
+    # A small floor keeps low-share segment labels readable.
+    if max_share > 0:
+        plot_df["Bubble Size"] = np.maximum(
+            38,
+            165 * np.sqrt(plot_df["Workload Share"] / max_share),
+        )
+    else:
+        plot_df["Bubble Size"] = 38
     segment_color_map = {svc: CORPORATE_PALETTE[i % len(CORPORATE_PALETTE)] for i, svc in enumerate(SERVICE_ORDER)}
 
     def bubble_text_color(hex_color: str) -> str:
@@ -5175,7 +5186,11 @@ def chart_service_matrix(
 
     plot_df["Bubble Color"] = plot_df["Segment"].map(segment_color_map).fillna(COLORS["blue"])
     plot_df["Text Color"] = plot_df["Bubble Color"].map(bubble_text_color)
-    plot_df["Text Size"] = np.where(plot_df["Bubble Size"] < 88, 10, np.where(plot_df["Bubble Size"] < 112, 11, 12))
+    plot_df["Text Size"] = np.where(
+        plot_df["Bubble Size"] < 58,
+        9,
+        np.where(plot_df["Bubble Size"] < 90, 10, np.where(plot_df["Bubble Size"] < 125, 11, 12)),
+    )
 
     fig = go.Figure()
     # Draw all bubbles first; labels are drawn afterwards on the top layer so
