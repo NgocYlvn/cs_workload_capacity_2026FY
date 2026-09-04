@@ -1,6 +1,6 @@
 # ============================================================
 # CS WORKLOAD & CAPACITY DASHBOARD
-# BUILD: V65_EXCEPTION_INFOGRAPHIC_DONUT
+# BUILD: V66_EXCEPTION_DONUT_REFINED
 # BUILD: SECTION2_CHART_DETAIL_V4
 # Python + Streamlit + Pandas + Plotly
 # Data source: (Not for Office Input) MASTER DATA SOURCE.xlsm
@@ -4042,7 +4042,7 @@ def chart_exception_by_criteria(df: pd.DataFrame):
     criteria_palette = [
         "#E34D8A",  # Magenta
         "#FF7A1A",  # Orange
-        "#FFC72C",  # Yellow
+        "#E6A600",  # Deep amber for better white-text contrast
         "#20B8B5",  # Teal
         "#6654C7",  # Violet
         "#347DB6",  # Corporate blue
@@ -4070,8 +4070,10 @@ def chart_exception_by_criteria(df: pd.DataFrame):
         else "<b>%{label}</b> %{percent:.1%}"
         for share in agg["Share"]
     ]
-    pull_pattern = [0.065, 0.035, 0.050, 0.030, 0.045]
+    # Subtle staggered pull creates the infographic effect without large gaps.
+    pull_pattern = [0.035, 0.018, 0.028, 0.015, 0.025]
     pull_values = [pull_pattern[i % len(pull_pattern)] for i in range(len(agg))]
+    total_volume = float(agg["Volume"].sum())
 
     fig = go.Figure(
         go.Pie(
@@ -4083,7 +4085,7 @@ def chart_exception_by_criteria(df: pd.DataFrame):
             rotation=pie_rotation,
             # Keep space for outside labels while retaining a large donut.
             domain=dict(x=[0.06, 0.88], y=[0.08, 0.94]),
-            hole=0.46,
+            hole=0.52,
             pull=pull_values,
             textinfo="label+percent",
             texttemplate=text_templates,
@@ -4103,7 +4105,7 @@ def chart_exception_by_criteria(df: pd.DataFrame):
             ),
             marker=dict(
                 colors=pie_colors,
-                line=dict(color=COLORS["white"], width=3.5),
+                line=dict(color=COLORS["white"], width=2.5),
             ),
             hovertemplate=(
                 "<b>%{label}</b><br>"
@@ -4115,7 +4117,7 @@ def chart_exception_by_criteria(df: pd.DataFrame):
     )
 
     fig = plotly_layout(
-        fig, 360, show_legend=False,
+        fig, 375, show_legend=False,
         margin_left=38, margin_right=78, margin_top=52, margin_bottom=28,
     )
     fig.update_layout(
@@ -4128,7 +4130,8 @@ def chart_exception_by_criteria(df: pd.DataFrame):
                 yref="paper",
                 text=(
                     "<b>EXCEPTION</b><br>"
-                    "<span style='font-size:12px'>HANDLING</span>"
+                    "<span style='font-size:12px'>HANDLING</span><br>"
+                    f"<b>{total_volume:,.0f}</b>"
                 ),
                 showarrow=False,
                 align="center",
