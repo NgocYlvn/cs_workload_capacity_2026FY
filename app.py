@@ -1,6 +1,6 @@
 # ============================================================
 # CS WORKLOAD & CAPACITY DASHBOARD
-# BUILD: V63_EXCEPTION_INLINE_OUTSIDE_LABELS
+# BUILD: V64_INLINE_SMALL_PIE_LABELS
 # BUILD: SECTION2_CHART_DETAIL_V4
 # Python + Streamlit + Pandas + Plotly
 # Data source: (Not for Office Input) MASTER DATA SOURCE.xlsm
@@ -5150,6 +5150,12 @@ def chart_service_matrix(
         "inside" if float(share) >= 0.04 else "outside"
         for share in plot_df["Workload Share"]
     ]
+    text_templates = [
+        "<b>%{label}</b><br>%{percent:.1%}"
+        if float(share) >= 0.04
+        else "<b>%{label}</b> %{percent:.1%}"
+        for share in plot_df["Workload Share"]
+    ]
     pull_values = [
         0.025 if float(share) >= 0.04 else 0.055
         for share in plot_df["Workload Share"]
@@ -5170,7 +5176,7 @@ def chart_service_matrix(
             hole=0,
             pull=pull_values,
             textposition=text_positions,
-            texttemplate="<b>%{label}</b><br>%{percent:.1%}",
+            texttemplate=text_templates,
             insidetextorientation="horizontal",
             insidetextfont=dict(
                 family=UI["font_family"], size=11, color=COLORS["white"]
