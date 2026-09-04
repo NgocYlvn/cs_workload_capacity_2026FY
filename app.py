@@ -1,6 +1,6 @@
 # ============================================================
 # CS WORKLOAD & CAPACITY DASHBOARD
-# BUILD: V49_HIGH_LOAD_BLUE_GRAY
+# BUILD: V50_BUBBLE_SIZE_BY_SHARE
 # BUILD: SECTION2_CHART_DETAIL_V4
 # Python + Streamlit + Pandas + Plotly
 # Data source: (Not for Office Input) MASTER DATA SOURCE.xlsm
@@ -5150,9 +5150,17 @@ def chart_service_matrix(
     plot_df["x"] = [rank_positions[i][0] for i in range(len(plot_df))]
     plot_df["y"] = [rank_positions[i][1] for i in range(len(plot_df))]
     max_share = float(plot_df["Workload Share"].max())
-    # Keep the size difference meaningful without letting the largest bubble
-    # dominate the card or squeeze the surrounding labels.
-    plot_df["Bubble Size"] = 70 + (plot_df["Workload Share"] / max_share) * 88 if max_share > 0 else 88
+    # Plotly marker size is a diameter in pixels. Using the square root of the
+    # share makes each bubble's visible AREA proportional to Workload Share,
+    # which allows users to compare percentages accurately at a glance.
+    # A small floor keeps low-share segment labels readable.
+    if max_share > 0:
+        plot_df["Bubble Size"] = np.maximum(
+            38,
+            165 * np.sqrt(plot_df["Workload Share"] / max_share),
+        )
+    else:
+        plot_df["Bubble Size"] = 38
     segment_color_map = {svc: CORPORATE_PALETTE[i % len(CORPORATE_PALETTE)] for i, svc in enumerate(SERVICE_ORDER)}
 
     def bubble_text_color(hex_color: str) -> str:
@@ -5176,7 +5184,11 @@ def chart_service_matrix(
 
     plot_df["Bubble Color"] = plot_df["Segment"].map(segment_color_map).fillna(COLORS["blue"])
     plot_df["Text Color"] = plot_df["Bubble Color"].map(bubble_text_color)
-    plot_df["Text Size"] = np.where(plot_df["Bubble Size"] < 88, 10, np.where(plot_df["Bubble Size"] < 112, 11, 12))
+    plot_df["Text Size"] = np.where(
+        plot_df["Bubble Size"] < 58,
+        9,
+        np.where(plot_df["Bubble Size"] < 90, 10, np.where(plot_df["Bubble Size"] < 125, 11, 12)),
+    )
 
     fig = go.Figure()
     # Draw all bubbles first; labels are drawn afterwards on the top layer so
