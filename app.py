@@ -2320,7 +2320,7 @@ def status_from_util(util: float) -> Tuple[str, str, str]:
     if util <= 0.95:
         return "BALANCED", COLORS["blue"], "#DBEAFE"
     if util <= 1.00:
-        return "HIGH LOAD", COLORS["amber"], "#FEF3C7"
+        return "HIGH LOAD", COLORS["amber"], "#FFFF00"
     return "OVERLOAD", COLORS["red"], "#FEE2E2"
 
 
@@ -2374,7 +2374,7 @@ def render_hc_office_comparison(hc_filtered_all_offices: pd.DataFrame) -> None:
             # using the standard workload thresholds:
             # < 90%       -> LESS LOAD / Green
             # 90% - 95%   -> BALANCED / Blue
-            # >95% - 100% -> HIGH LOAD / Orange
+            # >95% - 100% -> HIGH LOAD / Yellow
             # >100%       -> OVERLOAD / Red
             if pd.isna(util):
                 status_text, status_color, status_bg = "NO DATA", COLORS["muted"], COLORS["light_blue"]
@@ -4683,7 +4683,7 @@ def chart_workload_by_pic(fte_df: pd.DataFrame, selected_office: str):
     - All Offices: show Top 10 PICs by Utilization across all offices.
     - Colors:
         >100%      = Red (Overload)
-        >95%–100%  = Orange (High Load)
+        >95%–100%  = Yellow (High Load)
         90%–95%    = Blue (Balanced)
         <90%       = Green (Less Load)
     """
@@ -4711,7 +4711,7 @@ def chart_workload_by_pic(fte_df: pd.DataFrame, selected_office: str):
     def _status(util):
         # Standard workload color rule:
         # >100% = Overload / Red
-        # >95%–100% = High Load / Orange
+        # >95%–100% = High Load / Yellow
         # 90%–95% = Balanced / Blue
         # <90% = Less Load / Green
         if util > 1.00:
