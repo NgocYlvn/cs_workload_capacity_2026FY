@@ -3962,7 +3962,7 @@ def chart_case_allocation(df: pd.DataFrame):
         ("Core Service (min)", "Core Service", COLORS["blue"]),
         ("Ancillary Service (min)", "Ancillary Service", COLORS["green"]),
         ("Supporting Activity (min)", "Supporting Activity", COLORS["amber"]),
-        ("Exception Handling (min)", "Exception Handling", COLORS["red"]),
+        ("Exception Handling (min)", "Exception Handling", COLORS["navy"]),
     ]
 
     fig = go.Figure()
@@ -4064,12 +4064,12 @@ def chart_exception_by_criteria(df: pd.DataFrame):
     # the remaining circles around it, matching the dashboard's flower chart.
     rank_positions = [
         (0.00, 0.00),
-        (-0.46, 0.10),
-        (0.42, 0.28),
-        (-0.26, 0.48),
-        (0.30, -0.38),
-        (-0.36, -0.36),
-        (0.55, -0.12),
+        (-0.30, 0.05),
+        (0.28, 0.16),
+        (-0.16, 0.34),
+        (0.22, -0.25),
+        (-0.24, -0.25),
+        (0.36, -0.05),
     ]
     fallback_positions = [
         (0.68 * np.cos(i * 2 * np.pi / max(len(agg), 1)),
@@ -5180,15 +5180,15 @@ def chart_service_matrix(
     # Rank 7 -> lower-left
     rank_positions = [
         (0.00, 0.00),     # Rank 1
-        (-0.34, 0.00),    # Rank 2: attached on the left
-        (-0.22, 0.38),    # Rank 3: attached upper-left
-        (0.02, 0.48),     # Rank 4: attached on top
-        (0.30, 0.34),     # Rank 5: attached upper-right
-        (0.28, -0.28),    # Rank 6: attached lower-right
-        (-0.18, -0.42),   # Rank 7: attached lower-left
-        (-0.38, -0.28),   # fallback Rank 8
-        (0.04, -0.52),    # fallback Rank 9
-        (0.40, 0.00),     # fallback Rank 10
+        (-0.27, 0.00),    # Rank 2: slightly overlaps on the left
+        (-0.17, 0.30),    # Rank 3: slightly overlaps upper-left
+        (0.02, 0.38),     # Rank 4: slightly overlaps on top
+        (0.23, 0.27),     # Rank 5: slightly overlaps upper-right
+        (0.22, -0.22),    # Rank 6: slightly overlaps lower-right
+        (-0.14, -0.33),   # Rank 7: slightly overlaps lower-left
+        (-0.30, -0.22),   # fallback Rank 8
+        (0.03, -0.41),    # fallback Rank 9
+        (0.32, 0.00),     # fallback Rank 10
     ]
 
     plot_df["Rank"] = np.arange(1, len(plot_df) + 1)
