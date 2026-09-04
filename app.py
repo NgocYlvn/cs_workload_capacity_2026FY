@@ -1,6 +1,6 @@
 # ============================================================
 # CS WORKLOAD & CAPACITY DASHBOARD
-# BUILD: V56_EXCEPTION_PIE_PSEUDO_3D
+# BUILD: V57_EXCEPTION_DONUT_REFERENCE_STYLE
 # BUILD: SECTION2_CHART_DETAIL_V4
 # Python + Streamlit + Pandas + Plotly
 # Data source: (Not for Office Input) MASTER DATA SOURCE.xlsm
@@ -4031,23 +4031,23 @@ def exception_criteria_summary(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def chart_exception_by_criteria(df: pd.DataFrame):
-    """Pie chart of Exception Handling volume and share by Criteria."""
+    """Reference-style donut chart of Exception Handling by Criteria."""
     agg = exception_criteria_summary(df)
     if agg.empty:
         st.info("No Exception Handling criteria data available for the selected filters.")
         return
 
     agg = agg.sort_values("Volume", ascending=False).reset_index(drop=True)
-    # High-contrast corporate palette so adjacent Criteria are easy to distinguish.
+    # Bold contrasting colors inspired by the supplied donut-chart reference.
     criteria_palette = [
-        "#0DB2E3",  # Cyan
-        "#1F4E79",  # Navy blue
-        "#E6761B",  # Orange
+        "#E72F4F",  # Red
+        "#5A3FC0",  # Purple
+        "#F2A900",  # Golden orange
+        "#16A6A1",  # Teal
+        "#2E73AA",  # Blue
         "#70AD47",  # Green
-        "#7030A0",  # Purple
-        "#C00000",  # Red
-        "#008C95",  # Teal
-        "#7F6000",  # Brown
+        "#E6761B",  # Orange
+        "#7A5AA6",  # Violet
     ]
     pie_colors = [
         criteria_palette[i % len(criteria_palette)]
@@ -4060,45 +4060,17 @@ def chart_exception_by_criteria(df: pd.DataFrame):
     largest_share = float(agg.loc[0, "Share"])
     pie_rotation = 90 + 180 * max(0.0, 1.0 - largest_share)
 
-    def _shade_color(hex_color: str, factor: float = 0.62) -> str:
-        """Create a darker shade used for the visible side of the 3D pie."""
-        color = str(hex_color).lstrip("#")
-        if len(color) != 6:
-            return str(hex_color)
-        rgb = [int(color[i:i + 2], 16) for i in (0, 2, 4)]
-        return "#" + "".join(f"{max(0, min(255, int(v * factor))):02X}" for v in rgb)
+    total_exception = float(agg["Volume"].sum())
+    text_positions = [
+        "inside" if float(share) >= 0.035 else "outside"
+        for share in agg["Share"]
+    ]
+    donut_domain_x = [0.05, 0.78]
+    donut_domain_y = [0.12, 0.90]
+    donut_center_x = sum(donut_domain_x) / 2
+    donut_center_y = sum(donut_domain_y) / 2
 
-    depth_colors = [_shade_color(color) for color in pie_colors]
-    pull_values = [0.015 if i == 0 else 0.045 for i in range(len(agg))]
-    top_domain_x = [0.05, 0.76]
-    top_domain_y = [0.20, 0.92]
-
-    fig = go.Figure()
-
-    # Draw darker copies from bottom to top. Their small vertical offsets form
-    # the visible side wall and create a clean pseudo-3D extrusion effect.
-    for depth_shift in np.linspace(0.085, 0.015, 7):
-        fig.add_trace(
-            go.Pie(
-                labels=agg["Criteria"],
-                values=agg["Volume"],
-                sort=False,
-                direction="clockwise",
-                rotation=pie_rotation,
-                domain=dict(
-                    x=top_domain_x,
-                    y=[top_domain_y[0] - depth_shift, top_domain_y[1] - depth_shift],
-                ),
-                pull=pull_values,
-                textinfo="none",
-                hoverinfo="skip",
-                marker=dict(colors=depth_colors, line=dict(width=0)),
-                showlegend=False,
-            )
-        )
-
-    # Top face: keep the original colors, labels and hover information.
-    fig.add_trace(
+    fig = go.Figure(
         go.Pie(
             labels=agg["Criteria"],
             values=agg["Volume"],
@@ -4106,16 +4078,21 @@ def chart_exception_by_criteria(df: pd.DataFrame):
             sort=False,
             direction="clockwise",
             rotation=pie_rotation,
-            domain=dict(x=top_domain_x, y=top_domain_y),
-            pull=pull_values,
+            domain=dict(x=donut_domain_x, y=donut_domain_y),
+            hole=0.46,
+            pull=[0.012 for _ in range(len(agg))],
             textinfo="label+percent",
-            texttemplate="<b>%{label}</b><br>%{percent:.1%}",
-            # Place Criteria + percentage outside with leader lines so small
-            # slices remain readable and do not crowd the pie.
-            textposition="outside",
+            texttemplate="<b>%{label}</b><br><b>%{percent:.1%}</b>",
+            # Keep normal slices on the ring; move only very small slices out.
+            textposition=text_positions,
             insidetextorientation="horizontal",
             automargin=True,
-            textfont=dict(
+            insidetextfont=dict(
+                family=UI["font_family"],
+                size=11,
+                color=COLORS["white"],
+            ),
+            outsidetextfont=dict(
                 family=UI["font_family"],
                 size=10,
                 color=COLORS["navy"],
@@ -4134,14 +4111,28 @@ def chart_exception_by_criteria(df: pd.DataFrame):
     )
 
     fig = plotly_layout(
-        fig, 370, show_legend=False,
-        margin_left=42, margin_right=72, margin_top=52, margin_bottom=32,
+        fig, 360, show_legend=False,
+        margin_left=38, margin_right=72, margin_top=52, margin_bottom=28,
     )
     fig.update_layout(
         title=dict(text="Exception Handling by Criteria"),
-        # Keep all outside labels visible, including labels for small slices.
+        # Preserve small labels rather than hiding them.
         uniformtext_minsize=8,
         uniformtext_mode="show",
+    )
+    fig.add_annotation(
+        x=donut_center_x,
+        y=donut_center_y,
+        xref="paper",
+        yref="paper",
+        text=(
+            f"<span style='font-size:10px;color:#667085;'>TOTAL EXCEPTION</span>"
+            f"<br><b>{total_exception:,.0f}</b>"
+            f"<br><span style='font-size:9px;color:#98A2B3;'>cases</span>"
+        ),
+        showarrow=False,
+        align="center",
+        font=dict(family=UI["font_family"], size=18, color=COLORS["navy"]),
     )
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
