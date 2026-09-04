@@ -1,6 +1,6 @@
 # ============================================================
 # CS WORKLOAD & CAPACITY DASHBOARD
-# BUILD: V46_EXCEPTION_CRITERIA_PIE
+# BUILD: V48_EXCEPTION_PIE_OUTSIDE_LABELS
 # BUILD: SECTION2_CHART_DETAIL_V4
 # Python + Streamlit + Pandas + Plotly
 # Data source: (Not for Office Input) MASTER DATA SOURCE.xlsm
@@ -4035,8 +4035,21 @@ def chart_exception_by_criteria(df: pd.DataFrame):
         return
 
     agg = agg.sort_values("Volume", ascending=False).reset_index(drop=True)
-    blue_palette = ["#0DBAEE", "#56C9ED", "#A7E4F6", "#2E73AA", "#8EB7D8"]
-    pie_colors = [blue_palette[i % len(blue_palette)] for i in range(len(agg))]
+    # High-contrast corporate palette so adjacent Criteria are easy to distinguish.
+    criteria_palette = [
+        "#0DB2E3",  # Cyan
+        "#1F4E79",  # Navy blue
+        "#E6761B",  # Orange
+        "#70AD47",  # Green
+        "#7030A0",  # Purple
+        "#C00000",  # Red
+        "#008C95",  # Teal
+        "#7F6000",  # Brown
+    ]
+    pie_colors = [
+        criteria_palette[i % len(criteria_palette)]
+        for i in range(len(agg))
+    ]
 
     fig = go.Figure(
         go.Pie(
@@ -4047,8 +4060,16 @@ def chart_exception_by_criteria(df: pd.DataFrame):
             direction="clockwise",
             textinfo="label+percent",
             texttemplate="<b>%{label}</b><br>%{percent:.1%}",
-            textposition="inside",
+            # Place Criteria + percentage outside with leader lines so small
+            # slices remain readable and do not crowd the pie.
+            textposition="outside",
             insidetextorientation="horizontal",
+            automargin=True,
+            textfont=dict(
+                family=UI["font_family"],
+                size=10,
+                color=COLORS["navy"],
+            ),
             marker=dict(
                 colors=pie_colors,
                 line=dict(color=COLORS["white"], width=2.5),
@@ -4058,18 +4079,29 @@ def chart_exception_by_criteria(df: pd.DataFrame):
                 "Exception Volume: %{value:,.0f}<br>"
                 "Share: %{customdata[0]:.1%}<extra></extra>"
             ),
-            showlegend=False,
+            showlegend=True,
         )
     )
 
     fig = plotly_layout(
-        fig, 300, show_legend=False,
-        margin_left=12, margin_right=12, margin_top=42, margin_bottom=12,
+        fig, 370, show_legend=True, legend_position="bottom",
+        margin_left=58, margin_right=58, margin_top=42, margin_bottom=76,
     )
     fig.update_layout(
         title=dict(text="Exception Handling by Criteria"),
-        uniformtext_minsize=10,
-        uniformtext_mode="hide",
+        # Keep all outside labels visible, including labels for small slices.
+        uniformtext_minsize=8,
+        uniformtext_mode="show",
+        legend=dict(
+            orientation="h",
+            yanchor="top",
+            y=-0.08,
+            xanchor="center",
+            x=0.5,
+            title=dict(text="Criteria"),
+            font=dict(size=10, color=COLORS["navy"]),
+            bgcolor="rgba(0,0,0,0)",
+        ),
     )
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
