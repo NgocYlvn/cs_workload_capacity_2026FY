@@ -1,6 +1,6 @@
 # ============================================================
 # CS WORKLOAD & CAPACITY DASHBOARD
-# BUILD: V44_CASE_OFFICE_PERCENTAGE
+# BUILD: V45_CASE_OFFICE_PERCENTAGE_1DP
 # BUILD: SECTION2_CHART_DETAIL_V4
 # Python + Streamlit + Pandas + Plotly
 # Data source: (Not for Office Input) MASTER DATA SOURCE.xlsm
@@ -3895,10 +3895,10 @@ def render_case_office_cards(workload_df: pd.DataFrame):
                       color:#667085;
                       font-size:9.5px;
                       text-align:center;">
-                    <div>{shares['C']:.2%}</div>
-                    <div>{shares['A']:.2%}</div>
-                    <div>{shares['S']:.2%}</div>
-                    <div>{shares['E']:.2%}</div>
+                    <div>{shares['C']:.1%}</div>
+                    <div>{shares['A']:.1%}</div>
+                    <div>{shares['S']:.1%}</div>
+                    <div>{shares['E']:.1%}</div>
                   </div>
                 </div>
                 """
