@@ -6498,6 +6498,11 @@ def main():
   <div>{top3_rows_html}</div>
   </div>
 """
+        # Remove leading indentation so Markdown does not treat nested HTML
+        # as a fenced/code block and display the raw <div> tags.
+        summary_html = "\n".join(
+            line.lstrip() for line in summary_html.splitlines()
+        )
         st.markdown(summary_html.strip(), unsafe_allow_html=True)
 
     with seg_chart_col:
