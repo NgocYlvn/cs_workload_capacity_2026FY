@@ -1,6 +1,6 @@
 # ============================================================
 # CS WORKLOAD & CAPACITY DASHBOARD
-# BUILD: V59_EXCEPTION_EXPLODED_PIE
+# BUILD: V60_EXCEPTION_HIGH_CONTRAST_COLORS
 # BUILD: SECTION2_CHART_DETAIL_V4
 # Python + Streamlit + Pandas + Plotly
 # Data source: (Not for Office Input) MASTER DATA SOURCE.xlsm
@@ -4038,16 +4038,16 @@ def chart_exception_by_criteria(df: pd.DataFrame):
         return
 
     agg = agg.sort_values("Volume", ascending=False).reset_index(drop=True)
-    # Corporate blue hierarchy with orange/green accents, matching the sample.
+    # High-contrast palette so adjacent criteria remain easy to distinguish.
     criteria_palette = [
-        "#5D91BC",  # Largest slice
-        "#0DB2E3",  # Cyan
         "#2E73AA",  # Blue
-        "#12305A",  # Navy
-        "#8EB7D8",  # Light blue
         "#E6761B",  # Orange
         "#70AD47",  # Green
-        "#7A5AA6",  # Violet fallback
+        "#7A5AA6",  # Purple
+        "#D92D20",  # Red
+        "#008C95",  # Teal
+        "#F2B84B",  # Amber
+        "#667085",  # Slate
     ]
     pie_colors = [
         criteria_palette[i % len(criteria_palette)]
