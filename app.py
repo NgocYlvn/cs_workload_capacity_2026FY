@@ -3738,69 +3738,42 @@ def workload_breakdown_table(df: pd.DataFrame) -> pd.DataFrame:
 
 
 
-def render_case_office_cards(
-    core_df: pd.DataFrame,
-    ancillary_df: pd.DataFrame,
-    supporting_df: pd.DataFrame,
-    exception_df: pd.DataFrame,
-):
+def render_case_office_cards(workload_df: pd.DataFrame):
     """
     Section 5 executive cards by Office.
 
     IMPORTANT:
-    - Cards use the four original C/A/S/E detail sources, not the summarized
-      Workload-by-Activity table.
-    - "Volume" in each detail source is summed by Office, therefore each office
-      shows its own C / A / S / E quantity and does not repeat the network total.
+    - Cards use sheet "4. Workload by Activity" as the single source of truth.
+    - C / A / S / E values are summed from the corresponding activity-volume
+      columns by Office after the dashboard Month / Office filters are applied.
     - HPH is displayed as HLC to follow the dashboard's standard office naming.
     """
-
-    activity_sources = {
-        "C": core_df,
-        "A": ancillary_df,
-        "S": supporting_df,
-        "E": exception_df,
-    }
-
-    frames = []
-    for activity, source in activity_sources.items():
-        if source is None or source.empty:
-            continue
-        if "Office" not in source.columns or "Volume" not in source.columns:
-            continue
-
-        d = source[["Office", "Volume"]].copy()
-        d["Office"] = d["Office"].astype(str).str.strip().str.upper()
-        d["Office"] = d["Office"].replace({"HPH": "HLC"})
-        d["Volume"] = pd.to_numeric(d["Volume"], errors="coerce").fillna(0.0)
-        d = d[(d["Office"] != "") & (d["Volume"] > 0)]
-
-        if d.empty:
-            continue
-
-        g = d.groupby("Office", as_index=False)["Volume"].sum()
-        g["Activity"] = activity
-        frames.append(g)
-
-    if not frames:
+    if workload_df is None or workload_df.empty or "Office" not in workload_df.columns:
         return
 
-    long_summary = pd.concat(frames, ignore_index=True)
+    source_map = {
+        "C": "Core Volume",
+        "A": "Ancillary Volume",
+        "S": "Supporting Volume",
+        "E": "Exception Volume",
+    }
+    d = workload_df[["Office"]].copy()
+    d["Office"] = workload_df["Office"].astype(str).str.strip().str.upper()
+    d["Office"] = d["Office"].replace({"HPH": "HLC"})
 
-    summary = (
-        long_summary.pivot_table(
-            index="Office",
-            columns="Activity",
-            values="Volume",
-            aggfunc="sum",
-            fill_value=0,
-        )
-        .reset_index()
-    )
+    for activity, source_col in source_map.items():
+        if source_col in workload_df.columns:
+            d[activity] = pd.to_numeric(
+                workload_df[source_col], errors="coerce"
+            ).fillna(0.0)
+        else:
+            d[activity] = 0.0
 
-    for activity in ["C", "A", "S", "E"]:
-        if activity not in summary.columns:
-            summary[activity] = 0.0
+    d = d[d["Office"] != ""].copy()
+    if d.empty:
+        return
+
+    summary = d.groupby("Office", as_index=False)[["C", "A", "S", "E"]].sum()
 
     summary["Total"] = summary[["C", "A", "S", "E"]].sum(axis=1)
 
@@ -6530,12 +6503,7 @@ def main():
     )
 
     # C/A/S/E summary cards by Office — same executive idea as the HC office cards.
-    render_case_office_cards(
-        f_core_detail,
-        f_ancillary_detail,
-        f_supporting_detail,
-        f_exception_detail,
-    )
+    render_case_office_cards(f_workload)
 
     # Summary table + C/A/S/E allocation chart
     wb_chart, wb_table = st.columns([0.43, 0.57], gap="medium")
