@@ -2570,10 +2570,8 @@ def hc_detail_card(
     """Executive HC card with equal height and two aligned detail blocks at the bottom."""
     details_html = ""
     if mng_value is not None or pic_value is not None:
-        left_decimals = 2 if "REQUIRED" in label.upper() else 0
-        right_decimals = 2 if "REQUIRED" in label.upper() else 0
-        left_val = fmt_num(mng_value or 0, left_decimals)
-        right_val = fmt_num(pic_value or 0, right_decimals)
+        left_val = fmt_num(mng_value or 0, 2)
+        right_val = fmt_num(pic_value or 0, 2)
         details_html = f"""
         <div class="hc-detail-row">
             <div class="hc-detail-item">
@@ -2612,7 +2610,7 @@ def hc_detail_card(
             <div class="kpi-label">{label}</div>
             <div class="hc-main-row">
                 {hc_icon_for_label(label)}
-                <div class="hc-kpi-total {total_color_class}">{fmt_num(total_value, 2 if "REQUIRED" in label.upper() else 0)}</div>
+                <div class="hc-kpi-total {total_color_class}">{fmt_num(total_value, 2)}</div>
             </div>
             {status_html}
             {details_html}
@@ -3042,9 +3040,9 @@ def prepare_hc(df: pd.DataFrame) -> pd.DataFrame:
             df[new] = df[col]
     # Fallback calculations
     if "Total Approved HC" not in df.columns:
-        df["Total Approved HC"] = numeric_series(df.get("Approved HC MNG", 2)) + numeric_series(df.get("Approved HC PIC", 2))
+        df["Total Approved HC"] = numeric_series(df.get("Approved HC MNG", 0)) + numeric_series(df.get("Approved HC PIC", 0))
     if "Total Actual HC" not in df.columns:
-        df["Total Actual HC"] = numeric_series(df.get("Actual HC MNG", 2)) + numeric_series(df.get("Actual HC PIC", 2))
+        df["Total Actual HC"] = numeric_series(df.get("Actual HC MNG", 0)) + numeric_series(df.get("Actual HC PIC", 0))
     hc_numeric_cols = [
         "Approved HC MNG", "Approved HC PIC", "Total Approved HC",
         "Actual HC MNG", "Actual HC PIC", "Total Actual HC",
