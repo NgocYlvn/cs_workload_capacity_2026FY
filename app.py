@@ -1,6 +1,6 @@
 # ============================================================
 # CS WORKLOAD & CAPACITY DASHBOARD
-# BUILD: V69_EXCEPTION_PANEL_HEIGHT_FINE_TUNE
+# BUILD: V70_DETAIL_TABLE_FULL_WIDTH
 # BUILD: SECTION2_CHART_DETAIL_V4
 # Python + Streamlit + Pandas + Plotly
 # Data source: (Not for Office Input) MASTER DATA SOURCE.xlsm
@@ -4281,21 +4281,23 @@ def render_activity_detail_table(
     if months_with_data:
         st.caption("Months with data: " + ", ".join(months_with_data))
 
-    # Activity Detail table:
-    # No fixed width is applied. Streamlit determines each column width from content.
+    # Activity Detail table: compact identifier columns and give the available
+    # horizontal space to Code Description.
     auto_fit_config = {
-        "Office": st.column_config.TextColumn("Office"),
-        "Month": st.column_config.TextColumn("Month"),
-        "Code": st.column_config.TextColumn("Code"),
-        "Code Description": st.column_config.TextColumn("Code Description"),
+        "Office": st.column_config.TextColumn("Office", width="small"),
+        "Month": st.column_config.TextColumn("Month", width="small"),
+        "Code": st.column_config.TextColumn("Code", width="small"),
+        "Code Description": st.column_config.TextColumn(
+            "Code Description", width="large"
+        ),
         "Volume": st.column_config.NumberColumn(
-            "Volume", format="%,.0f"
+            "Volume", format="%,.0f", width="small"
         ),
     }
 
     st.dataframe(
         d,
-        use_container_width=False,
+        use_container_width=True,
         hide_index=True,
         height=(
             table_height
