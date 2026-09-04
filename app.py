@@ -1,6 +1,6 @@
 # ============================================================
 # CS WORKLOAD & CAPACITY DASHBOARD
-# BUILD: V66_EXCEPTION_DONUT_REFINED
+# BUILD: V68_EXCEPTION_EQUAL_PANEL_HEIGHTS
 # BUILD: SECTION2_CHART_DETAIL_V4
 # Python + Streamlit + Pandas + Plotly
 # Data source: (Not for Office Input) MASTER DATA SOURCE.xlsm
@@ -4117,7 +4117,8 @@ def chart_exception_by_criteria(df: pd.DataFrame):
     )
 
     fig = plotly_layout(
-        fig, 375, show_legend=False,
+        # Match the table panel height (caption + 420 px dataframe).
+        fig, 455, show_legend=False,
         margin_left=38, margin_right=78, margin_top=52, margin_bottom=28,
     )
     fig.update_layout(
@@ -4231,6 +4232,7 @@ def render_workload_breakdown_table(df: pd.DataFrame):
 def render_activity_detail_table(
     df: pd.DataFrame,
     activity_type: str,
+    table_height: Optional[int] = None,
 ):
     """Detail table for one C/A/S/E source sheet."""
     if df is None or df.empty:
@@ -4295,7 +4297,11 @@ def render_activity_detail_table(
         d,
         use_container_width=False,
         hide_index=True,
-        height=min(420, max(160, 38 + len(d) * 34)),
+        height=(
+            table_height
+            if table_height is not None
+            else min(420, max(160, 38 + len(d) * 34))
+        ),
         column_config={c: auto_fit_config[c] for c in d.columns if c in auto_fit_config},
     )
 
@@ -6544,7 +6550,12 @@ def main():
         with exception_chart_col:
             chart_exception_by_criteria(f_exception_detail)
         with exception_table_col:
-            render_activity_detail_table(f_exception_detail, "Exception Handling")
+            # 340 px dataframe + caption aligns with the 455 px chart card.
+            render_activity_detail_table(
+                f_exception_detail,
+                "Exception Handling",
+                table_height=340,
+            )
 
     section_title("6. Control Tower effectiveness = CS Resolutions Rate")
 
