@@ -1,6 +1,6 @@
 # ============================================================
 # CS WORKLOAD & CAPACITY DASHBOARD
-# BUILD: V45_CASE_OFFICE_PERCENTAGE_1DP
+# BUILD: V46_EXCEPTION_CRITERIA_PIE
 # BUILD: SECTION2_CHART_DETAIL_V4
 # Python + Streamlit + Pandas + Plotly
 # Data source: (Not for Office Input) MASTER DATA SOURCE.xlsm
@@ -4028,102 +4028,48 @@ def exception_criteria_summary(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def chart_exception_by_criteria(df: pd.DataFrame):
-    """Flower-style packed bubble chart of Exception Handling by Criteria."""
+    """Pie chart of Exception Handling volume and share by Criteria."""
     agg = exception_criteria_summary(df)
     if agg.empty:
         st.info("No Exception Handling criteria data available for the selected filters.")
         return
 
     agg = agg.sort_values("Volume", ascending=False).reset_index(drop=True)
-
-    # Rank-based placement keeps the largest Criteria at the center and packs
-    # the remaining circles around it, matching the dashboard's flower chart.
-    rank_positions = [
-        (0.00, 0.00),
-        (-0.30, 0.05),
-        (0.28, 0.16),
-        (-0.16, 0.34),
-        (0.22, -0.25),
-        (-0.24, -0.25),
-        (0.36, -0.05),
-    ]
-    fallback_positions = [
-        (0.68 * np.cos(i * 2 * np.pi / max(len(agg), 1)),
-         0.58 * np.sin(i * 2 * np.pi / max(len(agg), 1)))
-        for i in range(len(agg))
-    ]
-    positions = [
-        rank_positions[i] if i < len(rank_positions) else fallback_positions[i]
-        for i in range(len(agg))
-    ]
-    agg["x"] = [p[0] for p in positions]
-    agg["y"] = [p[1] for p in positions]
-
-    max_share = float(agg["Share"].max())
-    agg["Bubble Size"] = (
-        54 + np.sqrt(agg["Share"] / max_share) * 112
-        if max_share > 0 else 90
-    )
     blue_palette = ["#0DBAEE", "#56C9ED", "#A7E4F6", "#2E73AA", "#8EB7D8"]
-    agg["Bubble Color"] = [blue_palette[i % len(blue_palette)] for i in range(len(agg))]
-    agg["Text Color"] = np.where(
-        agg["Bubble Color"].isin(["#0DBAEE", "#2E73AA"]),
-        "#FFFFFF",
-        COLORS["navy"],
-    )
-    agg["Text Size"] = np.where(agg["Bubble Size"] < 75, 10, 12)
+    pie_colors = [blue_palette[i % len(blue_palette)] for i in range(len(agg))]
 
-    fig = go.Figure()
-    for _, row in agg.iterrows():
-        fig.add_trace(
-            go.Scatter(
-                x=[row["x"]],
-                y=[row["y"]],
-                mode="markers",
-                marker=dict(
-                    size=[row["Bubble Size"]],
-                    color=row["Bubble Color"],
-                    opacity=0.95,
-                    line=dict(color=COLORS["white"], width=2.5),
-                ),
-                customdata=[[row["Volume"], row["Share"]]],
-                hovertemplate=(
-                    f"<b>{row['Criteria']}</b><br>"
-                    "Exception Volume: %{customdata[0]:,.0f}<br>"
-                    "Share: %{customdata[1]:.1%}<extra></extra>"
-                ),
-                showlegend=False,
-            )
+    fig = go.Figure(
+        go.Pie(
+            labels=agg["Criteria"],
+            values=agg["Volume"],
+            customdata=agg[["Share"]],
+            sort=False,
+            direction="clockwise",
+            textinfo="label+percent",
+            texttemplate="<b>%{label}</b><br>%{percent:.1%}",
+            textposition="inside",
+            insidetextorientation="horizontal",
+            marker=dict(
+                colors=pie_colors,
+                line=dict(color=COLORS["white"], width=2.5),
+            ),
+            hovertemplate=(
+                "<b>%{label}</b><br>"
+                "Exception Volume: %{value:,.0f}<br>"
+                "Share: %{customdata[0]:.1%}<extra></extra>"
+            ),
+            showlegend=False,
         )
-
-    # Add labels last so overlapping bubbles never hide the text.
-    for _, row in agg.iterrows():
-        fig.add_trace(
-            go.Scatter(
-                x=[row["x"]],
-                y=[row["y"]],
-                mode="text",
-                text=[f"<b>{row['Criteria']}</b><br>{row['Share']:.1%}"],
-                textposition="middle center",
-                textfont=dict(
-                    family=UI["font_family"],
-                    size=int(row["Text Size"]),
-                    color=row["Text Color"],
-                ),
-                hoverinfo="skip",
-                showlegend=False,
-            )
-        )
-
-    fig = plotly_layout(fig, 300, show_legend=False, margin_left=8, margin_right=8, margin_top=42, margin_bottom=8)
-    fig.update_layout(title=dict(text="Exception Handling by Criteria"))
-    fig.update_xaxes(
-        visible=False, showgrid=False, zeroline=False, showticklabels=False,
-        title_text="", range=[-1.10, 1.10], fixedrange=True,
     )
-    fig.update_yaxes(
-        visible=False, showgrid=False, zeroline=False, showticklabels=False,
-        title_text="", range=[-0.90, 0.90], fixedrange=True,
+
+    fig = plotly_layout(
+        fig, 300, show_legend=False,
+        margin_left=12, margin_right=12, margin_top=42, margin_bottom=12,
+    )
+    fig.update_layout(
+        title=dict(text="Exception Handling by Criteria"),
+        uniformtext_minsize=10,
+        uniformtext_mode="hide",
     )
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
@@ -6543,10 +6489,13 @@ def main():
     with casetab_s:
         render_activity_detail_table(f_supporting_detail, "Supporting Activity")
     with casetab_e:
-        exception_chart_col, _ = st.columns([0.58, 0.42], gap="medium")
+        exception_chart_col, exception_table_col = st.columns(
+            [0.40, 0.60], gap="medium"
+        )
         with exception_chart_col:
             chart_exception_by_criteria(f_exception_detail)
-        render_activity_detail_table(f_exception_detail, "Exception Handling")
+        with exception_table_col:
+            render_activity_detail_table(f_exception_detail, "Exception Handling")
 
     section_title("6. Control Tower effectiveness = CS Resolutions Rate")
 
