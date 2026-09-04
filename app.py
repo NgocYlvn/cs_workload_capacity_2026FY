@@ -1,6 +1,6 @@
 # ============================================================
 # CS WORKLOAD & CAPACITY DASHBOARD
-# BUILD: V64_INLINE_SMALL_PIE_LABELS
+# BUILD: V65_EXCEPTION_INFOGRAPHIC_DONUT
 # BUILD: SECTION2_CHART_DETAIL_V4
 # Python + Streamlit + Pandas + Plotly
 # Data source: (Not for Office Input) MASTER DATA SOURCE.xlsm
@@ -4031,24 +4031,23 @@ def exception_criteria_summary(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def chart_exception_by_criteria(df: pd.DataFrame):
-    """Exploded pie chart of Exception Handling by Criteria."""
+    """Infographic-style exploded donut of Exception Handling by Criteria."""
     agg = exception_criteria_summary(df)
     if agg.empty:
         st.info("No Exception Handling criteria data available for the selected filters.")
         return
 
     agg = agg.sort_values("Volume", ascending=False).reset_index(drop=True)
-    # Yusen 3C palette: light corporate blues for large slices, stronger blue
-    # contrast for smaller slices, and orange as the final accent.
+    # Bright infographic palette with strong contrast between adjacent slices.
     criteria_palette = [
-        "#B4CEE2",  # N / largest: pale corporate blue
-        "#347DB6",  # M / second: medium blue
-        "#12B3E3",  # S / third: cyan
-        "#F58220",  # C / fourth: Yusen orange accent
-        "#102B55",  # Navy
-        "#5D91BC",  # Steel blue
-        "#70AD47",  # Green fallback
-        "#6E7F91",  # Slate fallback
+        "#E34D8A",  # Magenta
+        "#FF7A1A",  # Orange
+        "#FFC72C",  # Yellow
+        "#20B8B5",  # Teal
+        "#6654C7",  # Violet
+        "#347DB6",  # Corporate blue
+        "#70AD47",  # Green
+        "#102B55",  # Navy fallback
     ]
     pie_colors = [
         criteria_palette[i % len(criteria_palette)]
@@ -4071,10 +4070,8 @@ def chart_exception_by_criteria(df: pd.DataFrame):
         else "<b>%{label}</b> %{percent:.1%}"
         for share in agg["Share"]
     ]
-    pull_values = [
-        0.040 if i == 0 else 0.030
-        for i in range(len(agg))
-    ]
+    pull_pattern = [0.065, 0.035, 0.050, 0.030, 0.045]
+    pull_values = [pull_pattern[i % len(pull_pattern)] for i in range(len(agg))]
 
     fig = go.Figure(
         go.Pie(
@@ -4084,9 +4081,9 @@ def chart_exception_by_criteria(df: pd.DataFrame):
             sort=False,
             direction="clockwise",
             rotation=pie_rotation,
-            # Leave room on the right for labels of the smaller slices.
-            domain=dict(x=[0.06, 0.82], y=[0.10, 0.92]),
-            hole=0,
+            # Keep space for outside labels while retaining a large donut.
+            domain=dict(x=[0.06, 0.88], y=[0.08, 0.94]),
+            hole=0.46,
             pull=pull_values,
             textinfo="label+percent",
             texttemplate=text_templates,
@@ -4096,7 +4093,7 @@ def chart_exception_by_criteria(df: pd.DataFrame):
             automargin=True,
             insidetextfont=dict(
                 family=UI["font_family"],
-                size=10,
+                size=11,
                 color=COLORS["white"],
             ),
             outsidetextfont=dict(
@@ -4106,7 +4103,7 @@ def chart_exception_by_criteria(df: pd.DataFrame):
             ),
             marker=dict(
                 colors=pie_colors,
-                line=dict(color=COLORS["white"], width=4.0),
+                line=dict(color=COLORS["white"], width=3.5),
             ),
             hovertemplate=(
                 "<b>%{label}</b><br>"
@@ -4123,6 +4120,25 @@ def chart_exception_by_criteria(df: pd.DataFrame):
     )
     fig.update_layout(
         title=dict(text="Exception Handling by Criteria"),
+        annotations=[
+            dict(
+                x=0.47,
+                y=0.51,
+                xref="paper",
+                yref="paper",
+                text=(
+                    "<b>EXCEPTION</b><br>"
+                    "<span style='font-size:12px'>HANDLING</span>"
+                ),
+                showarrow=False,
+                align="center",
+                font=dict(
+                    family=UI["font_family"],
+                    size=16,
+                    color=COLORS["navy"],
+                ),
+            )
+        ],
         # Preserve small labels rather than hiding them.
         uniformtext_minsize=8,
         uniformtext_mode="show",
