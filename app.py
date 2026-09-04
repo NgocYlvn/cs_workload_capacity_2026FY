@@ -6465,11 +6465,22 @@ def main():
         _seg_rank = segment_summary.sort_values(
             "Workload Share", ascending=False
         ).reset_index(drop=True)
-        top_segment = str(_seg_rank.iloc[0]["Segment"])
-        top_share = float(_seg_rank.iloc[0]["Workload Share"])
+        _top3 = _seg_rank.head(3).copy()
+        _rank_colors = [COLORS["amber"], COLORS["blue"], "#8EB7D8"]
+        top3_rows_html = "".join(
+            f"""
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:{'0' if idx == len(_top3) - 1 else '1px solid #EEF2F6'};">
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <span style="width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:{_rank_colors[idx]};color:#FFFFFF;font-size:10px;font-weight:800;">{idx + 1}</span>
+                    <span style="color:#003B70;font-size:13px;font-weight:700;">{html.escape(str(row['Segment']))}</span>
+                </div>
+                <span style="color:#003B70;font-size:13px;font-weight:700;">{float(row['Workload Share']):.1%}</span>
+            </div>
+            """
+            for idx, (_, row) in enumerate(_top3.iterrows())
+        )
     else:
-        top_segment = "N/A"
-        top_share = 0.0
+        top3_rows_html = '<div style="color:#98A2B3;font-size:12px;padding:8px 0;">No data available</div>'
 
     seg_summary_col, seg_chart_col = st.columns([0.32, 0.68], gap="medium")
 
@@ -6479,15 +6490,12 @@ def main():
     <div style="color:#667085;font-size:12px;line-height:1.25;font-weight:600;letter-spacing:0.025em;text-transform:uppercase;">Total Workload Hours</div>
   <div style="color:#003B70;font-size:34px;line-height:1.05;font-weight:700;letter-spacing:-0.02em;margin-top:8px;">{fmt_num(segment_total_hours, 1)}</div>
   <div style="color:#667085;font-size:11px;margin-top:6px;"></div>
-  <div style="height:1px;background:#E6ECF2;margin:24px 0 18px 0;"></div>
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-    <span style="color:#667085;font-size:12px;">Leading</span>
-    <span style="color:#003B70;font-size:14px;font-weight:700;">{top_segment}</span>
+  <div style="height:1px;background:#E6ECF2;margin:20px 0 14px 0;"></div>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;">
+    <span style="color:#667085;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.025em;">Top 3 Leading</span>
+    <span style="color:#98A2B3;font-size:10px;font-weight:600;text-transform:uppercase;">Workload Share</span>
   </div>
-  <div style="display:flex;justify-content:space-between;align-items:center;">
-    <span style="color:#667085;font-size:12px;"> Workload Share</span>
-    <span style="color:#003B70;font-size:14px;font-weight:700;">{top_share:.1%}</span>
-  </div>
+  <div>{top3_rows_html}</div>
   </div>
 """
         st.markdown(summary_html.strip(), unsafe_allow_html=True)
