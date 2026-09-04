@@ -1,6 +1,6 @@
 # ============================================================
 # CS WORKLOAD & CAPACITY DASHBOARD
-# BUILD: V60_EXCEPTION_HIGH_CONTRAST_COLORS
+# BUILD: V61_EXCEPTION_YUSEN_3C_COLORS
 # BUILD: SECTION2_CHART_DETAIL_V4
 # Python + Streamlit + Pandas + Plotly
 # Data source: (Not for Office Input) MASTER DATA SOURCE.xlsm
@@ -4038,16 +4038,17 @@ def chart_exception_by_criteria(df: pd.DataFrame):
         return
 
     agg = agg.sort_values("Volume", ascending=False).reset_index(drop=True)
-    # High-contrast palette so adjacent criteria remain easy to distinguish.
+    # Yusen 3C palette: light corporate blues for large slices, stronger blue
+    # contrast for smaller slices, and orange as the final accent.
     criteria_palette = [
-        "#2E73AA",  # Blue
-        "#E6761B",  # Orange
-        "#70AD47",  # Green
-        "#7A5AA6",  # Purple
-        "#D92D20",  # Red
-        "#008C95",  # Teal
-        "#F2B84B",  # Amber
-        "#667085",  # Slate
+        "#B4CEE2",  # Pale corporate blue
+        "#8FB7D7",  # Soft blue
+        "#12B3E3",  # Cyan
+        "#347DB6",  # Medium blue
+        "#102B55",  # Navy
+        "#5D91BC",  # Steel blue
+        "#F58220",  # Yusen orange accent
+        "#6E7F91",  # Slate fallback
     ]
     pie_colors = [
         criteria_palette[i % len(criteria_palette)]
