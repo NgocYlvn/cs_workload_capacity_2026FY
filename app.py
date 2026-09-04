@@ -3042,9 +3042,9 @@ def prepare_hc(df: pd.DataFrame) -> pd.DataFrame:
             df[new] = df[col]
     # Fallback calculations
     if "Total Approved HC" not in df.columns:
-        df["Total Approved HC"] = numeric_series(df.get("Approved HC MNG", 0)) + numeric_series(df.get("Approved HC PIC", 0))
+        df["Total Approved HC"] = numeric_series(df.get("Approved HC MNG", 2)) + numeric_series(df.get("Approved HC PIC", 2))
     if "Total Actual HC" not in df.columns:
-        df["Total Actual HC"] = numeric_series(df.get("Actual HC MNG", 0)) + numeric_series(df.get("Actual HC PIC", 0))
+        df["Total Actual HC"] = numeric_series(df.get("Actual HC MNG", 2)) + numeric_series(df.get("Actual HC PIC", 2))
     hc_numeric_cols = [
         "Approved HC MNG", "Approved HC PIC", "Total Approved HC",
         "Actual HC MNG", "Actual HC PIC", "Total Actual HC",
