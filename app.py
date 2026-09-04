@@ -1,6 +1,6 @@
 # ============================================================
 # CS WORKLOAD & CAPACITY DASHBOARD
-# BUILD: V71_EXCEPTION_EXACT_PANEL_ALIGNMENT
+# BUILD: V73_DETAIL_TABLE_CONTEXT_WIDTHS
 # BUILD: SECTION2_CHART_DETAIL_V4
 # Python + Streamlit + Pandas + Plotly
 # Data source: (Not for Office Input) MASTER DATA SOURCE.xlsm
@@ -3985,8 +3985,21 @@ def chart_case_allocation(df: pd.DataFrame):
         legend_position="top",
         margin_left=50,
         margin_right=35,
-        margin_top=38,
+        margin_top=56,
         margin_bottom=40,
+    )
+
+    # Follow the same left-to-right order as the stacked bars and keep the
+    # legend visually separated from the top bar.
+    fig.update_layout(
+        legend=dict(
+            traceorder="normal",
+            orientation="h",
+            x=0.5,
+            xanchor="center",
+            y=1.10,
+            yanchor="bottom",
+        )
     )
 
     fig.update_xaxes(rangemode="tozero")
@@ -4234,6 +4247,7 @@ def render_activity_detail_table(
     activity_type: str,
     table_height: Optional[int] = None,
     show_months_caption: bool = True,
+    stretch_to_container: bool = False,
 ):
     """Detail table for one C/A/S/E source sheet."""
     if df is None or df.empty:
@@ -4282,23 +4296,32 @@ def render_activity_detail_table(
     if show_months_caption and months_with_data:
         st.caption("Months with data: " + ", ".join(months_with_data))
 
-    # Activity Detail table: compact identifier columns and give the available
-    # horizontal space to Code Description.
-    auto_fit_config = {
-        "Office": st.column_config.TextColumn("Office", width="small"),
-        "Month": st.column_config.TextColumn("Month", width="small"),
-        "Code": st.column_config.TextColumn("Code", width="small"),
-        "Code Description": st.column_config.TextColumn(
-            "Code Description", width="large"
-        ),
-        "Volume": st.column_config.NumberColumn(
-            "Volume", format="%,.0f", width="small"
-        ),
-    }
+    if stretch_to_container:
+        # Exception table: fill the right panel and prioritize its description.
+        auto_fit_config = {
+            "Office": st.column_config.TextColumn("Office", width="small"),
+            "Month": st.column_config.TextColumn("Month", width="small"),
+            "Code": st.column_config.TextColumn("Code", width="small"),
+            "Code Description": st.column_config.TextColumn(
+                "Code Description", width="large"
+            ),
+            "Volume": st.column_config.NumberColumn(
+                "Volume", format="%,.0f", width="small"
+            ),
+        }
+    else:
+        # Core / Ancillary / Supporting tables: size columns from their content.
+        auto_fit_config = {
+            "Office": st.column_config.TextColumn("Office"),
+            "Month": st.column_config.TextColumn("Month"),
+            "Code": st.column_config.TextColumn("Code"),
+            "Code Description": st.column_config.TextColumn("Code Description"),
+            "Volume": st.column_config.NumberColumn("Volume", format="%,.0f"),
+        }
 
     st.dataframe(
         d,
-        use_container_width=True,
+        use_container_width=stretch_to_container,
         hide_index=True,
         height=(
             table_height
@@ -6583,6 +6606,7 @@ def main():
                 "Exception Handling",
                 table_height=455,
                 show_months_caption=False,
+                stretch_to_container=True,
             )
 
     section_title("6. Control Tower effectiveness = CS Resolutions Rate")
