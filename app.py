@@ -1,6 +1,6 @@
 # ============================================================
 # CS WORKLOAD & CAPACITY DASHBOARD
-# BUILD: V74_EXCEPTION_ABSOLUTE_PANEL_ALIGNMENT
+# BUILD: V75_CUSTOMER_PANEL_ALIGNMENT
 # BUILD: SECTION2_CHART_DETAIL_V4
 # Python + Streamlit + Pandas + Plotly
 # Data source: (Not for Office Input) MASTER DATA SOURCE.xlsm
@@ -5379,7 +5379,15 @@ def chart_top_customers(df: pd.DataFrame):
     fig.update_layout(title_text="", yaxis_title="", xaxis_title=None, bargap=0.18)
     fig.update_yaxes(automargin=True, tickfont=dict(size=UI["axis_size"]))
     fig.update_xaxes(automargin=True)
-    fig = plotly_layout(fig, 460, show_legend=False, margin_left=155, margin_right=60, margin_top=22, margin_bottom=40)
+    fig = plotly_layout(
+        fig,
+        SHIPMENT_PAIR_HEIGHT,
+        show_legend=False,
+        margin_left=155,
+        margin_right=60,
+        margin_top=22,
+        margin_bottom=40,
+    )
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
 def customer_detail_volume_table(df: pd.DataFrame):
