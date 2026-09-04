@@ -1,6 +1,6 @@
 # ============================================================
 # CS WORKLOAD & CAPACITY DASHBOARD
-# BUILD: V70_DETAIL_TABLE_FULL_WIDTH
+# BUILD: V71_EXCEPTION_EXACT_PANEL_ALIGNMENT
 # BUILD: SECTION2_CHART_DETAIL_V4
 # Python + Streamlit + Pandas + Plotly
 # Data source: (Not for Office Input) MASTER DATA SOURCE.xlsm
@@ -4233,6 +4233,7 @@ def render_activity_detail_table(
     df: pd.DataFrame,
     activity_type: str,
     table_height: Optional[int] = None,
+    show_months_caption: bool = True,
 ):
     """Detail table for one C/A/S/E source sheet."""
     if df is None or df.empty:
@@ -4278,7 +4279,7 @@ def render_activity_detail_table(
     if "Volume" in d.columns:
         d["Volume"] = pd.to_numeric(d["Volume"], errors="coerce").fillna(0)
 
-    if months_with_data:
+    if show_months_caption and months_with_data:
         st.caption("Months with data: " + ", ".join(months_with_data))
 
     # Activity Detail table: compact identifier columns and give the available
@@ -6546,17 +6547,42 @@ def main():
     with casetab_s:
         render_activity_detail_table(f_supporting_detail, "Supporting Activity")
     with casetab_e:
+        exception_months = []
+        if (
+            f_exception_detail is not None
+            and not f_exception_detail.empty
+            and "MonthDate" in f_exception_detail.columns
+        ):
+            exception_months = (
+                pd.to_datetime(
+                    f_exception_detail["MonthDate"], errors="coerce"
+                )
+                .dropna()
+                .drop_duplicates()
+                .sort_values()
+                .dt.strftime("%b-%y")
+                .tolist()
+            )
+
         exception_chart_col, exception_table_col = st.columns(
             [0.40, 0.60], gap="medium"
         )
         with exception_chart_col:
+            # Reserve exactly the same caption row as the table column so the
+            # two bordered panels start at the same vertical position.
+            st.caption("\u00A0")
             chart_exception_by_criteria(f_exception_detail)
         with exception_table_col:
-            # Include the caption in the visual balance with the 455 px chart.
+            st.caption(
+                "Months with data: " + ", ".join(exception_months)
+                if exception_months
+                else "\u00A0"
+            )
             render_activity_detail_table(
                 f_exception_detail,
                 "Exception Handling",
-                table_height=395,
+                table_height=455,
+                show_months_caption=False,
             )
 
     section_title("6. Control Tower effectiveness = CS Resolutions Rate")
