@@ -1,6 +1,6 @@
 # ============================================================
 # CS WORKLOAD & CAPACITY DASHBOARD
-# BUILD: V73_DETAIL_TABLE_CONTEXT_WIDTHS
+# BUILD: V74_EXCEPTION_ABSOLUTE_PANEL_ALIGNMENT
 # BUILD: SECTION2_CHART_DETAIL_V4
 # Python + Streamlit + Pandas + Plotly
 # Data source: (Not for Office Input) MASTER DATA SOURCE.xlsm
@@ -6587,20 +6587,22 @@ def main():
                 .tolist()
             )
 
+        # Keep the month note outside the two-column row. This lets the chart
+        # and dataframe start from exactly the same vertical coordinate.
+        if exception_months:
+            months_text = "Months with data: " + ", ".join(exception_months)
+            st.markdown(
+                f'<div style="margin:-12px 0 4px 41.5%; color:#98A2B3; '
+                f'font-size:11px; line-height:16px;">{months_text}</div>',
+                unsafe_allow_html=True,
+            )
+
         exception_chart_col, exception_table_col = st.columns(
             [0.40, 0.60], gap="medium"
         )
         with exception_chart_col:
-            # Reserve exactly the same caption row as the table column so the
-            # two bordered panels start at the same vertical position.
-            st.caption("\u00A0")
             chart_exception_by_criteria(f_exception_detail)
         with exception_table_col:
-            st.caption(
-                "Months with data: " + ", ".join(exception_months)
-                if exception_months
-                else "\u00A0"
-            )
             render_activity_detail_table(
                 f_exception_detail,
                 "Exception Handling",
