@@ -1,6 +1,6 @@
 # ============================================================
 # CS WORKLOAD & CAPACITY DASHBOARD
-# BUILD: V57_EXCEPTION_DONUT_REFERENCE_STYLE
+# BUILD: V58_SEGMENT_EXPLODED_PIE
 # BUILD: SECTION2_CHART_DETAIL_V4
 # Python + Streamlit + Pandas + Plotly
 # Data source: (Not for Office Input) MASTER DATA SOURCE.xlsm
@@ -5134,126 +5134,82 @@ def chart_service_matrix(
     df: pd.DataFrame,
     mode_df: Optional[pd.DataFrame] = None,
 ):
-    """Workload by Segment — flower-style packed bubble chart."""
+    """Workload by Segment — exploded pie chart."""
     seg = build_segment_workload(df, mode_df)
     if seg.empty or float(seg["Allocation Time (h)"].sum()) <= 0:
         st.info("No segment workload data available for selected filters.")
         return
 
 
-    plot_df = seg[seg["Allocation Time (h)"] > 0].copy()
-    plot_df = plot_df.sort_values("Workload Share", ascending=False).reset_index(drop=True)
-    # Ordered overlapping bubble cluster.
-    # plot_df is already sorted by Workload Share descending.
-    # Rank 1 = center; remaining ranks are arranged around it in visual order.
-    # Compact overlapping bubble cluster.
-    # plot_df is sorted by Workload Share descending:
-    # 1 center, 2 left, 3 right, 4 upper-left, 5 upper-right,
-    # 6 lower-right, 7 lower-left/bottom.
-    # Coordinates are intentionally close so bubbles overlap visibly.
-    # Dynamic ranked overlapping bubble cluster.
-    # IMPORTANT: positions are assigned by CURRENT RANK, not by Segment name.
-    # Therefore the layout automatically changes with Office / Month / filters.
-    #
-    # plot_df is already sorted by Workload Share descending:
-    # Rank 1 -> center
-    # Rank 2 -> left
-    # Rank 3 -> upper-left
-    # Rank 4 -> top
-    # Rank 5 -> upper-right
-    # Rank 6 -> lower-right
-    # Rank 7 -> lower-left
-    rank_positions = [
-        (0.00, 0.00),     # Rank 1
-        (-0.27, 0.00),    # Rank 2: slightly overlaps on the left
-        (-0.17, 0.30),    # Rank 3: slightly overlaps upper-left
-        (0.02, 0.38),     # Rank 4: slightly overlaps on top
-        (0.23, 0.27),     # Rank 5: slightly overlaps upper-right
-        (0.22, -0.22),    # Rank 6: slightly overlaps lower-right
-        (-0.14, -0.33),   # Rank 7: slightly overlaps lower-left
-        (-0.30, -0.22),   # fallback Rank 8
-        (0.03, -0.41),    # fallback Rank 9
-        (0.32, 0.00),     # fallback Rank 10
+    plot_df = (
+        seg[seg["Allocation Time (h)"] > 0]
+        .copy()
+        .sort_values("Workload Share", ascending=False)
+        .reset_index(drop=True)
+    )
+
+    segment_color_map = {
+        svc: CORPORATE_PALETTE[i % len(CORPORATE_PALETTE)]
+        for i, svc in enumerate(SERVICE_ORDER)
+    }
+    pie_colors = plot_df["Segment"].map(segment_color_map).fillna(COLORS["blue"])
+    text_positions = [
+        "inside" if float(share) >= 0.04 else "outside"
+        for share in plot_df["Workload Share"]
+    ]
+    pull_values = [
+        0.025 if float(share) >= 0.04 else 0.055
+        for share in plot_df["Workload Share"]
     ]
 
-    plot_df["Rank"] = np.arange(1, len(plot_df) + 1)
-    plot_df["x"] = [rank_positions[i][0] for i in range(len(plot_df))]
-    plot_df["y"] = [rank_positions[i][1] for i in range(len(plot_df))]
-    max_share = float(plot_df["Workload Share"].max())
-    # Plotly marker size is a diameter in pixels. Using the square root of the
-    # share makes each bubble's visible AREA proportional to Workload Share,
-    # which allows users to compare percentages accurately at a glance.
-    # A small floor keeps low-share segment labels readable.
-    if max_share > 0:
-        plot_df["Bubble Size"] = np.maximum(
-            38,
-            165 * np.sqrt(plot_df["Workload Share"] / max_share),
+    fig = go.Figure(
+        go.Pie(
+            labels=plot_df["Segment"],
+            values=plot_df["Allocation Time (h)"],
+            customdata=np.column_stack([
+                plot_df["Shipment Volume"],
+                plot_df["Required FTE"],
+                plot_df["Workload Share"],
+            ]),
+            sort=False,
+            direction="clockwise",
+            rotation=90,
+            hole=0,
+            pull=pull_values,
+            textposition=text_positions,
+            texttemplate="<b>%{label}</b><br>%{percent:.1%}",
+            insidetextorientation="horizontal",
+            insidetextfont=dict(
+                family=UI["font_family"], size=11, color=COLORS["white"]
+            ),
+            outsidetextfont=dict(
+                family=UI["font_family"], size=10, color=COLORS["navy"]
+            ),
+            marker=dict(
+                colors=pie_colors,
+                line=dict(color=COLORS["white"], width=2.5),
+            ),
+            hovertemplate=(
+                "<b>%{label}</b>"
+                "<br>Shipment Volume: %{customdata[0]:,.0f}"
+                "<br>Allocation Time: %{value:,.1f} hrs"
+                "<br>Required FTE: %{customdata[1]:.2f}"
+                "<br>Workload Share: %{customdata[2]:.1%}"
+                "<extra></extra>"
+            ),
+            showlegend=False,
+            automargin=True,
         )
-    else:
-        plot_df["Bubble Size"] = 38
-    segment_color_map = {svc: CORPORATE_PALETTE[i % len(CORPORATE_PALETTE)] for i, svc in enumerate(SERVICE_ORDER)}
-
-    def bubble_text_color(hex_color: str) -> str:
-        """Choose white or navy according to the bubble fill contrast."""
-        color = str(hex_color).lstrip("#")
-        if len(color) != 6:
-            return COLORS["navy"]
-
-        def relative_luminance(rgb):
-            channels = [value / 12.92 if value <= 0.04045 else ((value + 0.055) / 1.055) ** 2.4 for value in rgb]
-            return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2]
-
-        bubble_rgb = tuple(int(color[i:i + 2], 16) / 255 for i in (0, 2, 4))
-        navy_hex = COLORS["navy"].lstrip("#")
-        navy_rgb = tuple(int(navy_hex[i:i + 2], 16) / 255 for i in (0, 2, 4))
-        bubble_luminance = relative_luminance(bubble_rgb)
-        navy_luminance = relative_luminance(navy_rgb)
-        white_contrast = 1.05 / (bubble_luminance + 0.05)
-        navy_contrast = (max(bubble_luminance, navy_luminance) + 0.05) / (min(bubble_luminance, navy_luminance) + 0.05)
-        return "#FFFFFF" if white_contrast >= navy_contrast else COLORS["navy"]
-
-    plot_df["Bubble Color"] = plot_df["Segment"].map(segment_color_map).fillna(COLORS["blue"])
-    plot_df["Text Color"] = plot_df["Bubble Color"].map(bubble_text_color)
-    plot_df["Text Size"] = np.where(
-        plot_df["Bubble Size"] < 58,
-        9,
-        np.where(plot_df["Bubble Size"] < 90, 10, np.where(plot_df["Bubble Size"] < 125, 11, 12)),
     )
 
-    fig = go.Figure()
-    # Draw all bubbles first; labels are drawn afterwards on the top layer so
-    # overlapping bubbles cannot cover or hide any segment text.
-    for _, r in plot_df.iterrows():
-        svc = r["Segment"]
-        fig.add_trace(go.Scatter(
-            x=[r["x"]], y=[r["y"]], mode="markers", name=svc,
-            marker=dict(size=[r["Bubble Size"]], color=r["Bubble Color"], opacity=0.94, line=dict(color="#FFFFFF", width=2.0)),
-            customdata=[[r["Shipment Volume"], r["Allocation Time (h)"], r["Required FTE"], r["Workload Share"]]],
-            hovertemplate=(f"<b>{svc}</b><br>Shipment Volume: %{{customdata[0]:,.0f}}<br>Allocation Time: %{{customdata[1]:,.1f}} hrs<br>Required FTE: %{{customdata[2]:,.2f}}<br>Workload Share: %{{customdata[3]:.1%}}<extra></extra>"),
-            showlegend=False,
-        ))
-
-    for _, r in plot_df.iterrows():
-        svc = r["Segment"]
-        fig.add_trace(go.Scatter(
-            x=[r["x"]], y=[r["y"]], mode="text",
-            text=[f"<b>{svc}</b><br>{r['Workload Share']:.1%}"],
-            textposition="middle center",
-            textfont=dict(family=UI["font_family"], size=int(r["Text Size"]), color=r["Text Color"]),
-            cliponaxis=False,
-            hoverinfo="skip",
-            showlegend=False,
-        ))
-
-    fig = plotly_layout(fig, 350, show_legend=False, margin_left=14, margin_right=14, margin_top=8, margin_bottom=8)
-    fig.update_layout(title=dict(text=""))
-    fig.update_xaxes(
-        visible=False, showgrid=False, zeroline=False, showticklabels=False,
-        title_text="", range=[-1.12, 1.12], fixedrange=True
+    fig = plotly_layout(
+        fig, 350, show_legend=False,
+        margin_left=42, margin_right=42, margin_top=12, margin_bottom=18,
     )
-    fig.update_yaxes(
-        visible=False, showgrid=False, zeroline=False, showticklabels=False,
-        title_text="", range=[-1.05, 1.05], fixedrange=True
+    fig.update_layout(
+        title=dict(text=""),
+        uniformtext_minsize=9,
+        uniformtext_mode="show",
     )
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
