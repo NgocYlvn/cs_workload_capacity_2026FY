@@ -1,6 +1,6 @@
 # ============================================================
 # CS WORKLOAD & CAPACITY DASHBOARD
-# BUILD: V61_EXCEPTION_YUSEN_3C_COLORS
+# BUILD: V62_EXCEPTION_YUSEN_3C_REFINED
 # BUILD: SECTION2_CHART_DETAIL_V4
 # Python + Streamlit + Pandas + Plotly
 # Data source: (Not for Office Input) MASTER DATA SOURCE.xlsm
@@ -4041,13 +4041,13 @@ def chart_exception_by_criteria(df: pd.DataFrame):
     # Yusen 3C palette: light corporate blues for large slices, stronger blue
     # contrast for smaller slices, and orange as the final accent.
     criteria_palette = [
-        "#B4CEE2",  # Pale corporate blue
-        "#8FB7D7",  # Soft blue
-        "#12B3E3",  # Cyan
-        "#347DB6",  # Medium blue
+        "#B4CEE2",  # N / largest: pale corporate blue
+        "#347DB6",  # M / second: medium blue
+        "#12B3E3",  # S / third: cyan
+        "#F58220",  # C / fourth: Yusen orange accent
         "#102B55",  # Navy
         "#5D91BC",  # Steel blue
-        "#F58220",  # Yusen orange accent
+        "#70AD47",  # Green fallback
         "#6E7F91",  # Slate fallback
     ]
     pie_colors = [
@@ -4066,7 +4066,7 @@ def chart_exception_by_criteria(df: pd.DataFrame):
         for share in agg["Share"]
     ]
     pull_values = [
-        0.055 if i == 0 else 0.035
+        0.040 if i == 0 else 0.030
         for i in range(len(agg))
     ]
 
@@ -4095,7 +4095,7 @@ def chart_exception_by_criteria(df: pd.DataFrame):
             ),
             outsidetextfont=dict(
                 family=UI["font_family"],
-                size=10,
+                size=11,
                 color=COLORS["navy"],
             ),
             marker=dict(
