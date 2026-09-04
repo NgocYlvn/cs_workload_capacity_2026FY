@@ -1,6 +1,6 @@
 # ============================================================
 # CS WORKLOAD & CAPACITY DASHBOARD
-# BUILD: V55_EXCEPTION_SMALL_SLICES_RIGHT
+# BUILD: V56_EXCEPTION_PIE_PSEUDO_3D
 # BUILD: SECTION2_CHART_DETAIL_V4
 # Python + Streamlit + Pandas + Plotly
 # Data source: (Not for Office Input) MASTER DATA SOURCE.xlsm
@@ -4060,7 +4060,45 @@ def chart_exception_by_criteria(df: pd.DataFrame):
     largest_share = float(agg.loc[0, "Share"])
     pie_rotation = 90 + 180 * max(0.0, 1.0 - largest_share)
 
-    fig = go.Figure(
+    def _shade_color(hex_color: str, factor: float = 0.62) -> str:
+        """Create a darker shade used for the visible side of the 3D pie."""
+        color = str(hex_color).lstrip("#")
+        if len(color) != 6:
+            return str(hex_color)
+        rgb = [int(color[i:i + 2], 16) for i in (0, 2, 4)]
+        return "#" + "".join(f"{max(0, min(255, int(v * factor))):02X}" for v in rgb)
+
+    depth_colors = [_shade_color(color) for color in pie_colors]
+    pull_values = [0.015 if i == 0 else 0.045 for i in range(len(agg))]
+    top_domain_x = [0.05, 0.76]
+    top_domain_y = [0.20, 0.92]
+
+    fig = go.Figure()
+
+    # Draw darker copies from bottom to top. Their small vertical offsets form
+    # the visible side wall and create a clean pseudo-3D extrusion effect.
+    for depth_shift in np.linspace(0.085, 0.015, 7):
+        fig.add_trace(
+            go.Pie(
+                labels=agg["Criteria"],
+                values=agg["Volume"],
+                sort=False,
+                direction="clockwise",
+                rotation=pie_rotation,
+                domain=dict(
+                    x=top_domain_x,
+                    y=[top_domain_y[0] - depth_shift, top_domain_y[1] - depth_shift],
+                ),
+                pull=pull_values,
+                textinfo="none",
+                hoverinfo="skip",
+                marker=dict(colors=depth_colors, line=dict(width=0)),
+                showlegend=False,
+            )
+        )
+
+    # Top face: keep the original colors, labels and hover information.
+    fig.add_trace(
         go.Pie(
             labels=agg["Criteria"],
             values=agg["Volume"],
@@ -4068,8 +4106,8 @@ def chart_exception_by_criteria(df: pd.DataFrame):
             sort=False,
             direction="clockwise",
             rotation=pie_rotation,
-            # Shift the pie left to reserve room for small-slice labels on the right.
-            domain=dict(x=[0.04, 0.76], y=[0.12, 0.90]),
+            domain=dict(x=top_domain_x, y=top_domain_y),
+            pull=pull_values,
             textinfo="label+percent",
             texttemplate="<b>%{label}</b><br>%{percent:.1%}",
             # Place Criteria + percentage outside with leader lines so small
@@ -4096,8 +4134,8 @@ def chart_exception_by_criteria(df: pd.DataFrame):
     )
 
     fig = plotly_layout(
-        fig, 350, show_legend=False,
-        margin_left=42, margin_right=70, margin_top=52, margin_bottom=28,
+        fig, 370, show_legend=False,
+        margin_left=42, margin_right=72, margin_top=52, margin_bottom=32,
     )
     fig.update_layout(
         title=dict(text="Exception Handling by Criteria"),
