@@ -1,6 +1,6 @@
 # ============================================================
 # CS WORKLOAD & CAPACITY DASHBOARD
-# BUILD: V68_EXCEPTION_EQUAL_PANEL_HEIGHTS
+# BUILD: V69_EXCEPTION_PANEL_HEIGHT_FINE_TUNE
 # BUILD: SECTION2_CHART_DETAIL_V4
 # Python + Streamlit + Pandas + Plotly
 # Data source: (Not for Office Input) MASTER DATA SOURCE.xlsm
@@ -6550,11 +6550,11 @@ def main():
         with exception_chart_col:
             chart_exception_by_criteria(f_exception_detail)
         with exception_table_col:
-            # 340 px dataframe + caption aligns with the 455 px chart card.
+            # Include the caption in the visual balance with the 455 px chart.
             render_activity_detail_table(
                 f_exception_detail,
                 "Exception Handling",
-                table_height=340,
+                table_height=395,
             )
 
     section_title("6. Control Tower effectiveness = CS Resolutions Rate")
