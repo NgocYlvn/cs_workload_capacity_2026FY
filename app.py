@@ -1,6 +1,6 @@
 # ============================================================
 # CS WORKLOAD & CAPACITY DASHBOARD
-# BUILD: V62_EXCEPTION_YUSEN_3C_REFINED
+# BUILD: V63_EXCEPTION_INLINE_OUTSIDE_LABELS
 # BUILD: SECTION2_CHART_DETAIL_V4
 # Python + Streamlit + Pandas + Plotly
 # Data source: (Not for Office Input) MASTER DATA SOURCE.xlsm
@@ -4065,6 +4065,12 @@ def chart_exception_by_criteria(df: pd.DataFrame):
         "inside" if float(share) >= 0.08 else "outside"
         for share in agg["Share"]
     ]
+    text_templates = [
+        "<b>%{label}</b><br>%{percent:.1%}"
+        if float(share) >= 0.08
+        else "<b>%{label}</b> %{percent:.1%}"
+        for share in agg["Share"]
+    ]
     pull_values = [
         0.040 if i == 0 else 0.030
         for i in range(len(agg))
@@ -4083,7 +4089,7 @@ def chart_exception_by_criteria(df: pd.DataFrame):
             hole=0,
             pull=pull_values,
             textinfo="label+percent",
-            texttemplate="<b>%{label}</b><br>%{percent:.1%}",
+            texttemplate=text_templates,
             # Match the sample: major labels inside, small labels outside.
             textposition=text_positions,
             insidetextorientation="horizontal",
