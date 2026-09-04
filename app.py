@@ -1,6 +1,6 @@
 # ============================================================
 # CS WORKLOAD & CAPACITY DASHBOARD
-# BUILD: V43_HC_COLOR_HIERARCHY
+# BUILD: V44_CASE_OFFICE_PERCENTAGE
 # BUILD: SECTION2_CHART_DETAIL_V4
 # Python + Streamlit + Pandas + Plotly
 # Data source: (Not for Office Input) MASTER DATA SOURCE.xlsm
@@ -3818,6 +3818,10 @@ def render_case_office_cards(workload_df: pd.DataFrame):
             for activity in ["C", "A", "S", "E"]
         }
         total = float(sum(vals.values()))
+        shares = {
+            activity: safe_div(value, total)
+            for activity, value in vals.items()
+        }
 
         with card_col:
             card_html = f"""
@@ -3891,10 +3895,10 @@ def render_case_office_cards(workload_df: pd.DataFrame):
                       color:#667085;
                       font-size:9.5px;
                       text-align:center;">
-                    <div>Core</div>
-                    <div>Ancillary</div>
-                    <div>Supporting</div>
-                    <div>Exception</div>
+                    <div>{shares['C']:.2%}</div>
+                    <div>{shares['A']:.2%}</div>
+                    <div>{shares['S']:.2%}</div>
+                    <div>{shares['E']:.2%}</div>
                   </div>
                 </div>
                 """
