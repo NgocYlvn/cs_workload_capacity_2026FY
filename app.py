@@ -1,6 +1,6 @@
 # ============================================================
 # CS WORKLOAD & CAPACITY DASHBOARD
-# BUILD: V76_STABILITY_OPTIMIZATION
+# BUILD: V77_EXCEPTION_SOFT_COLORS
 # BUILD: SECTION2_CHART_DETAIL_V4
 # Python + Streamlit + Pandas + Plotly
 # Data source: (Not for Office Input) MASTER DATA SOURCE.xlsm
@@ -4070,12 +4070,13 @@ def chart_exception_by_criteria(df: pd.DataFrame):
         return
 
     agg = agg.sort_values("Volume", ascending=False).reset_index(drop=True)
-    # Bright infographic palette with strong contrast between adjacent slices.
+    # Softer Yusen-inspired palette: calm for the dominant slice while smaller
+    # slices remain clearly distinguishable.
     criteria_palette = [
-        "#E34D8A",  # Magenta
-        "#FF7A1A",  # Orange
-        "#E6A600",  # Deep amber for better white-text contrast
-        "#20B8B5",  # Teal
+        "#8FB7D7",  # Soft blue for the largest slice
+        "#E6761B",  # Yusen orange
+        "#D9A400",  # Amber
+        "#269E9A",  # Teal
         "#6654C7",  # Violet
         "#347DB6",  # Corporate blue
         "#70AD47",  # Green
@@ -4128,7 +4129,7 @@ def chart_exception_by_criteria(df: pd.DataFrame):
             insidetextfont=dict(
                 family=UI["font_family"],
                 size=11,
-                color=COLORS["white"],
+                color=COLORS["navy"],
             ),
             outsidetextfont=dict(
                 family=UI["font_family"],
