@@ -2431,8 +2431,8 @@ def _fte_office_summary(office_fte: pd.DataFrame, selected_month: str) -> Tuple[
     if monthly.empty:
         return float("nan"), float("nan"), float("nan"), ("NO DATA", COLORS["muted"], COLORS["light_blue"])
     if str(selected_month).strip().lower() == "all":
-        total_available = float(monthly["Total_Available_Time"].mean())
-        total_actual = float(monthly["Total_Actual_Working_Time"].mean())
+        total_available = float(monthly["Total_Available_Time"].sum())
+        total_actual = float(monthly["Total_Actual_Working_Time"].sum())
     else:
         row = monthly.sort_values("MonthDate").iloc[-1]
         total_available = float(row["Total_Available_Time"])
@@ -6330,8 +6330,8 @@ def main():
     #        FTE Workload Status
     #
     # Month = All:
-    #   Calculate monthly office/PIC totals first, then show the average
-    #   monthly Total Available Time and Total Actual Working Time.
+    #   Calculate monthly office/PIC totals first, then sum all months for
+    #   Total Available Time and Total Actual Working Time.
     # Selected month:
     #   Show the actual total of that selected month.
 
@@ -6359,10 +6359,10 @@ def main():
         if not monthly_fte.empty:
             if str(month).strip().lower() == "all":
                 total_available = float(
-                    monthly_fte["Total_Available_Time"].mean()
+                    monthly_fte["Total_Available_Time"].sum()
                 )
                 total_actual_working = float(
-                    monthly_fte["Total_Actual_Working_Time"].mean()
+                    monthly_fte["Total_Actual_Working_Time"].sum()
                 )
             else:
                 selected_month_row = monthly_fte.sort_values(
