@@ -3240,14 +3240,9 @@ def prepare_fte(df: pd.DataFrame) -> pd.DataFrame:
     # --------------------------------------------------------
     month_col = first_existing(df, ["Month"])
 
-    available_col = first_existing(
-        df,
-        [
-            "Total Available Time (95%x8x22x1) (i)",
-            "Total Available Time",
-            "Available Time",
-        ],
-    )
+    # Section 3: Total Available Time is sourced strictly from Excel column D
+    # of sheet "2. FTE Workload". In pandas, column D has zero-based index 3.
+    available_col = df.columns[3] if len(df.columns) > 3 else None
 
     actual_time_col = first_existing(
         df,
@@ -3288,13 +3283,13 @@ def prepare_fte(df: pd.DataFrame) -> pd.DataFrame:
         long["CS PIC"] = long[pic_col].astype(str).str.strip()
         long["MonthDate"] = long[month_col].map(parse_month)
 
-        # Use source values directly whenever available.
+        # Use Total Available Time directly from source column D.
         if available_col:
             long["Available Time"] = pd.to_numeric(
                 long[available_col], errors="coerce"
             )
         else:
-            long["Available Time"] = CAPACITY_HOURS_PER_FTE
+            long["Available Time"] = np.nan
 
         if actual_time_col:
             long["Actual Working Time"] = pd.to_numeric(
