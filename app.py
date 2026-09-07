@@ -2418,7 +2418,7 @@ def _fte_office_summary(office_fte: pd.DataFrame, selected_month: str) -> Tuple[
     if office_fte is None or office_fte.empty:
         return float("nan"), float("nan"), float("nan"), ("NO DATA", COLORS["muted"], COLORS["light_blue"])
     d = office_fte.copy()
-    d["Available Time (hour)"] = pd.to_numeric(d.get("Available Time"), errors="coerce")
+    d["Available Time"] = pd.to_numeric(d.get("Available Time"), errors="coerce")
     d["Actual Working Time"] = pd.to_numeric(d.get("Actual Working Time"), errors="coerce")
     monthly = (
         d.dropna(subset=["MonthDate", "Available Time", "Actual Working Time"])
@@ -3805,7 +3805,7 @@ def render_case_office_cards(workload_df: pd.DataFrame):
         f"""
         <div style="
             color:{COLORS['navy']};
-            font-size:{UI['chart_title_size']}px;
+            font-size:20px;
             font-weight:700;
             margin:4px 0 10px 2px;">
             C / A / S / E Activity by Office
@@ -3848,7 +3848,7 @@ def render_case_office_cards(workload_df: pd.DataFrame):
                     border-top:4px solid {COLORS['navy']};
                     border-radius:12px;
                     padding:14px 16px 13px;
-                    min-height:168px;
+                    min-height:180px;
                     box-sizing:border-box;
                     box-shadow:0 2px 7px rgba(0,59,112,0.045);">
 
@@ -3860,7 +3860,7 @@ def render_case_office_cards(workload_df: pd.DataFrame):
                       margin-bottom:10px;">
                     <div style="
                         color:{COLORS['navy']};
-                        font-size:18px;
+                        font-size:20px;
                         font-weight:800;">
                       {html.escape(office)}
                     </div>
@@ -3868,13 +3868,13 @@ def render_case_office_cards(workload_df: pd.DataFrame):
                     <div style="text-align:right;">
                       <div style="
                           color:#667085;
-                          font-size:10.5px;
+                          font-size:12px;
                           font-weight:600;">
                         TOTAL ACTIVITY
                       </div>
                       <div style="
                           color:{COLORS['navy']};
-                          font-size:20px;
+                          font-size:23px;
                           font-weight:800;
                           margin-top:2px;">
                         {total:,.0f}
@@ -3888,20 +3888,20 @@ def render_case_office_cards(workload_df: pd.DataFrame):
                       border-top:1px solid #E7ECF1;
                       padding-top:11px;">
                     <div style="text-align:center;border-right:1px solid #E7ECF1;">
-                      <div style="color:{activity_meta['C'][1]};font-size:14px;font-weight:800;">C</div>
-                      <div style="color:{COLORS['navy']};font-size:16px;font-weight:750;margin-top:4px;">{vals['C']:,.0f}</div>
+                      <div style="color:{activity_meta['C'][1]};font-size:16px;font-weight:800;">C</div>
+                      <div style="color:{COLORS['navy']};font-size:18px;font-weight:750;margin-top:4px;">{vals['C']:,.0f}</div>
                     </div>
                     <div style="text-align:center;border-right:1px solid #E7ECF1;">
-                      <div style="color:{activity_meta['A'][1]};font-size:14px;font-weight:800;">A</div>
-                      <div style="color:{COLORS['navy']};font-size:16px;font-weight:750;margin-top:4px;">{vals['A']:,.0f}</div>
+                      <div style="color:{activity_meta['A'][1]};font-size:16px;font-weight:800;">A</div>
+                      <div style="color:{COLORS['navy']};font-size:18px;font-weight:750;margin-top:4px;">{vals['A']:,.0f}</div>
                     </div>
                     <div style="text-align:center;border-right:1px solid #E7ECF1;">
-                      <div style="color:{activity_meta['S'][1]};font-size:14px;font-weight:800;">S</div>
-                      <div style="color:{COLORS['navy']};font-size:16px;font-weight:750;margin-top:4px;">{vals['S']:,.0f}</div>
+                      <div style="color:{activity_meta['S'][1]};font-size:16px;font-weight:800;">S</div>
+                      <div style="color:{COLORS['navy']};font-size:18px;font-weight:750;margin-top:4px;">{vals['S']:,.0f}</div>
                     </div>
                     <div style="text-align:center;">
-                      <div style="color:{activity_meta['E'][1]};font-size:14px;font-weight:800;">E</div>
-                      <div style="color:{COLORS['navy']};font-size:16px;font-weight:750;margin-top:4px;">{vals['E']:,.0f}</div>
+                      <div style="color:{activity_meta['E'][1]};font-size:16px;font-weight:800;">E</div>
+                      <div style="color:{COLORS['navy']};font-size:18px;font-weight:750;margin-top:4px;">{vals['E']:,.0f}</div>
                     </div>
                   </div>
 
@@ -3910,7 +3910,7 @@ def render_case_office_cards(workload_df: pd.DataFrame):
                       grid-template-columns:repeat(4,minmax(0,1fr));
                       margin-top:4px;
                       color:#667085;
-                      font-size:9.5px;
+                      font-size:11px;
                       text-align:center;">
                     <div>{shares['C']:.1%}</div>
                     <div>{shares['A']:.1%}</div>
