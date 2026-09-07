@@ -2418,7 +2418,7 @@ def _fte_office_summary(office_fte: pd.DataFrame, selected_month: str) -> Tuple[
     if office_fte is None or office_fte.empty:
         return float("nan"), float("nan"), float("nan"), ("NO DATA", COLORS["muted"], COLORS["light_blue"])
     d = office_fte.copy()
-    d["Available Time"] = pd.to_numeric(d.get("Available Time"), errors="coerce")
+    d["Available Time (hour)"] = pd.to_numeric(d.get("Available Time"), errors="coerce")
     d["Actual Working Time"] = pd.to_numeric(d.get("Actual Working Time"), errors="coerce")
     monthly = (
         d.dropna(subset=["MonthDate", "Available Time", "Actual Working Time"])
@@ -2460,8 +2460,8 @@ def render_fte_office_comparison(fte_filtered_all_offices: pd.DataFrame, selecte
                 "FTE Workload",
                 "N/A" if pd.isna(workload) else f"{int(np.ceil(workload * 100))}%",
                 [
-                    ("Available Time", "N/A" if pd.isna(available) else fmt_num(available, 0), ""),
-                    ("Actual Time", "N/A" if pd.isna(actual) else fmt_num(actual, 0), ""),
+                    ("Available Time (hour)", "N/A" if pd.isna(available) else fmt_num(available, 0), ""),
+                    ("Actual Time (hour)", "N/A" if pd.isna(actual) else fmt_num(actual, 0), ""),
                     ("Gap", "N/A" if pd.isna(variance) else fmt_num(variance, 0), variance_class),
                     ("Status", status_text.title(), ""),
                 ],
