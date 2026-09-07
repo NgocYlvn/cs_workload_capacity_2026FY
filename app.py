@@ -3910,7 +3910,7 @@ def render_case_office_cards(workload_df: pd.DataFrame):
                       grid-template-columns:repeat(4,minmax(0,1fr));
                       margin-top:4px;
                       color:#667085;
-                      font-size:11px;
+                      font-size:18px;
                       text-align:center;">
                     <div>{shares['C']:.1%}</div>
                     <div>{shares['A']:.1%}</div>
