@@ -5628,13 +5628,6 @@ footer{display:none!important}
     z-index:10;
 }
 
-.cover-logo-real{
-    width:192px;
-    height:auto;
-    display:block;
-    margin:0 0 clamp(12px,1.7vh,20px) 0;
-}
-
 .cover-title{
     margin:0;
     max-width:650px;
