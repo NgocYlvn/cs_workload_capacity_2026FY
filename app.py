@@ -3534,7 +3534,10 @@ def prepare_case_detail(
     # Descriptive columns before month columns.
     code_col = first_existing(d, ["Scope", "CODE", "Code", "Service Code"])
     bu_col = first_existing(d, ["BU", "Segment", "Service"])
-    criteria_col = first_existing(d, ["Criteria"])
+    criteria_col = first_existing(
+        d,
+        ["Criteria", "CRITERIA", "Criterion", "Criteria (N/M/S)"],
+    )
     detail_col = first_existing(
         d,
         [
@@ -4281,9 +4284,12 @@ def render_activity_detail_table(
 
     d["Month"] = d["MonthDate"].dt.strftime("%b-%y")
 
-    # Consistent business order requested for all C / A / S / E tabs:
-    # Office → Month → Code → Code Description → Volume
-    preferred = ["Office", "Month", "Code", "Code Description", "Volume"]
+    # Criteria is carried directly from source sheet "8. E Vol.".
+    # It remains visible for Exception Handling and is automatically removed
+    # from C/A/S when the entire source column is blank.
+    preferred = [
+        "Office", "Month", "Code", "Criteria", "Code Description", "Volume"
+    ]
     cols = [c for c in preferred if c in d.columns]
 
     # Drop descriptive columns that are completely blank.
@@ -4300,7 +4306,10 @@ def render_activity_detail_table(
     )
 
     sort_source = d.copy()
-    sort_cols = [c for c in ["Office", "Code", "MonthDate"] if c in sort_source.columns]
+    sort_cols = [
+        c for c in ["Office", "Code", "Criteria", "MonthDate"]
+        if c in sort_source.columns
+    ]
     if sort_cols:
         sort_source = sort_source.sort_values(sort_cols)
 
@@ -4317,6 +4326,7 @@ def render_activity_detail_table(
             "Office": st.column_config.TextColumn("Office", width="small"),
             "Month": st.column_config.TextColumn("Month", width="small"),
             "Code": st.column_config.TextColumn("Code", width="small"),
+            "Criteria": st.column_config.TextColumn("Criteria", width="small"),
             "Code Description": st.column_config.TextColumn(
                 "Code Description", width="large"
             ),
@@ -4330,6 +4340,7 @@ def render_activity_detail_table(
             "Office": st.column_config.TextColumn("Office"),
             "Month": st.column_config.TextColumn("Month"),
             "Code": st.column_config.TextColumn("Code"),
+            "Criteria": st.column_config.TextColumn("Criteria"),
             "Code Description": st.column_config.TextColumn("Code Description"),
             "Volume": st.column_config.NumberColumn("Volume", format="%,.0f"),
         }
