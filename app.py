@@ -4326,7 +4326,7 @@ def render_activity_detail_table(
             "Office": st.column_config.TextColumn("Office", width="small"),
             "Month": st.column_config.TextColumn("Month", width="small"),
             "Code": st.column_config.TextColumn("Code", width="small"),
-            "Criteria": st.column_config.TextColumn("Criteria", width="small"),
+            "Criteria": st.column_config.TextColumn("\u2003Criteria", width=90),
             "Code Description": st.column_config.TextColumn(
                 "Code Description", width="large"
             ),
@@ -4345,8 +4345,21 @@ def render_activity_detail_table(
             "Volume": st.column_config.NumberColumn("Volume", format="%,.0f"),
         }
 
+    # Streamlit's grid ignores CSS text alignment for text columns. Use fixed
+    # column width plus non-breaking em-space padding for reliable centering.
+    display_table = d
+    if "Criteria" in d.columns:
+        display_table = d.copy()
+        display_table["Criteria"] = (
+            display_table["Criteria"]
+            .fillna("")
+            .astype(str)
+            .str.strip()
+            .map(lambda value: f"\u2003\u2003{value}" if value else "")
+        )
+
     st.dataframe(
-        d,
+        display_table,
         use_container_width=stretch_to_container,
         hide_index=True,
         height=(
