@@ -2469,18 +2469,38 @@ def render_fte_office_comparison(fte_filtered_all_offices: pd.DataFrame, selecte
             )
 
     st.markdown(
-        """
+        f"""
         <div style="
-            margin:8px 2px 0;
+            margin:8px 0 0;
+            padding:13px 16px;
+            display:flex;
+            justify-content:center;
+            align-items:center;
+            flex-wrap:wrap;
+            gap:10px 28px;
             color:#667085;
+            background:#F4F6F8;
+            border-top:1px solid #E3E8EF;
+            border-bottom:1px solid #D8E0E8;
             font-size:12px;
-            font-weight:600;
-            line-height:1.55;
-            text-align:center;">
-            Overload: &gt;100% &nbsp;|&nbsp;
-            High load: &gt;95–100% &nbsp;|&nbsp;
-            Balanced: 90–95% &nbsp;|&nbsp;
-            Less load: &lt;90%
+            font-weight:500;
+            line-height:1.4;">
+            <span style="display:inline-flex;align-items:center;gap:7px;white-space:nowrap;">
+                <span style="width:10px;height:10px;border-radius:2px;background:{COLORS['red']};"></span>
+                Overload &gt;100%
+            </span>
+            <span style="display:inline-flex;align-items:center;gap:7px;white-space:nowrap;">
+                <span style="width:10px;height:10px;border-radius:2px;background:{COLORS['high_load']};"></span>
+                High Load &gt;95–100%
+            </span>
+            <span style="display:inline-flex;align-items:center;gap:7px;white-space:nowrap;">
+                <span style="width:10px;height:10px;border-radius:2px;background:{COLORS['blue']};"></span>
+                Balanced 90–95%
+            </span>
+            <span style="display:inline-flex;align-items:center;gap:7px;white-space:nowrap;">
+                <span style="width:10px;height:10px;border-radius:2px;background:{COLORS['green']};"></span>
+                Less Load &lt;90%
+            </span>
         </div>
         """,
         unsafe_allow_html=True,
