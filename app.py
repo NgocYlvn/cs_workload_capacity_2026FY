@@ -3911,7 +3911,7 @@ def render_case_office_cards(workload_df: pd.DataFrame):
                           color:#667085;
                           font-size:12px;
                           font-weight:600;">
-                        TOTAL ACTIVITY (Hours)
+                        TOTAL ACTIVITY
                       </div>
                       <div style="
                           color:{COLORS['navy']};
