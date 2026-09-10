@@ -2443,7 +2443,7 @@ def _fte_office_summary(office_fte: pd.DataFrame, selected_month: str) -> Tuple[
 
 def render_fte_office_comparison(fte_filtered_all_offices: pd.DataFrame, selected_month: str) -> None:
     # Reuse exact Section 3 FTE formula / month handling.
-    _office_comparison_heading("Office Workload per FTE")
+    _office_comparison_heading("Office Workload per PIC")
     cols = st.columns(4, gap="small")
     for col, office_name in zip(cols, STANDARD_OFFICES):
         if fte_filtered_all_offices is not None and not fte_filtered_all_offices.empty and "Office" in fte_filtered_all_offices.columns:
@@ -2467,6 +2467,24 @@ def render_fte_office_comparison(fte_filtered_all_offices: pd.DataFrame, selecte
                 ],
                 status_text, status_color, status_bg,
             )
+
+    st.markdown(
+        """
+        <div style="
+            margin:8px 2px 0;
+            color:#667085;
+            font-size:12px;
+            font-weight:600;
+            line-height:1.55;
+            text-align:center;">
+            Overload: &gt;100% &nbsp;|&nbsp;
+            High load: &gt;95–100% &nbsp;|&nbsp;
+            Balanced: 90–95% &nbsp;|&nbsp;
+            Less load: &lt;90%
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
 
@@ -3873,7 +3891,7 @@ def render_case_office_cards(workload_df: pd.DataFrame):
                           color:#667085;
                           font-size:12px;
                           font-weight:600;">
-                        TOTAL ACTIVITY
+                        TOTAL ACTIVITY (Hours)
                       </div>
                       <div style="
                           color:{COLORS['navy']};
@@ -5309,7 +5327,7 @@ def segment_workload_table(df: pd.DataFrame, mode_df: pd.DataFrame):
         st.info("No segment workload data available for selected filters.")
         return
 
-    pair_panel_title("Segment Workload Breakdown")
+    pair_panel_title("Segment Workload Breakdown (including MNG)")
     display = (
         seg.copy()
         .sort_values("Workload Share", ascending=False)
@@ -5325,7 +5343,7 @@ def segment_workload_table(df: pd.DataFrame, mode_df: pd.DataFrame):
             "Segment": st.column_config.TextColumn("Segment", width=70),
             "Shipment Volume": st.column_config.NumberColumn("Volume", width="medium", format="%,.0f"),
             "Allocation Time (h)": st.column_config.NumberColumn("Actual Working Time (Hours)", width="medium", format="%,.1f"),
-            "Required FTE": st.column_config.NumberColumn("Required FTE", width="small", format="%.2f"),
+            "Required FTE": st.column_config.NumberColumn("FTE Allocation", width="small", format="%.2f"),
             "Workload Share (%)": st.column_config.NumberColumn("Workload Share (%)", width="medium", format="%.1f%%"),
         },
     )
@@ -6336,7 +6354,7 @@ def main():
         customer_detail_volume_table(f_customer_ns)
 
 
-    section_title("3. Workload per FTE")
+    section_title("3. Workload per PIC")
 
     # KPI source: sheet "2. FTE Workload".
     # Single source of truth for Section 3:
