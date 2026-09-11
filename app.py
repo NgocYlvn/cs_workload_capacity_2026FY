@@ -5538,32 +5538,70 @@ def render_cs_solution_table(df: pd.DataFrame):
     )
     display = display.drop(columns=["Resolution Rate"])
 
-    resolution_table_height = min(
-        390,
-        max(160, 38 + len(display) * 34),
+    display["Total Abnormality"] = display["Total Abnormality"].apply(
+        lambda value: "" if pd.isna(value) else f"{value:,.0f}"
+    )
+    display["Resolved"] = display["Resolved"].apply(
+        lambda value: "" if pd.isna(value) else f"{value:,.0f}"
+    )
+    display = display.rename(
+        columns={
+            "Total Abnormality": "Total Exception Case",
+            "Resolved": "Resolved by CS",
+            "Resolution Rate (%)": "CS Resolution Rate",
+        }
     )
 
-    # Center all body-cell values in this table only.
-    styled_display = display.style.set_properties(**{"text-align": "center"})
-
-    st.dataframe(
-        styled_display,
-        use_container_width=True,
-        hide_index=True,
-        height=resolution_table_height,
-        column_config={
-            "Office": st.column_config.TextColumn("Office", width=70),
-            "Month": st.column_config.TextColumn("Month", width=80),
-            "Total Abnormality": st.column_config.NumberColumn(
-                "Total Exception Case", width=135, format="%,.0f"
-            ),
-            "Resolved": st.column_config.NumberColumn(
-                "Resolved by CS", width=120, format="%,.0f"
-            ),
-            "Resolution Rate (%)": st.column_config.TextColumn(
-                "CS Resolution Rate", width=115
-            ),
-        },
+    resolution_table_height = min(390, max(160, 38 + len(display) * 34))
+    table_html = display.to_html(
+        index=False,
+        escape=True,
+        classes="cs-resolution-table",
+        border=0,
+    )
+    st.markdown(
+        f"""
+        <style>
+        .cs-resolution-table-wrap {{
+            width: 100%;
+            max-height: {resolution_table_height}px;
+            overflow-y: auto;
+            border: 1px solid #D8E0E8;
+            border-radius: 10px;
+            background: #FFFFFF;
+        }}
+        .cs-resolution-table {{
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+            font-family: {UI['font_family']};
+            font-size: 13px;
+        }}
+        .cs-resolution-table th,
+        .cs-resolution-table td {{
+            height: 34px;
+            padding: 6px 8px;
+            border-right: 1px solid #E1E6EB;
+            border-bottom: 1px solid #E1E6EB;
+            text-align: center !important;
+            vertical-align: middle !important;
+            white-space: nowrap;
+        }}
+        .cs-resolution-table th {{
+            position: sticky;
+            top: 0;
+            z-index: 1;
+            background: #F7F9FB;
+            color: #718096;
+            font-weight: 400;
+        }}
+        .cs-resolution-table th:last-child,
+        .cs-resolution-table td:last-child {{ border-right: 0; }}
+        .cs-resolution-table tbody tr:last-child td {{ border-bottom: 0; }}
+        </style>
+        <div class="cs-resolution-table-wrap">{table_html}</div>
+        """,
+        unsafe_allow_html=True,
     )
 
 def chart_yvf(df: pd.DataFrame):
