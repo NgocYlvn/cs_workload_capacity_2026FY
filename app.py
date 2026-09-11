@@ -5353,8 +5353,14 @@ def segment_workload_table(df: pd.DataFrame, mode_df: pd.DataFrame):
     display["Workload Share (%)"] = pd.to_numeric(display["Workload Share (%)"], errors="coerce").fillna(0) * 100
     display = display[["Segment", "Shipment Volume", "Allocation Time (h)", "Required FTE", "Workload Share (%)"]]
 
+    # Fit the table to its actual row count so no empty rows appear below.
+    segment_table_height = 38 + 35 * len(display)
+
     st.dataframe(
-        display, use_container_width=True, hide_index=True, height=390,
+        display,
+        use_container_width=True,
+        hide_index=True,
+        height=segment_table_height,
         column_config={
             "Segment": st.column_config.TextColumn("Segment", width=70),
             "Shipment Volume": st.column_config.NumberColumn("Volume", width="medium", format="%,.0f"),
