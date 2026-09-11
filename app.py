@@ -5543,8 +5543,11 @@ def render_cs_solution_table(df: pd.DataFrame):
         max(160, 38 + len(display) * 34),
     )
 
+    # Center all body-cell values in this table only.
+    styled_display = display.style.set_properties(**{"text-align": "center"})
+
     st.dataframe(
-        display,
+        styled_display,
         use_container_width=True,
         hide_index=True,
         height=resolution_table_height,
