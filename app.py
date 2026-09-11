@@ -13,6 +13,7 @@ import html
 import hashlib
 import logging
 import tempfile
+import textwrap
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Tuple
 
@@ -5559,7 +5560,7 @@ def render_cs_solution_table(df: pd.DataFrame):
         classes="cs-resolution-table",
         border=0,
     )
-    st.markdown(
+    table_css = textwrap.dedent(
         f"""
         <style>
         .cs-resolution-table-wrap {{
@@ -5599,8 +5600,11 @@ def render_cs_solution_table(df: pd.DataFrame):
         .cs-resolution-table td:last-child {{ border-right: 0; }}
         .cs-resolution-table tbody tr:last-child td {{ border-bottom: 0; }}
         </style>
-        <div class="cs-resolution-table-wrap">{table_html}</div>
-        """,
+        """
+    ).strip()
+    st.markdown(
+        table_css
+        + f'\n<div class="cs-resolution-table-wrap">{table_html}</div>',
         unsafe_allow_html=True,
     )
 
