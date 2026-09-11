@@ -167,7 +167,7 @@ SHEET_NAMES = {
     "customer_hlc": "__NOT_USED_CUSTOMER_HLC__",
     "customer_hcm": "__NOT_USED_CUSTOMER_HCM__",
 
-    "fte": " 2. FTE Workload",
+    "fte": " 2. Average PIC Workload",
     "core": "5. C Vol.",
     "ancillary": "6. A Vol.",
     "supporting": "7. S Vol.",
@@ -3259,7 +3259,7 @@ def prepare_fte(df: pd.DataFrame) -> pd.DataFrame:
         "Available Time",
         "Actual Working Time",
         "Actual FTE",
-        "FTE Workload Status",
+        "PIC Workload Status",
     ]
 
     if df.empty:
