@@ -5255,7 +5255,7 @@ def chart_service_matrix(
     df: pd.DataFrame,
     mode_df: Optional[pd.DataFrame] = None,
 ):
-    """Workload by Segment — exploded pie chart."""
+    """Workload by Segment — compact pie chart."""
     seg = build_segment_workload(df, mode_df)
     if seg.empty or float(seg["Allocation Time (h)"].sum()) <= 0:
         st.info("No segment workload data available for selected filters.")
@@ -5284,11 +5284,6 @@ def chart_service_matrix(
         else "<b>%{label}</b> %{percent:.1%}"
         for share in plot_df["Workload Share"]
     ]
-    pull_values = [
-        0.025 if float(share) >= 0.04 else 0.055
-        for share in plot_df["Workload Share"]
-    ]
-
     fig = go.Figure(
         go.Pie(
             labels=plot_df["Segment"],
@@ -5302,7 +5297,8 @@ def chart_service_matrix(
             direction="clockwise",
             rotation=90,
             hole=0,
-            pull=pull_values,
+            # Keep every slice joined inside one complete circle.
+            pull=0,
             textposition=text_positions,
             texttemplate=text_templates,
             insidetextorientation="horizontal",
