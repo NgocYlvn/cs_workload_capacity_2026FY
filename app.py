@@ -11,11 +11,8 @@ from __future__ import annotations
 import re
 import html
 import hashlib
-import json
 import logging
 import tempfile
-import urllib.error
-import urllib.request
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Tuple
 
@@ -53,13 +50,6 @@ SERVICE_LABELS = {
     "CC": "Customs Clearance",
     "TR": "Trucking",
     "WH": "Warehouse",
-}
-
-# Only these email addresses may request and verify an OTP.
-ALLOWED_EMAILS = {
-    "huong.vu@vn.yusen-logistics.com",
-    "thuhuong.ngo@vn.yusen-logistics.com",
-    "nguyenbich.ngoc@vn.yusen-logistics.com",
 }
 
 # ============================================================
@@ -6031,119 +6021,6 @@ footer{display:none!important}
 
 
 
-def _supabase_auth_request(endpoint: str, payload: dict) -> dict:
-    """Call Supabase Auth without adding another Python dependency."""
-    try:
-        supabase_url = str(st.secrets["SUPABASE_URL"]).strip().rstrip("/")
-        publishable_key = str(st.secrets["SUPABASE_PUBLISHABLE_KEY"]).strip()
-    except (KeyError, FileNotFoundError) as exc:
-        raise RuntimeError(
-            "Missing SUPABASE_URL or SUPABASE_PUBLISHABLE_KEY in Streamlit Secrets."
-        ) from exc
-
-    request = urllib.request.Request(
-        f"{supabase_url}/auth/v1/{endpoint}",
-        data=json.dumps(payload).encode("utf-8"),
-        headers={
-            "apikey": publishable_key,
-            "Authorization": f"Bearer {publishable_key}",
-            "Content-Type": "application/json",
-        },
-        method="POST",
-    )
-    try:
-        with urllib.request.urlopen(request, timeout=20) as response:
-            return json.loads(response.read().decode("utf-8") or "{}")
-    except urllib.error.HTTPError as exc:
-        try:
-            detail = json.loads(exc.read().decode("utf-8"))
-            message = detail.get("msg") or detail.get("message") or detail.get("error_description")
-        except Exception:
-            message = None
-        raise RuntimeError(message or f"Authentication service returned HTTP {exc.code}.") from exc
-    except urllib.error.URLError as exc:
-        raise RuntimeError("Unable to connect to the authentication service.") from exc
-
-
-def render_email_otp_gate() -> None:
-    """Require a Supabase email OTP before loading any dashboard data."""
-    if st.session_state.get("otp_authenticated", False):
-        return
-
-    st.markdown(
-        """
-        <style>
-        [data-testid="stSidebar"] {display:none;}
-        .block-container {max-width:520px;padding-top:10vh;}
-        .otp-title {color:#06183F;font-size:32px;font-weight:800;text-align:center;}
-        .otp-note {color:#5B6575;text-align:center;margin:8px 0 24px;}
-        </style>
-        <div class="otp-title">CS OPERATIONS DASHBOARD</div>
-        <div class="otp-note">Sign in with the verification code sent to your authorized email.</div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    pending_email = st.session_state.get("otp_pending_email", "")
-    if not pending_email:
-        with st.form("request_otp_form"):
-            email = st.text_input("EMAIL", placeholder="name@vn.yusen-logistics.com").strip().lower()
-            request_otp = st.form_submit_button("SEND VERIFICATION CODE", type="primary", use_container_width=True)
-
-        if request_otp:
-            if email not in ALLOWED_EMAILS:
-                st.error("This email address is not authorized to access the dashboard.")
-            else:
-                try:
-                    _supabase_auth_request("otp", {"email": email, "create_user": True})
-                    st.session_state["otp_pending_email"] = email
-                    st.session_state["otp_notice"] = f"A verification code was sent to {email}."
-                    st.rerun()
-                except RuntimeError as exc:
-                    st.error(str(exc))
-    else:
-        st.info(st.session_state.get("otp_notice", f"A verification code was sent to {pending_email}."))
-        with st.form("verify_otp_form"):
-            token = st.text_input("VERIFICATION CODE", max_chars=8, placeholder="Enter the code from your email")
-            verify_otp = st.form_submit_button("VERIFY AND SIGN IN", type="primary", use_container_width=True)
-
-        if verify_otp:
-            token = token.strip().replace(" ", "")
-            if not token.isdigit():
-                st.error("Please enter the numeric verification code from your email.")
-            else:
-                try:
-                    result = _supabase_auth_request(
-                        "verify", {"email": pending_email, "token": token, "type": "email"}
-                    )
-                    verified_email = str(result.get("user", {}).get("email", "")).strip().lower()
-                    if verified_email != pending_email or verified_email not in ALLOWED_EMAILS:
-                        raise RuntimeError("The verified email is not authorized.")
-                    st.session_state["otp_authenticated"] = True
-                    st.session_state["authenticated_email"] = verified_email
-                    st.session_state.pop("otp_pending_email", None)
-                    st.session_state.pop("otp_notice", None)
-                    st.rerun()
-                except RuntimeError as exc:
-                    st.error(str(exc))
-
-        col_back, col_resend = st.columns(2)
-        with col_back:
-            if st.button("CHANGE EMAIL", use_container_width=True):
-                st.session_state.pop("otp_pending_email", None)
-                st.session_state.pop("otp_notice", None)
-                st.rerun()
-        with col_resend:
-            if st.button("RESEND CODE", use_container_width=True):
-                try:
-                    _supabase_auth_request("otp", {"email": pending_email, "create_user": True})
-                    st.success("A new verification code has been sent.")
-                except RuntimeError as exc:
-                    st.error(str(exc))
-
-    st.stop()
-
-
 def render_cover_gate() -> None:
     """Stop on the cover until the user selects VIEW DASHBOARD."""
     if "dashboard_entered" not in st.session_state:
@@ -6179,9 +6056,6 @@ def render_cover_gate() -> None:
 
 
 def main():
-    # Verify the authorized email before rendering the cover or loading Excel.
-    render_email_otp_gate()
-
     # Cover page is displayed before any Excel loading/filtering.
     render_cover_gate()
 
@@ -6269,16 +6143,6 @@ def main():
     with st.sidebar:
         if st.button("HOME", icon=":material/home:", use_container_width=True, key="back_to_cover_btn"):
             st.session_state["dashboard_entered"] = False
-            st.rerun()
-        if st.button("LOG OUT", icon=":material/logout:", use_container_width=True, key="logout_btn"):
-            for key in (
-                "otp_authenticated",
-                "authenticated_email",
-                "otp_pending_email",
-                "otp_notice",
-                "dashboard_entered",
-            ):
-                st.session_state.pop(key, None)
             st.rerun()
         st.markdown('<div class="sidebar-filter-title">FILTERS</div><div class="sidebar-filter-spacer"></div>', unsafe_allow_html=True)
         month = st.selectbox("MONTH", month_options, key="month_filter")
