@@ -2457,7 +2457,7 @@ def render_fte_office_comparison(fte_filtered_all_offices: pd.DataFrame, selecte
         with col:
             _office_compare_card(
                 office_name,
-                "FTE Workload",
+                "Average PIC Workload",
                 "N/A" if pd.isna(workload) else f"{int(np.ceil(workload * 100))}%",
                 [
                     ("Available Time (hour)", "N/A" if pd.isna(available) else fmt_num(available, 0), ""),
@@ -6488,7 +6488,7 @@ def main():
         st.markdown(
             f"""
             <div class="pic-kpi-card">
-                <div class="pic-kpi-label">FTE Workload</div>
+                <div class="pic-kpi-label">Average PIC Workload</div>
                 <div class="pic-kpi-value" style="
                     font-size:38px !important;
                     font-weight:800 !important;
@@ -6507,7 +6507,7 @@ def main():
         st.markdown(
             f"""
             <div class="pic-kpi-card">
-                <div class="pic-kpi-label">FTE Workload Status</div>
+                <div class="pic-kpi-label">PIC Workload Status</div>
                 <div style="
                     margin-top:0;
                     min-height:52px;
