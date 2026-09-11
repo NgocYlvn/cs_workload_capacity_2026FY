@@ -5527,6 +5527,15 @@ def render_cs_solution_table(df: pd.DataFrame):
     display["Resolution Rate (%)"] = (
         pd.to_numeric(display["Resolution Rate"], errors="coerce") * 100
     )
+    display["Resolution Rate (%)"] = display["Resolution Rate (%)"].apply(
+        lambda value: (
+            ""
+            if pd.isna(value)
+            else f"{value:.0f}%"
+            if np.isclose(value, 0) or np.isclose(value, 100)
+            else f"{value:.2f}%"
+        )
+    )
     display = display.drop(columns=["Resolution Rate"])
 
     resolution_table_height = min(
@@ -5548,10 +5557,8 @@ def render_cs_solution_table(df: pd.DataFrame):
             "Resolved": st.column_config.NumberColumn(
                 "Resolved by CS", width=120, format="%,.0f"
             ),
-            "Resolution Rate (%)": st.column_config.NumberColumn(
-                "CS Resolution Rate",
-                width=115,
-                format="%.4g%%",
+            "Resolution Rate (%)": st.column_config.TextColumn(
+                "CS Resolution Rate", width=115
             ),
         },
     )
