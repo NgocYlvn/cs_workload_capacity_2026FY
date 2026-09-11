@@ -5551,7 +5551,7 @@ def render_cs_solution_table(df: pd.DataFrame):
             "Resolution Rate (%)": st.column_config.NumberColumn(
                 "CS Resolution Rate",
                 width=115,
-                format="%.2f%%",
+                format="%.4g%%",
             ),
         },
     )
