@@ -7011,12 +7011,12 @@ def main():
         unsafe_allow_html=True,
     )
 
-    # Four-office totals follow the Month filter but remain independent of
-    # the selected Office so management can always see the full network view.
-    f_workload_4_offices = apply_filters(
-        workload, year, month, "All Offices"
-    )
-    render_case_total_cards(f_workload_4_offices)
+    # Show four-office totals only in the All Offices view.
+    if office == "All Offices":
+        f_workload_4_offices = apply_filters(
+            workload, year, month, "All Offices"
+        )
+        render_case_total_cards(f_workload_4_offices)
 
     # C/A/S/E summary cards by Office — same executive idea as the HC office cards.
     render_case_office_cards(f_workload)
