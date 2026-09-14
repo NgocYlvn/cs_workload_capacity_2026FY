@@ -6832,13 +6832,9 @@ def main():
                     showlegend=True,
                 )
             )
-        y_max = max(
-            120.0,
-            float(np.ceil(trend_data["WorkloadPct"].max() / 10.0) * 10.0 + 10.0),
-        )
         fig.update_layout(
             title="Monthly Average PIC Workload Trend",
-            yaxis_title="Workload",
+            yaxis_title="PIC Workload (%)",
             hovermode="x",
         )
         fig = plotly_layout(
@@ -6851,6 +6847,14 @@ def main():
             margin_bottom=64,
         )
         fig.update_layout(
+            title=dict(
+                text="Monthly Average PIC Workload Trend",
+                x=0.015,
+                xanchor="left",
+                y=0.96,
+                yanchor="top",
+                pad=dict(l=8, t=8, b=8),
+            ),
             legend=dict(
                 orientation="h",
                 yanchor="top",
@@ -6862,7 +6866,7 @@ def main():
                 borderwidth=0,
             )
         )
-        fig.update_yaxes(range=[0, y_max], ticksuffix="%", dtick=20)
+        fig.update_yaxes(range=[0, 120], ticksuffix="%", dtick=20)
         fig.update_xaxes(
             type="category",
             categoryorder="array",
@@ -6934,8 +6938,10 @@ def main():
                     font-size:30px !important;
                     line-height:1.05 !important;
                     font-weight:800 !important;
-                    padding:10px 32px !important;
-                    min-width:220px;
+                    padding:10px 16px !important;
+                    width:50%;
+                    min-width:0;
+                    max-width:190px;
                     min-height:44px;
                     display:inline-flex;
                     align-items:center;
@@ -6951,6 +6957,7 @@ def main():
             unsafe_allow_html=True,
         )
 
+    st.markdown('<div style="height:12px;"></div>', unsafe_allow_html=True)
     chart_section3_average_workload_trend(fte_trend_source)
 
     if office == "All Offices":
