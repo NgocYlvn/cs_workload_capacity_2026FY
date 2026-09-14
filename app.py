@@ -4779,13 +4779,14 @@ def chart_office_capacity_trend(df: pd.DataFrame):
             y=trend["Total Approved HC"],
             mode="lines+markers+text",
             name="Approved HC",
-            line=dict(color=BUSINESS_COLORS["approved"], width=3),
+            legendrank=3,
+            line=dict(color=BUSINESS_COLORS["approved"], width=2, dash="dash"),
             marker=dict(size=7),
             text=trend["Total Approved HC"].map(
                 lambda value: "" if pd.isna(value) else f"{value:,.1f}"
             ),
             textposition=label_positions["approved"],
-            textfont=dict(color=BUSINESS_COLORS["approved"], size=10),
+            textfont=dict(color=BUSINESS_COLORS["approved"], size=11),
             hovertemplate="%{x}<br>Approved HC: %{y:,.1f}<extra></extra>",
         )
     )
@@ -4797,13 +4798,14 @@ def chart_office_capacity_trend(df: pd.DataFrame):
             y=trend["Total Actual HC"],
             mode="lines+markers+text",
             name="Actual HC",
+            legendrank=2,
             line=dict(color=BUSINESS_COLORS["actual"], width=3),
             marker=dict(size=7),
             text=trend["Total Actual HC"].map(
                 lambda value: "" if pd.isna(value) else f"{value:,.1f}"
             ),
             textposition=label_positions["actual"],
-            textfont=dict(color=BUSINESS_COLORS["actual"], size=10),
+            textfont=dict(color=BUSINESS_COLORS["actual"], size=11),
             hovertemplate="%{x}<br>Actual HC: %{y:,.1f}<extra></extra>",
         )
     )
@@ -4816,13 +4818,14 @@ def chart_office_capacity_trend(df: pd.DataFrame):
             y=required_values,
             mode="lines+markers+text",
             name="Required HC",
+            legendrank=1,
             line=dict(color=BUSINESS_COLORS["required"], width=3, dash="solid"),
             marker=dict(size=7),
             text=required_values.map(
                 lambda value: "" if pd.isna(value) else f"{value:,.1f}"
             ),
             textposition=label_positions["required"],
-            textfont=dict(color=BUSINESS_COLORS["required"], size=10),
+            textfont=dict(color=BUSINESS_COLORS["required"], size=11),
             fill="tonexty",
             fillcolor="rgba(245, 158, 11, 0.14)",
             hovertemplate="%{x}<br>Required HC: %{y:,.2f}<extra></extra>",
@@ -4834,10 +4837,19 @@ def chart_office_capacity_trend(df: pd.DataFrame):
         yaxis_title="HC",
         hovermode="x unified",
     )
-    fig = plotly_layout(fig, UI["chart_height"], show_legend=True, legend_position="top", margin_left=56, margin_right=42, margin_top=76, margin_bottom=46)
+    fig = plotly_layout(fig, 320, show_legend=True, legend_position="top", margin_left=56, margin_right=42, margin_top=76, margin_bottom=46)
 
-    # HC Capacity Trend only: start at zero and display ticks every 10 HC.
-    fig.update_yaxes(rangemode="tozero", tickmode="linear", tick0=0, dtick=10)
+    # HC Capacity Trend only: use a focused, dynamic 5-HC scale with label headroom.
+    visible_values = pd.concat(
+        [trend["Total Approved HC"], trend["Total Actual HC"], required_values],
+        ignore_index=True,
+    ).dropna()
+    if not visible_values.empty:
+        y_min = max(0.0, float(np.floor(visible_values.min() / 5.0) * 5.0))
+        y_max = float(np.ceil(visible_values.max() / 5.0) * 5.0 + 5.0)
+        if y_max <= y_min:
+            y_max = y_min + 10.0
+        fig.update_yaxes(range=[y_min, y_max], tickmode="linear", tick0=y_min, dtick=5)
 
     # HC Capacity Trend only: align the horizontal legend to the left.
     fig.update_layout(
