@@ -6654,16 +6654,16 @@ def main():
     # Four management KPIs in one row.
     p1, p2, p3, p4 = st.columns(4, gap="medium")
 
-    # Mini monthly trend for the Average PIC Workload card.
+    # Monthly trend for Average PIC Workload.
     # It follows the Office filter but intentionally keeps all available months.
     fte_trend_source = filter_office_only(fte, office)
 
-    def section3_workload_mini_columns(source: pd.DataFrame) -> str:
+    def chart_section3_average_workload_trend(source: pd.DataFrame) -> None:
         if source is None or source.empty:
-            return ""
+            return
         required = {"MonthDate", "Available Time", "Actual Working Time"}
         if not required.issubset(source.columns):
-            return ""
+            return
 
         trend_data = source[
             ["MonthDate", "Available Time", "Actual Working Time"]
@@ -6687,64 +6687,71 @@ def main():
         )
         trend_data = trend_data[trend_data["Available"] > 0].copy()
         if trend_data.empty:
-            return ""
+            return
 
         trend_data["WorkloadPct"] = (
             trend_data["Actual"] / trend_data["Available"] * 100.0
         )
         trend_data = trend_data.dropna(subset=["WorkloadPct"])
         if trend_data.empty:
-            return ""
+            return
 
-        width, height = 240.0, 58.0
-        pad_x, pad_top, pad_bottom = 6.0, 10.0, 13.0
-        values = trend_data["WorkloadPct"].astype(float).tolist()
-        scale_max = max(110.0, float(np.ceil(max(values) / 10.0) * 10.0))
-        plot_height = height - pad_top - pad_bottom
+        trend_data["Month"] = trend_data["MonthDate"].dt.strftime("%b-%y")
+        trend_data["BarColor"] = trend_data["WorkloadPct"].map(
+            lambda value: status_from_util(float(value) / 100.0)[1]
+        )
+        trend_data["ValueLabel"] = trend_data["WorkloadPct"].map(
+            lambda value: f"{value:,.1f}%"
+        )
 
-        def y_coord(value: float) -> float:
-            clipped = max(0.0, min(value, scale_max))
-            return pad_top + (scale_max - clipped) / scale_max * plot_height
-
-        slot_width = (width - 2.0 * pad_x) / max(len(values), 1)
-        bar_width = min(24.0, slot_width * 0.52)
-        chart_bottom = height - pad_bottom
-        bar_parts = []
-        for idx, (value, month) in enumerate(
-            zip(values, trend_data["MonthDate"])
-        ):
-            center_x = pad_x + slot_width * (idx + 0.5)
-            bar_top = y_coord(value)
-            bar_height = max(1.0, chart_bottom - bar_top)
-            _, bar_color, _ = status_from_util(value / 100.0)
-            month_label = month.strftime("%b")
-            bar_parts.append(
-                f'<rect x="{center_x - bar_width / 2.0:.1f}" y="{bar_top:.1f}" '
-                f'width="{bar_width:.1f}" height="{bar_height:.1f}" rx="2.5" '
-                f'fill="{bar_color}" opacity="0.88"><title>{month.strftime("%b-%y")}: '
-                f'{value:.1f}%</title></rect>'
-                f'<text x="{center_x:.1f}" y="{max(7.0, bar_top - 2.5):.1f}" '
-                f'text-anchor="middle" fill="{bar_color}" font-size="7.5" '
-                f'font-weight="700">{value:.1f}%</text>'
-                f'<text x="{center_x:.1f}" y="56" text-anchor="middle" '
-                f'fill="#7A8699" font-size="7">{month_label}</text>'
+        fig = go.Figure(
+            go.Bar(
+                x=trend_data["Month"],
+                y=trend_data["WorkloadPct"],
+                marker=dict(color=trend_data["BarColor"], line=dict(width=0)),
+                text=trend_data["ValueLabel"],
+                textposition="outside",
+                textfont=dict(size=11),
+                cliponaxis=False,
+                hovertemplate="%{x}<br>Average PIC Workload: %{y:,.1f}%<extra></extra>",
+                width=0.46,
+                name="Average PIC Workload",
             )
-        bars = "".join(bar_parts)
-        baseline_y = y_coord(100.0)
-
-        return f"""
-            <div style="width:100%;margin-top:2px;">
-                <svg viewBox="0 0 240 58" preserveAspectRatio="none"
-                     style="display:block;width:100%;height:52px;overflow:visible;"
-                     role="img" aria-label="Average PIC Workload monthly column chart">
-                    <line x1="6" x2="234" y1="{baseline_y:.1f}" y2="{baseline_y:.1f}"
-                          stroke="#E6761B" stroke-width="1" stroke-dasharray="4 3" opacity="0.70" />
-                    <text x="233" y="{max(7.0, baseline_y - 2.0):.1f}" text-anchor="end"
-                          fill="#E6761B" font-size="7">100%</text>
-                    {bars}
-                </svg>
-            </div>
-        """
+        )
+        fig.add_hline(
+            y=100,
+            line_color=YUSEN_THEME["accent"],
+            line_width=1.5,
+            line_dash="dash",
+            annotation_text="100% reference",
+            annotation_position="top right",
+            annotation_font=dict(color=YUSEN_THEME["accent"], size=10),
+        )
+        y_max = max(
+            120.0,
+            float(np.ceil(trend_data["WorkloadPct"].max() / 10.0) * 10.0 + 10.0),
+        )
+        fig.update_layout(
+            title="Average PIC Workload Trend",
+            yaxis_title="Workload",
+            hovermode="x",
+        )
+        fig = plotly_layout(
+            fig,
+            270,
+            show_legend=False,
+            margin_left=58,
+            margin_right=34,
+            margin_top=62,
+            margin_bottom=42,
+        )
+        fig.update_yaxes(range=[0, y_max], ticksuffix="%", dtick=20)
+        fig.update_xaxes(
+            type="category",
+            categoryorder="array",
+            categoryarray=trend_data["Month"].tolist(),
+        )
+        st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
     def section3_kpi_card(label: str, value: str, note: str = ""):
         note_html = (
@@ -6753,7 +6760,7 @@ def main():
         )
         st.markdown(
             f"""
-            <div class="pic-kpi-card" style="height:170px !important;min-height:170px !important;">
+            <div class="pic-kpi-card">
                 <div class="pic-kpi-label">{label}</div>
                 <div class="pic-kpi-value">{value}</div>
                 {note_html}
@@ -6783,34 +6790,17 @@ def main():
             f"{fte_workload * 100:,.1f}%"
             if not pd.isna(fte_workload) else "N/A"
         )
-        workload_mini_chart = section3_workload_mini_columns(fte_trend_source)
-        st.markdown(
-            f"""
-            <div class="pic-kpi-card" style="height:170px !important;min-height:170px !important;
-                 padding:9px 14px 8px !important;overflow:hidden;">
-                <div class="pic-kpi-label" style="min-height:20px !important;height:20px !important;
-                     margin-bottom:2px !important;">Average PIC Workload</div>
-                <div class="pic-kpi-value" style="
-                    font-size:32px !important;
-                    font-weight:800 !important;
-                    line-height:1.05 !important;
-                ">
-                    {fte_value}
-                </div>
-                <div class="pic-kpi-note" style="margin-top:2px !important;">
-                    Actual Time vs Available Time
-                </div>
-                {workload_mini_chart}
-            </div>
-            """,
-            unsafe_allow_html=True,
+        section3_kpi_card(
+            "Average PIC Workload",
+            fte_value,
+            "Actual Time vs Available Time",
         )
 
     with p4:
         status_text, status_color, status_bg = fte_status
         st.markdown(
             f"""
-            <div class="pic-kpi-card" style="height:170px !important;min-height:170px !important;">
+            <div class="pic-kpi-card">
                 <div class="pic-kpi-label">PIC Workload Status</div>
                 <div style="
                     margin-top:0;
@@ -6842,6 +6832,8 @@ def main():
             """,
             unsafe_allow_html=True,
         )
+
+    chart_section3_average_workload_trend(fte_trend_source)
 
     if office == "All Offices":
         render_fte_office_comparison(f_fte, month)
