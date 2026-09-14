@@ -6658,7 +6658,7 @@ def main():
     # It follows the Office filter but intentionally keeps all available months.
     fte_trend_source = filter_office_only(fte, office)
 
-    def section3_workload_sparkline(source: pd.DataFrame) -> str:
+    def section3_workload_mini_columns(source: pd.DataFrame) -> str:
         if source is None or source.empty:
             return ""
         required = {"MonthDate", "Available Time", "Actual Working Time"}
@@ -6696,62 +6696,53 @@ def main():
         if trend_data.empty:
             return ""
 
-        width, height = 240.0, 34.0
-        pad_x, pad_y = 5.0, 5.0
+        width, height = 240.0, 58.0
+        pad_x, pad_top, pad_bottom = 6.0, 10.0, 13.0
         values = trend_data["WorkloadPct"].astype(float).tolist()
-        scale_min = min(min(values), 100.0)
-        scale_max = max(max(values), 100.0)
-        if scale_max - scale_min < 4.0:
-            scale_min -= 2.0
-            scale_max += 2.0
+        scale_max = max(110.0, float(np.ceil(max(values) / 10.0) * 10.0))
+        plot_height = height - pad_top - pad_bottom
 
         def y_coord(value: float) -> float:
-            usable_height = height - (2.0 * pad_y)
-            return pad_y + (scale_max - value) / (scale_max - scale_min) * usable_height
+            clipped = max(0.0, min(value, scale_max))
+            return pad_top + (scale_max - clipped) / scale_max * plot_height
 
-        if len(values) == 1:
-            x_coords = [width / 2.0]
-        else:
-            usable_width = width - (2.0 * pad_x)
-            x_coords = [
-                pad_x + idx * usable_width / (len(values) - 1)
-                for idx in range(len(values))
-            ]
-
-        points = " ".join(
-            f"{x_value:.1f},{y_coord(y_value):.1f}"
-            for x_value, y_value in zip(x_coords, values)
-        )
-        circle_parts = []
-        for x_value, y_value, month in zip(
-            x_coords, values, trend_data["MonthDate"]
+        slot_width = (width - 2.0 * pad_x) / max(len(values), 1)
+        bar_width = min(24.0, slot_width * 0.52)
+        chart_bottom = height - pad_bottom
+        bar_parts = []
+        for idx, (value, month) in enumerate(
+            zip(values, trend_data["MonthDate"])
         ):
-            _, point_color, _ = status_from_util(y_value / 100.0)
-            circle_parts.append(
-                f'<circle cx="{x_value:.1f}" cy="{y_coord(y_value):.1f}" r="2.5" '
-                f'fill="{point_color}"><title>{month.strftime("%b-%y")}: '
-                f'{y_value:.1f}%</title></circle>'
+            center_x = pad_x + slot_width * (idx + 0.5)
+            bar_top = y_coord(value)
+            bar_height = max(1.0, chart_bottom - bar_top)
+            _, bar_color, _ = status_from_util(value / 100.0)
+            month_label = month.strftime("%b")
+            bar_parts.append(
+                f'<rect x="{center_x - bar_width / 2.0:.1f}" y="{bar_top:.1f}" '
+                f'width="{bar_width:.1f}" height="{bar_height:.1f}" rx="2.5" '
+                f'fill="{bar_color}" opacity="0.88"><title>{month.strftime("%b-%y")}: '
+                f'{value:.1f}%</title></rect>'
+                f'<text x="{center_x:.1f}" y="{max(7.0, bar_top - 2.5):.1f}" '
+                f'text-anchor="middle" fill="{bar_color}" font-size="7.5" '
+                f'font-weight="700">{value:.1f}%</text>'
+                f'<text x="{center_x:.1f}" y="56" text-anchor="middle" '
+                f'fill="#7A8699" font-size="7">{month_label}</text>'
             )
-        circles = "".join(circle_parts)
+        bars = "".join(bar_parts)
         baseline_y = y_coord(100.0)
-        first_month = trend_data["MonthDate"].iloc[0].strftime("%b-%y")
-        last_month = trend_data["MonthDate"].iloc[-1].strftime("%b-%y")
 
         return f"""
-            <div style="width:100%;margin-top:3px;">
-                <svg viewBox="0 0 240 34" preserveAspectRatio="none"
-                     style="display:block;width:100%;height:27px;overflow:visible;"
-                     role="img" aria-label="Average PIC Workload monthly trend">
-                    <line x1="5" x2="235" y1="{baseline_y:.1f}" y2="{baseline_y:.1f}"
+            <div style="width:100%;margin-top:2px;">
+                <svg viewBox="0 0 240 58" preserveAspectRatio="none"
+                     style="display:block;width:100%;height:52px;overflow:visible;"
+                     role="img" aria-label="Average PIC Workload monthly column chart">
+                    <line x1="6" x2="234" y1="{baseline_y:.1f}" y2="{baseline_y:.1f}"
                           stroke="#E6761B" stroke-width="1" stroke-dasharray="4 3" opacity="0.70" />
-                    <polyline points="{points}" fill="none" stroke="#0DBAEE"
-                              stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
-                    {circles}
+                    <text x="233" y="{max(7.0, baseline_y - 2.0):.1f}" text-anchor="end"
+                          fill="#E6761B" font-size="7">100%</text>
+                    {bars}
                 </svg>
-                <div style="display:flex;justify-content:space-between;color:#7A8699;
-                            font-size:9px;line-height:1;margin-top:1px;">
-                    <span>{first_month}</span><span>100% reference</span><span>{last_month}</span>
-                </div>
             </div>
         """
 
@@ -6762,7 +6753,7 @@ def main():
         )
         st.markdown(
             f"""
-            <div class="pic-kpi-card">
+            <div class="pic-kpi-card" style="height:170px !important;min-height:170px !important;">
                 <div class="pic-kpi-label">{label}</div>
                 <div class="pic-kpi-value">{value}</div>
                 {note_html}
@@ -6792,10 +6783,11 @@ def main():
             f"{fte_workload * 100:,.1f}%"
             if not pd.isna(fte_workload) else "N/A"
         )
-        workload_sparkline = section3_workload_sparkline(fte_trend_source)
+        workload_mini_chart = section3_workload_mini_columns(fte_trend_source)
         st.markdown(
             f"""
-            <div class="pic-kpi-card" style="padding:9px 14px 8px !important;">
+            <div class="pic-kpi-card" style="height:170px !important;min-height:170px !important;
+                 padding:9px 14px 8px !important;overflow:hidden;">
                 <div class="pic-kpi-label" style="min-height:20px !important;height:20px !important;
                      margin-bottom:2px !important;">Average PIC Workload</div>
                 <div class="pic-kpi-value" style="
@@ -6808,7 +6800,7 @@ def main():
                 <div class="pic-kpi-note" style="margin-top:2px !important;">
                     Actual Time vs Available Time
                 </div>
-                {workload_sparkline}
+                {workload_mini_chart}
             </div>
             """,
             unsafe_allow_html=True,
@@ -6818,7 +6810,7 @@ def main():
         status_text, status_color, status_bg = fte_status
         st.markdown(
             f"""
-            <div class="pic-kpi-card">
+            <div class="pic-kpi-card" style="height:170px !important;min-height:170px !important;">
                 <div class="pic-kpi-label">PIC Workload Status</div>
                 <div style="
                     margin-top:0;
