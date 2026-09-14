@@ -6926,6 +6926,7 @@ def main():
                 <div class="pic-kpi-label">PIC Workload Status</div>
                 <div style="
                     margin-top:0;
+                    width:100%;
                     min-height:52px;
                     display:flex;
                     justify-content:center;
@@ -6940,7 +6941,7 @@ def main():
                     font-weight:800 !important;
                     padding:10px 16px !important;
                     width:50%;
-                    min-width:0;
+                    min-width:150px;
                     max-width:190px;
                     min-height:44px;
                     display:inline-flex;
