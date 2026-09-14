@@ -3995,6 +3995,68 @@ def render_case_office_cards(workload_df: pd.DataFrame):
 
 
 
+def render_case_total_cards(workload_df: pd.DataFrame):
+    """Section 5 C/A/S/E totals across the four standard offices."""
+    if workload_df is None or workload_df.empty:
+        return
+
+    source_map = {
+        "C": ("Core Volume", "Total Core (C)", COLORS["blue"]),
+        "A": ("Ancillary Volume", "Total Ancillary (A)", COLORS["green"]),
+        "S": ("Supporting Volume", "Total Supporting (S)", COLORS["amber"]),
+        "E": ("Exception Volume", "Total Exception (E)", COLORS["red"]),
+    }
+
+    d = workload_df.copy()
+    if "Office" in d.columns:
+        normalized_office = d["Office"].astype(str).str.strip().str.upper()
+        normalized_office = normalized_office.replace({"HPH": "HLC"})
+        d = d[normalized_office.isin(STANDARD_OFFICES)].copy()
+    if d.empty:
+        return
+
+    totals = {}
+    for activity, (source_col, _, _) in source_map.items():
+        totals[activity] = (
+            float(pd.to_numeric(d[source_col], errors="coerce").fillna(0).sum())
+            if source_col in d.columns
+            else 0.0
+        )
+
+    grand_total = float(sum(totals.values()))
+    st.markdown(
+        f"""
+        <div style="color:{COLORS['navy']};font-size:20px;font-weight:700;
+                    margin:4px 0 10px 2px;">
+            Total C / A / S / E — 4 Offices
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    total_cols = st.columns(4, gap="medium")
+    for card_col, activity in zip(total_cols, ["C", "A", "S", "E"]):
+        _, label, color = source_map[activity]
+        value = totals[activity]
+        share = safe_div(value, grand_total)
+        with card_col:
+            st.markdown(
+                f"""
+                <div class="kpi-card" style="border-top:4px solid {color} !important;">
+                    <div class="kpi-label">{label}</div>
+                    <div class="kpi-value" style="color:{color} !important;">
+                        {value:,.0f}
+                    </div>
+                    <div class="kpi-note">
+                        {share:.1%} of total activity · HAN / HAD / HLC / HCM
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+
+
 def chart_case_allocation(df: pd.DataFrame):
     """C/A/S/E workload composition by Segment, displayed in hours."""
     summary = workload_breakdown_table(df)
@@ -6948,6 +7010,13 @@ def main():
         """,
         unsafe_allow_html=True,
     )
+
+    # Four-office totals follow the Month filter but remain independent of
+    # the selected Office so management can always see the full network view.
+    f_workload_4_offices = apply_filters(
+        workload, year, month, "All Offices"
+    )
+    render_case_total_cards(f_workload_4_offices)
 
     # C/A/S/E summary cards by Office — same executive idea as the HC office cards.
     render_case_office_cards(f_workload)
