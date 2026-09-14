@@ -362,7 +362,7 @@ st.markdown(
         display: flex;
         flex-direction: column;
         align-items: flex-end;
-        gap: 4px;
+        gap: 5px;
     }}
 
     .hc-variance-util .status-badge {{
@@ -376,6 +376,7 @@ st.markdown(
         line-height: 1;
         font-weight: 800;
         letter-spacing: -0.02em;
+        margin-top: 2px;
     }}
 
     .hc-variance-util-label {{
@@ -384,7 +385,7 @@ st.markdown(
         line-height: 1.1;
         font-weight: 600;
         white-space: nowrap;
-        margin-top: 2px;
+        margin-top: 0;
     }}
 
     .hc-variance-formula {{
@@ -2446,10 +2447,10 @@ def render_hc_office_comparison(hc_filtered_all_offices: pd.DataFrame) -> None:
                 "Office Workload",
                 "N/A" if pd.isna(util) else fmt_pct(util),
                 [
+                    ("Approved HC", "N/A" if pd.isna(approved) else fmt_num(approved, 2), ""),
                     ("Actual HC", "N/A" if pd.isna(actual) else fmt_num(actual, 2), ""),
                     ("Required HC", "N/A" if pd.isna(required) else fmt_num(required, 2), ""),
                     ("HC Gap", gap_text, gap_class),
-                    ("Approved HC", "N/A" if pd.isna(approved) else fmt_num(approved, 2), ""),
                 ],
                 status_text, status_color, status_bg,
             )
@@ -2736,8 +2737,8 @@ def hc_variance_card(
                       style="color:{util_status_color};background:{util_status_bg};">
                     {util_status_text}
                 </span>
-                <div class="hc-variance-util-label">Capacity Utilization</div>
                 <div class="hc-variance-util-value">{fmt_pct(utilization)}</div>
+                <div class="hc-variance-util-label">Capacity Utilization</div>
             </div>
             <div class="hc-main-row">
                 {ui_icon_svg("balance", "#6EA52B", "#F1F8E8")}
