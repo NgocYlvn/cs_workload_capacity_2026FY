@@ -4853,7 +4853,7 @@ def chart_office_capacity_trend(df: pd.DataFrame):
         yaxis_title="HC",
         hovermode="x unified",
     )
-    fig = plotly_layout(fig, 320, show_legend=True, legend_position="top", margin_left=56, margin_right=42, margin_top=76, margin_bottom=46)
+    fig = plotly_layout(fig, 320, show_legend=True, legend_position="top", margin_left=56, margin_right=42, margin_top=76, margin_bottom=54)
 
     # HC Capacity Trend only: use a focused, dynamic 5-HC scale with label headroom.
     visible_values = pd.concat(
@@ -4861,7 +4861,12 @@ def chart_office_capacity_trend(df: pd.DataFrame):
         ignore_index=True,
     ).dropna()
     if not visible_values.empty:
-        y_min = max(0.0, float(np.floor(visible_values.min() / 5.0) * 5.0))
+        lowest_value = float(visible_values.min())
+        y_min = max(0.0, float(np.floor(lowest_value / 5.0) * 5.0))
+        # Add one extra 5-HC interval only when the lowest point is too close
+        # to the axis floor, keeping bottom labels clear of month labels.
+        if lowest_value - y_min < 2.0 and y_min >= 5.0:
+            y_min -= 5.0
         y_max = float(np.ceil(visible_values.max() / 5.0) * 5.0 + 5.0)
         if y_max <= y_min:
             y_max = y_min + 10.0
