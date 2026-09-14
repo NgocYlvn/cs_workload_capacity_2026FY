@@ -5691,7 +5691,7 @@ def chart_top_customers(df: pd.DataFrame):
     fig = px.bar(top, x="Shipment Volume", y="Customer", orientation="h", text="Shipment Volume", color_discrete_sequence=[COLORS["blue"]])
     fig.update_traces(texttemplate="%{text:,.0f}", textposition="outside", cliponaxis=False, hovertemplate="%{y}<br>Shipment Volume: %{x:,.0f}<extra></extra>")
     fig.update_layout(title_text="", yaxis_title="", xaxis_title=None, bargap=0.18)
-    fig.update_yaxes(automargin=True, tickfont=dict(size=UI["axis_size"]))
+    fig.update_yaxes(automargin=True, tickfont=dict(size=max(9, UI["axis_size"] - 1)))
     fig.update_xaxes(automargin=True)
     fig = plotly_layout(
         fig,
@@ -5711,9 +5711,23 @@ def customer_detail_volume_table(df: pd.DataFrame):
         st.info("No customer detail data available for selected filters.")
         return
 
-    pair_panel_title("Customer Volume Detail")
+    # Enforce management-first order whenever filters refresh the table.
+    ranking = ranking.sort_values(
+        ["Shipment Volume", "Customer"],
+        ascending=[False, True],
+        kind="stable",
+    ).reset_index(drop=True)
+    ranking["Rank"] = np.arange(1, len(ranking) + 1)
+    styled_ranking = (
+        ranking.style
+        .set_properties(subset=["Rank"], **{"text-align": "center"})
+        .set_properties(subset=["Shipment Volume"], **{"text-align": "right"})
+        .set_properties(subset=["Customer"], **{"text-align": "left"})
+    )
+
+    pair_panel_title("Customer Shipment Volume Detail")
     st.dataframe(
-        ranking,
+        styled_ranking,
         use_container_width=True,
         hide_index=True,
         height=SHIPMENT_PAIR_HEIGHT,  # keep full-height scrollable detail for all customers
@@ -6635,8 +6649,8 @@ def main():
     # KPI order requested:
     # 1) Active Customers
     # 2) Total Shipment Volume
-    # Keep 2 empty columns so KPI widths remain consistent with Section 1.
-    sk1, sk2, sk3, sk4 = st.columns(4, gap="medium")
+    # Use the full section width so the two KPI cards form a balanced row.
+    sk1, sk2 = st.columns(2, gap="medium")
     with sk1:
         shipment_kpi_card(
             "ACTIVE CUSTOMERS",
@@ -6649,11 +6663,6 @@ def main():
             fmt_int(shipment_total),
             "",
         )
-    with sk3:
-        st.empty()
-    with sk4:
-        st.empty()
-
     # Customer shipment analysis:
     # Remove Transportation Mode chart/detail from the dashboard.
     # Show Top 15 Customers chart and Customer Volume Detail on the same row.
