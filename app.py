@@ -4748,6 +4748,28 @@ def chart_office_capacity_trend(df: pd.DataFrame):
         st.info("HC trend cannot be displayed because Required HC data is missing.")
         return
 
+    # Place point labels according to their relative height in each month.
+    # This keeps labels readable when the three HC lines are close together.
+    label_positions = {
+        "approved": ["top center"] * len(trend),
+        "actual": ["bottom center"] * len(trend),
+        "required": ["middle right"] * len(trend),
+    }
+    for row_idx in range(len(trend)):
+        month_values = [
+            ("approved", trend["Total Approved HC"].iloc[row_idx]),
+            ("actual", trend["Total Actual HC"].iloc[row_idx]),
+            ("required", required_values.iloc[row_idx]),
+        ]
+        valid_values = [item for item in month_values if not pd.isna(item[1])]
+        valid_values.sort(key=lambda item: item[1])
+        if valid_values:
+            label_positions[valid_values[0][0]][row_idx] = "bottom center"
+        if len(valid_values) >= 2:
+            label_positions[valid_values[-1][0]][row_idx] = "top center"
+        if len(valid_values) == 3:
+            label_positions[valid_values[1][0]][row_idx] = "middle right"
+
     fig = go.Figure()
 
     # Approved HC line
@@ -4760,9 +4782,9 @@ def chart_office_capacity_trend(df: pd.DataFrame):
             line=dict(color=BUSINESS_COLORS["approved"], width=3),
             marker=dict(size=7),
             text=trend["Total Approved HC"].map(
-                lambda value: "" if pd.isna(value) else f"{value:,.2f}"
+                lambda value: "" if pd.isna(value) else f"{value:,.1f}"
             ),
-            textposition="top center",
+            textposition=label_positions["approved"],
             textfont=dict(color=BUSINESS_COLORS["approved"], size=10),
             hovertemplate="%{x}<br>Approved HC: %{y:,.1f}<extra></extra>",
         )
@@ -4778,9 +4800,9 @@ def chart_office_capacity_trend(df: pd.DataFrame):
             line=dict(color=BUSINESS_COLORS["actual"], width=3),
             marker=dict(size=7),
             text=trend["Total Actual HC"].map(
-                lambda value: "" if pd.isna(value) else f"{value:,.2f}"
+                lambda value: "" if pd.isna(value) else f"{value:,.1f}"
             ),
-            textposition="bottom center",
+            textposition=label_positions["actual"],
             textfont=dict(color=BUSINESS_COLORS["actual"], size=10),
             hovertemplate="%{x}<br>Actual HC: %{y:,.1f}<extra></extra>",
         )
@@ -4797,9 +4819,9 @@ def chart_office_capacity_trend(df: pd.DataFrame):
             line=dict(color=BUSINESS_COLORS["required"], width=3, dash="solid"),
             marker=dict(size=7),
             text=required_values.map(
-                lambda value: "" if pd.isna(value) else f"{value:,.2f}"
+                lambda value: "" if pd.isna(value) else f"{value:,.1f}"
             ),
-            textposition="middle right",
+            textposition=label_positions["required"],
             textfont=dict(color=BUSINESS_COLORS["required"], size=10),
             fill="tonexty",
             fillcolor="rgba(245, 158, 11, 0.14)",
