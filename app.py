@@ -4777,16 +4777,11 @@ def chart_office_capacity_trend(df: pd.DataFrame):
         go.Scatter(
             x=trend["Month"],
             y=trend["Total Approved HC"],
-            mode="lines+markers+text",
+            mode="lines+markers",
             name="Approved HC",
             legendrank=3,
             line=dict(color=BUSINESS_COLORS["approved"], width=2, dash="dash"),
             marker=dict(size=7),
-            text=trend["Total Approved HC"].map(
-                lambda value: "" if pd.isna(value) else f"{value:,.1f}"
-            ),
-            textposition=label_positions["approved"],
-            textfont=dict(color=BUSINESS_COLORS["approved"], size=11),
             hovertemplate="%{x}<br>Approved HC: %{y:,.1f}<extra></extra>",
         )
     )
@@ -4796,16 +4791,11 @@ def chart_office_capacity_trend(df: pd.DataFrame):
         go.Scatter(
             x=trend["Month"],
             y=trend["Total Actual HC"],
-            mode="lines+markers+text",
+            mode="lines+markers",
             name="Actual HC",
             legendrank=2,
             line=dict(color=BUSINESS_COLORS["actual"], width=3),
             marker=dict(size=7),
-            text=trend["Total Actual HC"].map(
-                lambda value: "" if pd.isna(value) else f"{value:,.1f}"
-            ),
-            textposition=label_positions["actual"],
-            textfont=dict(color=BUSINESS_COLORS["actual"], size=11),
             hovertemplate="%{x}<br>Actual HC: %{y:,.1f}<extra></extra>",
         )
     )
@@ -4816,21 +4806,47 @@ def chart_office_capacity_trend(df: pd.DataFrame):
         go.Scatter(
             x=trend["Month"],
             y=required_values,
-            mode="lines+markers+text",
+            mode="lines+markers",
             name="Required HC",
             legendrank=1,
             line=dict(color=BUSINESS_COLORS["required"], width=3, dash="solid"),
             marker=dict(size=7),
-            text=required_values.map(
-                lambda value: "" if pd.isna(value) else f"{value:,.1f}"
-            ),
-            textposition=label_positions["required"],
-            textfont=dict(color=BUSINESS_COLORS["required"], size=11),
             fill="tonexty",
             fillcolor="rgba(245, 158, 11, 0.14)",
             hovertemplate="%{x}<br>Required HC: %{y:,.2f}<extra></extra>",
         )
     )
+
+    # Use compact white-backed annotations so lines never run through the values.
+    annotation_series = {
+        "approved": (trend["Total Approved HC"], BUSINESS_COLORS["approved"]),
+        "actual": (trend["Total Actual HC"], BUSINESS_COLORS["actual"]),
+        "required": (required_values, BUSINESS_COLORS["required"]),
+    }
+    for series_key, (series_values, series_color) in annotation_series.items():
+        for row_idx, value in enumerate(series_values):
+            if pd.isna(value):
+                continue
+            position = label_positions[series_key][row_idx]
+            if position == "top center":
+                x_shift, y_shift, x_anchor, y_anchor = 0, 12, "center", "bottom"
+            elif position == "bottom center":
+                x_shift, y_shift, x_anchor, y_anchor = 0, -12, "center", "top"
+            else:
+                x_shift, y_shift, x_anchor, y_anchor = 11, 0, "left", "middle"
+            fig.add_annotation(
+                x=trend["Month"].iloc[row_idx],
+                y=float(value),
+                text=f"{value:,.1f}",
+                showarrow=False,
+                xshift=x_shift,
+                yshift=y_shift,
+                xanchor=x_anchor,
+                yanchor=y_anchor,
+                bgcolor="rgba(255,255,255,0.88)",
+                borderpad=2,
+                font=dict(color=series_color, size=11),
+            )
 
     fig.update_layout(
         title="HC Capacity Trend",
@@ -4858,11 +4874,16 @@ def chart_office_capacity_trend(df: pd.DataFrame):
             yanchor="bottom",
             y=1.015,
             xanchor="left",
-            x=0,
+            x=0.08,
         )
     )
 
-    fig.update_xaxes(type="category", categoryorder="array", categoryarray=trend["Month"].tolist())
+    fig.update_xaxes(
+        type="category",
+        categoryorder="array",
+        categoryarray=trend["Month"].tolist(),
+        domain=[0.08, 0.92],
+    )
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
 
