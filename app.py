@@ -6814,6 +6814,25 @@ def main():
                 showlegend=False,
             )
         )
+
+        # Thin month-to-month connector for faster trend recognition.
+        # The bars retain status colors; this line adds no duplicate labels or legend item.
+        fig.add_trace(
+            go.Scatter(
+                x=trend_data["Month"],
+                y=trend_data["WorkloadPct"],
+                mode="lines+markers",
+                name="Workload Trend",
+                line=dict(color=COLORS["navy"], width=2),
+                marker=dict(
+                    size=6,
+                    color="#FFFFFF",
+                    line=dict(color=COLORS["navy"], width=2),
+                ),
+                hovertemplate="%{x}<br>Average PIC Workload: %{y:,.1f}%<extra></extra>",
+                showlegend=False,
+            )
+        )
         status_legend = [
             ("Less Load", COLORS["green"]),
             ("Balanced", COLORS["blue"]),
@@ -6938,7 +6957,7 @@ def main():
                     background:{status_bg};
                     font-size:14px !important;
                     line-height:1.1 !important;
-                    font-weight:800 !important;
+                    font-weight:900 !important;
                     letter-spacing:0.02em;
                     padding:10px 16px !important;
                     width:50%;
