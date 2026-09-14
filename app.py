@@ -362,7 +362,7 @@ st.markdown(
         display: flex;
         flex-direction: column;
         align-items: flex-end;
-        gap: 7px;
+        gap: 4px;
     }}
 
     .hc-variance-util .status-badge {{
@@ -376,6 +376,15 @@ st.markdown(
         line-height: 1;
         font-weight: 800;
         letter-spacing: -0.02em;
+    }}
+
+    .hc-variance-util-label {{
+        color: #64748B;
+        font-size: 9px;
+        line-height: 1.1;
+        font-weight: 600;
+        white-space: nowrap;
+        margin-top: 2px;
     }}
 
     .hc-variance-formula {{
@@ -2143,6 +2152,12 @@ st.markdown(
         content:""; width:22px; height:3px; border-radius:999px;
         background:#E6761B; display:inline-block;
     }}
+    .office-comparison-heading.is-emphasized {{
+        font-size:17px;
+        font-weight:800;
+        margin-top:12px;
+        margin-bottom:9px;
+    }}
     .office-compare-card {{
         --office-status:#3F5B81; --office-status-bg:#EEF3F8;
         position:relative; background:#FFFFFF; border:1px solid #D5E1EA;
@@ -2385,16 +2400,17 @@ def _office_compare_card(
     )
 
 
-def _office_comparison_heading(title: str) -> None:
+def _office_comparison_heading(title: str, emphasized: bool = False) -> None:
+    css_class = "office-comparison-heading is-emphasized" if emphasized else "office-comparison-heading"
     st.markdown(
-        f'<div class="office-comparison-heading">{html.escape(title)}</div>',
+        f'<div class="{css_class}">{html.escape(title)}</div>',
         unsafe_allow_html=True,
     )
 
 
 def render_hc_office_comparison(hc_filtered_all_offices: pd.DataFrame) -> None:
     # Reuse existing HC source-of-truth functions and status thresholds.
-    _office_comparison_heading("Utilization by Office")
+    _office_comparison_heading("Utilization by Office", emphasized=True)
     cols = st.columns(4, gap="small")
     for col, office_name in zip(cols, STANDARD_OFFICES):
         if hc_filtered_all_offices is not None and not hc_filtered_all_offices.empty and "Office" in hc_filtered_all_offices.columns:
@@ -2403,9 +2419,10 @@ def render_hc_office_comparison(hc_filtered_all_offices: pd.DataFrame) -> None:
             office_df = pd.DataFrame()
 
         if office_df.empty:
-            actual = required = gap = util = float("nan")
+            approved = actual = required = gap = util = float("nan")
             status_text, status_color, status_bg = "NO DATA", COLORS["muted"], COLORS["light_blue"]
         else:
+            approved = weighted_period_avg(office_df, "Total Approved HC")
             actual = weighted_period_avg(office_df, "Total Actual HC")
             required = weighted_period_avg(office_df, "Total Required HC")
             gap = required - actual
@@ -2432,7 +2449,7 @@ def render_hc_office_comparison(hc_filtered_all_offices: pd.DataFrame) -> None:
                     ("Actual HC", "N/A" if pd.isna(actual) else fmt_num(actual, 2), ""),
                     ("Required HC", "N/A" if pd.isna(required) else fmt_num(required, 2), ""),
                     ("HC Gap", gap_text, gap_class),
-                    ("Status", status_text.title(), ""),
+                    ("Approved HC", "N/A" if pd.isna(approved) else fmt_num(approved, 2), ""),
                 ],
                 status_text, status_color, status_bg,
             )
@@ -2719,13 +2736,17 @@ def hc_variance_card(
                       style="color:{util_status_color};background:{util_status_bg};">
                     {util_status_text}
                 </span>
+                <div class="hc-variance-util-label">Capacity Utilization</div>
                 <div class="hc-variance-util-value">{fmt_pct(utilization)}</div>
             </div>
             <div class="hc-main-row">
                 {ui_icon_svg("balance", "#6EA52B", "#F1F8E8")}
                 <div class="hc-kpi-total" style="color:{status_color} !important;">{fmt_num(value, 2)}</div>
             </div>
-            <div class="hc-variance-formula">{formula_text}</div>
+            <div class="hc-variance-formula"
+                 style="margin-top:8px !important;margin-bottom:0 !important;">
+                {formula_text}
+            </div>
         </div>
         """,
         unsafe_allow_html=True,
