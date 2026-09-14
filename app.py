@@ -2516,8 +2516,8 @@ def render_fte_office_comparison(fte_filtered_all_offices: pd.DataFrame, selecte
             background:#F4F6F8;
             border-top:1px solid #E3E8EF;
             border-bottom:1px solid #D8E0E8;
-            font-size:12px;
-            font-weight:500;
+            font-size:16px;
+            font-weight:800;
             line-height:1.4;">
             <span style="display:inline-flex;align-items:center;gap:7px;white-space:nowrap;">
                 <span style="width:10px;height:10px;border-radius:2px;background:{COLORS['red']};"></span>
