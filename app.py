@@ -4033,12 +4033,14 @@ def render_case_total_cards(workload_df: pd.DataFrame):
             st.markdown(
                 f"""
                 <div class="kpi-card" style="border-top:4px solid {color} !important;">
-                    <div class="kpi-label">{label}</div>
-                    <div class="kpi-value" style="color:{color} !important;">
+                    <div class="kpi-label" style="color:{color} !important;
+                         font-weight:700 !important;">{label}</div>
+                    <div class="kpi-value" style="color:{COLORS['navy']} !important;">
                         {value:,.0f}
                     </div>
-                    <div class="kpi-note" style="font-size:16px !important;
-                         font-weight:500 !important;text-align:center;">
+                    <div style="color:#667085;font-size:18px;
+                         line-height:1.2;font-weight:500;text-align:center;
+                         margin-top:5px;">
                         {share:.1%}
                     </div>
                 </div>
