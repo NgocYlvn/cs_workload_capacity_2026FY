@@ -5732,9 +5732,9 @@ def customer_detail_volume_table(df: pd.DataFrame):
         hide_index=True,
         height=SHIPMENT_PAIR_HEIGHT,  # keep full-height scrollable detail for all customers
         column_config={
-            "Rank": st.column_config.NumberColumn("Rank", width="small", format="%d"),
-            "Customer": st.column_config.TextColumn("Customer", width="large"),
-            "Shipment Volume": st.column_config.NumberColumn("Shipment Volume", width="medium", format="%,.0f"),
+            "Rank": st.column_config.NumberColumn("Rank", width=60, format="%d"),
+            "Customer": st.column_config.TextColumn("Customer", width=420),
+            "Shipment Volume": st.column_config.NumberColumn("Shipment Volume", width=150, format="%,.0f"),
         },
     )
 
@@ -6666,7 +6666,7 @@ def main():
     # Customer shipment analysis:
     # Remove Transportation Mode chart/detail from the dashboard.
     # Show Top 15 Customers chart and Customer Volume Detail on the same row.
-    customer_chart_col, customer_detail_col = st.columns([0.58, 0.42], gap="medium")
+    customer_chart_col, customer_detail_col = st.columns([0.55, 0.45], gap="medium")
 
     with customer_chart_col:
         chart_top_customers(f_customer_ns)
