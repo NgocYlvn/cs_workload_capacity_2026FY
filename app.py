@@ -352,6 +352,30 @@ st.markdown(
 
     .hc-variance-card {{
         justify-content: flex-start;
+        position: relative;
+    }}
+
+    .hc-variance-util {{
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 7px;
+    }}
+
+    .hc-variance-util .status-badge {{
+        margin-top: 0 !important;
+        white-space: nowrap;
+    }}
+
+    .hc-variance-util-value {{
+        color: #06183F;
+        font-size: 22px;
+        line-height: 1;
+        font-weight: 800;
+        letter-spacing: -0.02em;
     }}
 
     .hc-variance-formula {{
@@ -2682,12 +2706,21 @@ def hc_variance_card(
     status_text: str,
     status_color: str,
     status_bg: str,
+    utilization: float,
 ):
     """Centered variance card to visually balance the HC cards."""
+    util_status_text, util_status_color, util_status_bg = status_from_util(utilization)
     st.markdown(
         f"""
         <div class="hc-kpi-card hc-variance-card">
             <div class="kpi-label">{label}</div>
+            <div class="hc-variance-util">
+                <span class="status-badge"
+                      style="color:{util_status_color};background:{util_status_bg};">
+                    {util_status_text}
+                </span>
+                <div class="hc-variance-util-value">{fmt_pct(utilization)}</div>
+            </div>
             <div class="hc-main-row">
                 {ui_icon_svg("balance", "#6EA52B", "#F1F8E8")}
                 <div class="hc-kpi-total" style="color:{status_color} !important;">{fmt_num(value, 2)}</div>
@@ -6333,6 +6366,7 @@ def main():
     required_pic = weighted_period_avg(f_hc, "Required HC PIC") if not f_hc.empty else 0.0
 
     hc_variance = required_hc - actual_hc
+    hc_utilization = hc_capacity_utilization(f_hc)
     
     if hc_variance > 0:
         variance_status = ("OVERLOAD", COLORS["red"], "#FEE2E2")
@@ -6375,6 +6409,7 @@ def main():
             variance_status[0],
             variance_status[1],
             variance_status[2],
+            hc_utilization,
         )
 
     if office == "All Offices":
