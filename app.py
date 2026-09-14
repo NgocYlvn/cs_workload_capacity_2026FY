@@ -4777,6 +4777,15 @@ def chart_office_capacity_trend(df: pd.DataFrame):
         st.info("HC trend cannot be displayed because required HC columns are missing.")
         return
 
+    visible_offices = []
+    if "Office" in df.columns:
+        visible_offices = sorted(
+            value for value in df["Office"].dropna().astype(str).str.strip().unique().tolist()
+            if value
+        )
+    is_all_offices = len(visible_offices) != 1
+    chart_title = "HC Capacity Trend" if is_all_offices else f"HC Capacity Trend – {visible_offices[0]}"
+
     trend_source = df[
         ["MonthDate", "Total Approved HC", "Total Actual HC", "Total Required HC"]
     ].copy()
@@ -4859,7 +4868,7 @@ def chart_office_capacity_trend(df: pd.DataFrame):
             legendrank=3,
             line=dict(color=BUSINESS_COLORS["approved"], width=2, dash="dash"),
             marker=dict(
-                size=9,
+                size=8,
                 symbol="diamond-open",
                 color=BUSINESS_COLORS["approved"],
                 line=dict(color=BUSINESS_COLORS["approved"], width=2),
@@ -4894,7 +4903,7 @@ def chart_office_capacity_trend(df: pd.DataFrame):
             line=dict(color=BUSINESS_COLORS["required"], width=3, dash="solid"),
             marker=dict(size=7),
             fill="tonexty",
-            fillcolor="rgba(245, 158, 11, 0.14)",
+            fillcolor="rgba(245, 158, 11, 0.09)",
             hovertemplate="%{x}<br>Required HC: %{y:,.2f}<extra></extra>",
         )
     )
@@ -4938,13 +4947,15 @@ def chart_office_capacity_trend(df: pd.DataFrame):
             )
 
     fig.update_layout(
-        title="HC Capacity Trend",
+        title=chart_title,
         yaxis_title="HC",
         hovermode="x unified",
     )
     fig = plotly_layout(fig, 320, show_legend=True, legend_position="top", margin_left=56, margin_right=42, margin_top=76, margin_bottom=54)
 
-    # HC Capacity Trend only: adapt tick spacing to the visible data spread.
+    # Keep a minimum visual range so a small HC gap is not exaggerated.
+    # One office: at least 10 HC with 2-HC ticks.
+    # All offices: at least 20 HC with 5-HC ticks.
     visible_values = pd.concat(
         [trend["Total Approved HC"], trend["Total Actual HC"], required_values],
         ignore_index=True,
@@ -4953,18 +4964,26 @@ def chart_office_capacity_trend(df: pd.DataFrame):
         lowest_value = float(visible_values.min())
         highest_value = float(visible_values.max())
         data_spread = highest_value - lowest_value
-        if data_spread < 5.0:
-            tick_step = 1.0
-            y_min = max(0.0, float(np.floor(lowest_value) - 1.0))
-            y_max = float(np.ceil(highest_value) + 1.0)
-        else:
-            tick_step = 5.0
-            y_min = max(0.0, float(np.floor(lowest_value / 5.0) * 5.0))
-            if lowest_value - y_min < 2.0 and y_min >= 5.0:
-                y_min -= 5.0
-            y_max = float(np.ceil(highest_value / 5.0) * 5.0 + 5.0)
-        if y_max <= y_min:
-            y_max = y_min + (tick_step * 2.0)
+        tick_step = 5.0 if is_all_offices else 2.0
+        minimum_span = 20.0 if is_all_offices else 10.0
+        display_span = max(
+            minimum_span,
+            float(np.ceil(max(data_spread, tick_step) / tick_step) * tick_step),
+        )
+        data_center = (lowest_value + highest_value) / 2.0
+        y_min = float(round((data_center - display_span / 2.0) / tick_step) * tick_step)
+        y_max = y_min + display_span
+
+        # Keep every value inside the scale while retaining clean tick marks.
+        if y_min > lowest_value:
+            y_min -= tick_step
+            y_max -= tick_step
+        if y_max < highest_value:
+            y_min += tick_step
+            y_max += tick_step
+        if y_min < 0.0:
+            y_max -= y_min
+            y_min = 0.0
         fig.update_yaxes(
             range=[y_min, y_max],
             tickmode="linear",
