@@ -4024,16 +4024,6 @@ def render_case_total_cards(workload_df: pd.DataFrame):
         )
 
     grand_total = float(sum(totals.values()))
-    st.markdown(
-        f"""
-        <div style="color:{COLORS['navy']};font-size:20px;font-weight:700;
-                    margin:4px 0 10px 2px;">
-            Total C / A / S / E — 4 Offices
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
     total_cols = st.columns(4, gap="medium")
     for card_col, activity in zip(total_cols, ["C", "A", "S", "E"]):
         _, label, color = source_map[activity]
@@ -4047,8 +4037,9 @@ def render_case_total_cards(workload_df: pd.DataFrame):
                     <div class="kpi-value" style="color:{color} !important;">
                         {value:,.0f}
                     </div>
-                    <div class="kpi-note">
-                        {share:.1%} of total activity · HAN / HAD / HLC / HCM
+                    <div class="kpi-note" style="font-size:16px !important;
+                         font-weight:500 !important;text-align:center;">
+                        {share:.1%}
                     </div>
                 </div>
                 """,
