@@ -6714,10 +6714,29 @@ def main():
                 textfont=dict(size=11),
                 cliponaxis=False,
                 hovertemplate="%{x}<br>Average PIC Workload: %{y:,.1f}%<extra></extra>",
-                width=0.46,
+                width=0.38,
                 name="Average PIC Workload",
+                showlegend=False,
             )
         )
+        status_legend = [
+            ("Less Load", COLORS["green"]),
+            ("Balanced", COLORS["blue"]),
+            ("High Load", COLORS["high_load"]),
+            ("Overload", COLORS["red"]),
+        ]
+        for legend_name, legend_color in status_legend:
+            fig.add_trace(
+                go.Scatter(
+                    x=[None],
+                    y=[None],
+                    mode="markers",
+                    marker=dict(size=8, symbol="square", color=legend_color),
+                    name=legend_name,
+                    hoverinfo="skip",
+                    showlegend=True,
+                )
+            )
         fig.add_hline(
             y=100,
             line_color=YUSEN_THEME["accent"],
@@ -6732,24 +6751,37 @@ def main():
             float(np.ceil(trend_data["WorkloadPct"].max() / 10.0) * 10.0 + 10.0),
         )
         fig.update_layout(
-            title="Average PIC Workload Trend",
+            title="Monthly Average PIC Workload Trend",
             yaxis_title="Workload",
             hovermode="x",
         )
         fig = plotly_layout(
             fig,
-            270,
-            show_legend=False,
+            250,
+            show_legend=True,
             margin_left=58,
             margin_right=34,
-            margin_top=62,
+            margin_top=64,
             margin_bottom=42,
+        )
+        fig.update_layout(
+            legend=dict(
+                orientation="h",
+                yanchor="bottom",
+                y=1.015,
+                xanchor="right",
+                x=1,
+                font=dict(size=10),
+                bgcolor="rgba(0,0,0,0)",
+                borderwidth=0,
+            )
         )
         fig.update_yaxes(range=[0, y_max], ticksuffix="%", dtick=20)
         fig.update_xaxes(
             type="category",
             categoryorder="array",
             categoryarray=trend_data["Month"].tolist(),
+            domain=[0.075, 0.925],
         )
         st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
