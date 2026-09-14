@@ -4770,6 +4770,16 @@ def chart_office_capacity_trend(df: pd.DataFrame):
         if len(valid_values) == 3:
             label_positions[valid_values[1][0]][row_idx] = "middle right"
 
+        approved_value = trend["Total Approved HC"].iloc[row_idx]
+        actual_value = trend["Total Actual HC"].iloc[row_idx]
+        if (
+            not pd.isna(approved_value)
+            and not pd.isna(actual_value)
+            and np.isclose(approved_value, actual_value, rtol=0.0, atol=0.05)
+        ):
+            # When Approved and Actual overlap, keep one clear value label.
+            label_positions["actual"][row_idx] = "bottom center"
+
     fig = go.Figure()
 
     # Approved HC line
@@ -4781,7 +4791,12 @@ def chart_office_capacity_trend(df: pd.DataFrame):
             name="Approved HC",
             legendrank=3,
             line=dict(color=BUSINESS_COLORS["approved"], width=2, dash="dash"),
-            marker=dict(size=7),
+            marker=dict(
+                size=9,
+                symbol="diamond-open",
+                color=BUSINESS_COLORS["approved"],
+                line=dict(color=BUSINESS_COLORS["approved"], width=2),
+            ),
             hovertemplate="%{x}<br>Approved HC: %{y:,.1f}<extra></extra>",
         )
     )
@@ -4827,6 +4842,13 @@ def chart_office_capacity_trend(df: pd.DataFrame):
         for row_idx, value in enumerate(series_values):
             if pd.isna(value):
                 continue
+            if series_key == "approved":
+                actual_value = trend["Total Actual HC"].iloc[row_idx]
+                if (
+                    not pd.isna(actual_value)
+                    and np.isclose(value, actual_value, rtol=0.0, atol=0.05)
+                ):
+                    continue
             position = label_positions[series_key][row_idx]
             if position == "top center":
                 x_shift, y_shift, x_anchor, y_anchor = 0, 12, "center", "bottom"
@@ -4855,22 +4877,33 @@ def chart_office_capacity_trend(df: pd.DataFrame):
     )
     fig = plotly_layout(fig, 320, show_legend=True, legend_position="top", margin_left=56, margin_right=42, margin_top=76, margin_bottom=54)
 
-    # HC Capacity Trend only: use a focused, dynamic 5-HC scale with label headroom.
+    # HC Capacity Trend only: adapt tick spacing to the visible data spread.
     visible_values = pd.concat(
         [trend["Total Approved HC"], trend["Total Actual HC"], required_values],
         ignore_index=True,
     ).dropna()
     if not visible_values.empty:
         lowest_value = float(visible_values.min())
-        y_min = max(0.0, float(np.floor(lowest_value / 5.0) * 5.0))
-        # Add one extra 5-HC interval only when the lowest point is too close
-        # to the axis floor, keeping bottom labels clear of month labels.
-        if lowest_value - y_min < 2.0 and y_min >= 5.0:
-            y_min -= 5.0
-        y_max = float(np.ceil(visible_values.max() / 5.0) * 5.0 + 5.0)
+        highest_value = float(visible_values.max())
+        data_spread = highest_value - lowest_value
+        if data_spread < 5.0:
+            tick_step = 1.0
+            y_min = max(0.0, float(np.floor(lowest_value) - 1.0))
+            y_max = float(np.ceil(highest_value) + 1.0)
+        else:
+            tick_step = 5.0
+            y_min = max(0.0, float(np.floor(lowest_value / 5.0) * 5.0))
+            if lowest_value - y_min < 2.0 and y_min >= 5.0:
+                y_min -= 5.0
+            y_max = float(np.ceil(highest_value / 5.0) * 5.0 + 5.0)
         if y_max <= y_min:
-            y_max = y_min + 10.0
-        fig.update_yaxes(range=[y_min, y_max], tickmode="linear", tick0=y_min, dtick=5)
+            y_max = y_min + (tick_step * 2.0)
+        fig.update_yaxes(
+            range=[y_min, y_max],
+            tickmode="linear",
+            tick0=y_min,
+            dtick=tick_step,
+        )
 
     # HC Capacity Trend only: align the horizontal legend to the left.
     fig.update_layout(
