@@ -6714,7 +6714,7 @@ def main():
                 textfont=dict(size=11),
                 cliponaxis=False,
                 hovertemplate="%{x}<br>Average PIC Workload: %{y:,.1f}%<extra></extra>",
-                width=0.38,
+                width=0.44,
                 name="Average PIC Workload",
                 showlegend=False,
             )
@@ -6737,15 +6737,6 @@ def main():
                     showlegend=True,
                 )
             )
-        fig.add_hline(
-            y=100,
-            line_color=YUSEN_THEME["accent"],
-            line_width=1.5,
-            line_dash="dash",
-            annotation_text="100% reference",
-            annotation_position="top right",
-            annotation_font=dict(color=YUSEN_THEME["accent"], size=10),
-        )
         y_max = max(
             120.0,
             float(np.ceil(trend_data["WorkloadPct"].max() / 10.0) * 10.0 + 10.0),
@@ -6757,20 +6748,20 @@ def main():
         )
         fig = plotly_layout(
             fig,
-            250,
+            260,
             show_legend=True,
             margin_left=58,
             margin_right=34,
             margin_top=64,
-            margin_bottom=42,
+            margin_bottom=64,
         )
         fig.update_layout(
             legend=dict(
                 orientation="h",
-                yanchor="bottom",
-                y=1.015,
-                xanchor="right",
-                x=1,
+                yanchor="top",
+                y=-0.22,
+                xanchor="center",
+                x=0.5,
                 font=dict(size=10),
                 bgcolor="rgba(0,0,0,0)",
                 borderwidth=0,
@@ -6781,7 +6772,7 @@ def main():
             type="category",
             categoryorder="array",
             categoryarray=trend_data["Month"].tolist(),
-            domain=[0.075, 0.925],
+            domain=[0.16, 0.84],
         )
         st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
