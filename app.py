@@ -40,6 +40,7 @@ APP_SUBTITLE = "Capacity • Workload • Utilization • Performance"
 DEFAULT_FILE = "(Not for Office Input) MASTER DATA SOURCE.xlsm"
 APP_DIR = Path(__file__).resolve().parent
 DEFAULT_FILE_PATH = APP_DIR / DEFAULT_FILE
+DASHBOARD_PASSWORD_SHA256 = "e0828b3b78a7a47b44f6d7db51982797897a6e0655f5a9b699ee44bcabc08b87"
 CAPACITY_HOURS_PER_FTE = 8 * 0.95 * 22  # 167.2 hours/FTE/month
 STANDARD_OFFICES = ["HAN", "HAD", "HLC", "HCM"]
 SERVICE_ORDER = ["AE", "AI", "OE", "OI", "CC", "TR", "WH"]
@@ -6078,9 +6079,11 @@ footer{display:none!important}
 
 
 def render_cover_gate() -> None:
-    """Stop on the cover until the user selects VIEW DASHBOARD."""
+    """Show the cover, then require a password before opening the dashboard."""
     if "dashboard_entered" not in st.session_state:
         st.session_state["dashboard_entered"] = False
+    if "dashboard_login_requested" not in st.session_state:
+        st.session_state["dashboard_login_requested"] = False
 
     # The cover CTA is a styled HTML link to ?enter=1.
     # This allows the button to remain visually inside the white cover panel.
@@ -6094,14 +6097,58 @@ def render_cover_gate() -> None:
         enter_param = enter_param[0] if enter_param else None
 
     if str(enter_param) == "1":
-        st.session_state["dashboard_entered"] = True
+        st.session_state["dashboard_login_requested"] = True
         try:
             st.query_params.clear()
         except Exception:
             logger.debug("Unable to clear Streamlit query parameters", exc_info=True)
 
     if not st.session_state["dashboard_entered"]:
-        render_cover_page()
+        if not st.session_state["dashboard_login_requested"]:
+            render_cover_page()
+            st.stop()
+
+        st.markdown(
+            """
+            <div style="max-width:460px;margin:12vh auto 18px auto;text-align:center;">
+                <div style="font-size:28px;font-weight:800;color:#06183F;">
+                    CS OPERATIONS PERFORMANCE DASHBOARD
+                </div>
+                <div style="margin-top:8px;color:#5B6575;font-size:14px;">
+                    Please enter the password to continue.
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+        _, login_col, _ = st.columns([1, 1.15, 1])
+        with login_col:
+            with st.form("dashboard_password_form", clear_on_submit=False):
+                entered_password = st.text_input(
+                    "Password",
+                    type="password",
+                    placeholder="Enter password",
+                )
+                submitted = st.form_submit_button(
+                    "OPEN DASHBOARD",
+                    type="primary",
+                    use_container_width=True,
+                )
+
+            if submitted:
+                entered_hash = hashlib.sha256(entered_password.encode("utf-8")).hexdigest()
+                if entered_hash == DASHBOARD_PASSWORD_SHA256:
+                    st.session_state["dashboard_entered"] = True
+                    st.session_state["dashboard_login_requested"] = False
+                    st.rerun()
+                else:
+                    st.error("Incorrect password. Please try again.")
+
+            if st.button("← BACK", use_container_width=True, key="back_to_cover_login"):
+                st.session_state["dashboard_login_requested"] = False
+                st.rerun()
+
         st.stop()
 
 
