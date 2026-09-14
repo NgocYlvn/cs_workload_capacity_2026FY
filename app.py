@@ -4755,10 +4755,15 @@ def chart_office_capacity_trend(df: pd.DataFrame):
         go.Scatter(
             x=trend["Month"],
             y=trend["Total Approved HC"],
-            mode="lines+markers",
+            mode="lines+markers+text",
             name="Approved HC",
             line=dict(color=BUSINESS_COLORS["approved"], width=3),
             marker=dict(size=7),
+            text=trend["Total Approved HC"].map(
+                lambda value: "" if pd.isna(value) else f"{value:,.2f}"
+            ),
+            textposition="top center",
+            textfont=dict(color=BUSINESS_COLORS["approved"], size=10),
             hovertemplate="%{x}<br>Approved HC: %{y:,.1f}<extra></extra>",
         )
     )
@@ -4768,10 +4773,15 @@ def chart_office_capacity_trend(df: pd.DataFrame):
         go.Scatter(
             x=trend["Month"],
             y=trend["Total Actual HC"],
-            mode="lines+markers",
+            mode="lines+markers+text",
             name="Actual HC",
             line=dict(color=BUSINESS_COLORS["actual"], width=3),
             marker=dict(size=7),
+            text=trend["Total Actual HC"].map(
+                lambda value: "" if pd.isna(value) else f"{value:,.2f}"
+            ),
+            textposition="bottom center",
+            textfont=dict(color=BUSINESS_COLORS["actual"], size=10),
             hovertemplate="%{x}<br>Actual HC: %{y:,.1f}<extra></extra>",
         )
     )
@@ -4782,10 +4792,15 @@ def chart_office_capacity_trend(df: pd.DataFrame):
         go.Scatter(
             x=trend["Month"],
             y=required_values,
-            mode="lines+markers",
+            mode="lines+markers+text",
             name="Required HC",
             line=dict(color=BUSINESS_COLORS["required"], width=3, dash="solid"),
             marker=dict(size=7),
+            text=required_values.map(
+                lambda value: "" if pd.isna(value) else f"{value:,.2f}"
+            ),
+            textposition="middle right",
+            textfont=dict(color=BUSINESS_COLORS["required"], size=10),
             fill="tonexty",
             fillcolor="rgba(245, 158, 11, 0.14)",
             hovertemplate="%{x}<br>Required HC: %{y:,.2f}<extra></extra>",
@@ -4799,8 +4814,19 @@ def chart_office_capacity_trend(df: pd.DataFrame):
     )
     fig = plotly_layout(fig, UI["chart_height"], show_legend=True, legend_position="top", margin_left=56, margin_right=42, margin_top=76, margin_bottom=46)
 
-    # Keep the HC chart proportional: Y-axis always starts from zero.
-    fig.update_yaxes(rangemode="tozero")
+    # HC Capacity Trend only: start at zero and display ticks every 10 HC.
+    fig.update_yaxes(rangemode="tozero", tickmode="linear", tick0=0, dtick=10)
+
+    # HC Capacity Trend only: align the horizontal legend to the left.
+    fig.update_layout(
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.015,
+            xanchor="left",
+            x=0,
+        )
+    )
 
     fig.update_xaxes(type="category", categoryorder="array", categoryarray=trend["Month"].tolist())
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
