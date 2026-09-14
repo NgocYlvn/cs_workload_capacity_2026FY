@@ -2726,10 +2726,6 @@ def hc_variance_card(
                 <div class="hc-kpi-total" style="color:{status_color} !important;">{fmt_num(value, 2)}</div>
             </div>
             <div class="hc-variance-formula">{formula_text}</div>
-            <span class="status-badge hc-variance-status"
-                  style="color:{status_color};background:{status_bg};">
-                {status_text}
-            </span>
         </div>
         """,
         unsafe_allow_html=True,
