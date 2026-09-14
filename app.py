@@ -6932,22 +6932,25 @@ def main():
                     justify-content:center;
                     align-items:center;
                 ">
-            <span class="status-badge"
+            <span class="pic-workload-status-badge"
                 style="
                     color:{status_color};
                     background:{status_bg};
-                    font-size:30px !important;
-                    line-height:1.05 !important;
+                    font-size:14px !important;
+                    line-height:1.1 !important;
                     font-weight:800 !important;
+                    letter-spacing:0.02em;
                     padding:10px 16px !important;
                     width:50%;
                     min-width:150px;
                     max-width:190px;
                     min-height:44px;
+                    box-sizing:border-box;
                     display:inline-flex;
                     align-items:center;
                     justify-content:center;
                     text-align:center;
+                    white-space:nowrap;
                     border-radius:999px;
                 ">
                 {status_text}
