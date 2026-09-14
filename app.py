@@ -362,7 +362,7 @@ st.markdown(
         display: flex;
         flex-direction: column;
         align-items: flex-end;
-        gap: 5px;
+        gap: 7px;
     }}
 
     .hc-variance-util .status-badge {{
@@ -377,15 +377,6 @@ st.markdown(
         font-weight: 800;
         letter-spacing: -0.02em;
         margin-top: 2px;
-    }}
-
-    .hc-variance-util-label {{
-        color: #64748B;
-        font-size: 9px;
-        line-height: 1.1;
-        font-weight: 600;
-        white-space: nowrap;
-        margin-top: 0;
     }}
 
     .hc-variance-formula {{
@@ -2738,7 +2729,6 @@ def hc_variance_card(
                     {util_status_text}
                 </span>
                 <div class="hc-variance-util-value">{fmt_pct(utilization)}</div>
-                <div class="hc-variance-util-label">Capacity Utilization</div>
             </div>
             <div class="hc-main-row">
                 {ui_icon_svg("balance", "#6EA52B", "#F1F8E8")}
