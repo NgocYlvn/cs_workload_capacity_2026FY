@@ -6809,9 +6809,9 @@ def main():
                 textfont=dict(size=11),
                 cliponaxis=False,
                 hovertemplate="%{x}<br>Average PIC Workload: %{y:,.1f}%<extra></extra>",
-                # The category domain below is compressed by 50%; width=0.44
-                # preserves the approved narrow on-screen bar width.
-                width=0.44,
+                # Keep the approved narrow on-screen bar width after widening
+                # the centered plotting area to about 65% of the card.
+                width=0.24,
                 name="Average PIC Workload",
                 showlegend=False,
             )
@@ -6892,8 +6892,8 @@ def main():
             type="category",
             categoryorder="array",
             categoryarray=trend_data["Month"].tolist(),
-            # Reduce the month-to-month spacing by 50% and center the group.
-            domain=[0.33, 0.67],
+            # Use about 65% of the card width and keep the full group centered.
+            domain=[0.18, 0.82],
         )
         st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
