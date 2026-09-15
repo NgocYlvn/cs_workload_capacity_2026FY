@@ -6809,7 +6809,8 @@ def main():
                 textfont=dict(size=11),
                 cliponaxis=False,
                 hovertemplate="%{x}<br>Average PIC Workload: %{y:,.1f}%<extra></extra>",
-                width=0.44,
+                # Keep the chart size unchanged; only make each monthly bar 50% narrower.
+                width=0.22,
                 name="Average PIC Workload",
                 showlegend=False,
             )
@@ -6985,14 +6986,6 @@ def main():
 
     if office == "All Offices":
         render_fte_office_comparison(f_fte, month)
-
-    # Chart source: 2. FTE Workload
-    # PIC Workload = FTE Workload factor × Available Time / PIC.
-    # Available Standard Time / PIC = 95% × 8 × 22 = 167.2 hours.
-    # Therefore: PIC Workload = CS FTE coefficient × 167.2 hours.
-    # When All Offices is selected, only overloaded PICs/offices are displayed.
-    st.markdown('<div class="chart-box" style="margin-top:8px;">', unsafe_allow_html=True)
-    chart_workload_by_pic(f_fte, office)
 
     section_title("4. Workload Distribution by Segment")
 
