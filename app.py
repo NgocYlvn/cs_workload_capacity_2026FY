@@ -6811,9 +6811,6 @@ def main():
                 x=trend_data["Month"],
                 y=trend_data["WorkloadPct"],
                 marker=dict(color=trend_data["BarColor"], line=dict(width=0)),
-                text=trend_data["ValueLabel"],
-                textposition="outside",
-                textfont=dict(size=11),
                 cliponaxis=False,
                 hovertemplate="%{x}<br>Average PIC Workload: %{y:,.1f}%<extra></extra>",
                 # Keep the approved narrow on-screen bar width after widening
@@ -6842,6 +6839,23 @@ def main():
                 showlegend=False,
             )
         )
+
+        # Place clearer value labels above the bar/line points with extra spacing.
+        for month_label, workload_value, value_label in zip(
+            trend_data["Month"],
+            trend_data["WorkloadPct"],
+            trend_data["ValueLabel"],
+        ):
+            fig.add_annotation(
+                x=month_label,
+                y=float(workload_value),
+                text=f"<b>{value_label}</b>",
+                showarrow=False,
+                yshift=8,
+                yanchor="bottom",
+                font=dict(size=12, color=COLORS["navy"]),
+            )
+
         status_legend = [
             ("Less Load", COLORS["green"]),
             ("Balanced", COLORS["blue"]),
