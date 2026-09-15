@@ -7170,9 +7170,13 @@ def main():
             font-size:14px;
             line-height:1.5;
         ">
-            <strong style="color:#C2410C;">Definition:</strong>
-            CS Resolution Rate = % of customer requests/issues fully resolved by CS without handing off the resolution to another BU.
-            Requests merely forwarded to BUs and relayed back to customers are not considered CS resolutions.
+            <strong style="color:#C2410C;">CS Control Tower Effective Rate = CS Resolutions Rate.</strong><br>
+            Follow the <strong>CS RESOLUTION DECISION RULE</strong> below:
+            <div style="margin-top:6px;">
+                <strong>Rule 1 –</strong> Count as CS Resolution when CS owns and closes the resolution mainly through customer communication/negotiation, without another BU taking over the main corrective action.<br>
+                <strong>Rule 2 –</strong> Do not count when CS only forwards the request to another BU and relays the response back to the customer.<br>
+                <strong>Rule 3 –</strong> Unclear cases shall be escalated to the HOD for verification, final classification, and guidance to the CS PIC.
+            </div>
         </div>
         """,
         unsafe_allow_html=True,
