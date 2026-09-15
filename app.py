@@ -4935,7 +4935,7 @@ def chart_office_capacity_trend(df: pd.DataFrame):
             fig.add_annotation(
                 x=trend["Month"].iloc[row_idx],
                 y=float(value),
-                text=f"{value:,.1f}",
+                text=f"<b>{value:,.1f}</b>",
                 showarrow=False,
                 xshift=x_shift,
                 yshift=y_shift,
@@ -4943,7 +4943,7 @@ def chart_office_capacity_trend(df: pd.DataFrame):
                 yanchor=y_anchor,
                 bgcolor="rgba(255,255,255,0.88)",
                 borderpad=2,
-                font=dict(color=series_color, size=11),
+                font=dict(color=series_color, size=12),
             )
 
     fig.update_layout(
@@ -6809,8 +6809,9 @@ def main():
                 textfont=dict(size=11),
                 cliponaxis=False,
                 hovertemplate="%{x}<br>Average PIC Workload: %{y:,.1f}%<extra></extra>",
-                # Keep the chart size unchanged; only make each monthly bar 50% narrower.
-                width=0.22,
+                # The category domain below is compressed by 50%; width=0.44
+                # preserves the approved narrow on-screen bar width.
+                width=0.44,
                 name="Average PIC Workload",
                 showlegend=False,
             )
@@ -6891,7 +6892,8 @@ def main():
             type="category",
             categoryorder="array",
             categoryarray=trend_data["Month"].tolist(),
-            domain=[0.16, 0.84],
+            # Reduce the month-to-month spacing by 50% and center the group.
+            domain=[0.33, 0.67],
         )
         st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
