@@ -7174,8 +7174,7 @@ def main():
             <div style="margin-top:6px;">
                 <strong>Rule 1 –</strong> Count as CS Resolution when CS owns and closes the resolution mainly through customer communication/negotiation, without another BU taking over the main corrective action.<br>
                 <strong>Rule 2 –</strong> Do not count when CS only forwards the request to another BU and relays the response back to the customer.<br>
-                <strong>Rule 3 –</strong> Unclear cases shall be escalated to the HOD for verification, final classification, and guidance to the CS PIC.
-            </div>
+        </div>
         </div>
         """,
         unsafe_allow_html=True,
