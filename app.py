@@ -4154,7 +4154,14 @@ def chart_case_allocation(df: pd.DataFrame):
         )
     )
 
-    fig.update_xaxes(rangemode="tozero")
+    # Show complete hour values (5,000; 10,000; ...) instead of abbreviated
+    # SI labels such as 5k, 10k and 15k.
+    fig.update_xaxes(
+        rangemode="tozero",
+        tickformat=",.0f",
+        separatethousands=True,
+        exponentformat="none",
+    )
 
     st.plotly_chart(
         fig,
