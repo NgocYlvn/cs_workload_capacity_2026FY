@@ -6995,6 +6995,35 @@ def main():
             )
         )
 
+        # Month-to-month connector for quick trend comparison.
+        fig.add_trace(
+            go.Scatter(
+                x=monthly_ratio["Month"],
+                y=monthly_ratio["Shipment per Actual FTE"],
+                mode="lines+markers",
+                name="Shipment/FTE Trend",
+                line=dict(color=COLORS["navy"], width=2),
+                marker=dict(
+                    size=6,
+                    color="#FFFFFF",
+                    line=dict(color=COLORS["navy"], width=2),
+                ),
+                customdata=np.column_stack(
+                    [
+                        monthly_ratio["Total Shipment"],
+                        monthly_ratio["Actual FTE"],
+                    ]
+                ),
+                hovertemplate=(
+                    "%{x}<br>Shipment/FTE: %{y:,.1f}"
+                    "<br>Total Shipment: %{customdata[0]:,.0f}"
+                    "<br>Actual FTE: %{customdata[1]:,.2f}"
+                    "<extra></extra>"
+                ),
+                showlegend=False,
+            )
+        )
+
         for month_label, ratio_value in zip(
             monthly_ratio["Month"],
             monthly_ratio["Shipment per Actual FTE"],
@@ -7139,13 +7168,14 @@ def main():
         )
 
     st.markdown('<div style="height:12px;"></div>', unsafe_allow_html=True)
-    chart_section3_average_workload_trend(fte_trend_source)
-
-    st.markdown('<div style="height:12px;"></div>', unsafe_allow_html=True)
-    chart_section3_shipment_per_actual_fte(
-        shipment_trend_source,
-        fte_trend_source,
-    )
+    workload_trend_col, shipment_fte_col = st.columns(2, gap="medium")
+    with workload_trend_col:
+        chart_section3_average_workload_trend(fte_trend_source)
+    with shipment_fte_col:
+        chart_section3_shipment_per_actual_fte(
+            shipment_trend_source,
+            fte_trend_source,
+        )
 
     if office == "All Offices":
         render_fte_office_comparison(f_fte, month)
