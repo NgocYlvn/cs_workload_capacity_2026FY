@@ -7036,18 +7036,18 @@ def main():
         )
         st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
-    def chart_section3_shipment_per_actual_hc(
+    def chart_section3_shipment_per_actual_pic(
         shipment_source: pd.DataFrame,
         hc_source: pd.DataFrame,
     ) -> None:
-        """Monthly shipment volume divided by monthly Total Actual HC."""
+        """Monthly shipment volume divided by monthly Actual HC PIC."""
         if shipment_source is None or shipment_source.empty:
             return
         if hc_source is None or hc_source.empty:
             return
         if not {"MonthDate", "Total Shipment"}.issubset(shipment_source.columns):
             return
-        if not {"MonthDate", "Total Actual HC"}.issubset(hc_source.columns):
+        if not {"MonthDate", "Actual HC PIC"}.issubset(hc_source.columns):
             return
 
         monthly_shipment = shipment_source[["MonthDate", "Total Shipment"]].copy()
@@ -7060,28 +7060,28 @@ def main():
             .sum()
         )
 
-        monthly_hc = hc_source[["MonthDate", "Total Actual HC"]].copy()
-        monthly_hc["Total Actual HC"] = pd.to_numeric(
-            monthly_hc["Total Actual HC"], errors="coerce"
+        monthly_pic = hc_source[["MonthDate", "Actual HC PIC"]].copy()
+        monthly_pic["Actual HC PIC"] = pd.to_numeric(
+            monthly_pic["Actual HC PIC"], errors="coerce"
         )
-        monthly_hc = (
-            monthly_hc.dropna(subset=["MonthDate", "Total Actual HC"])
-            .groupby("MonthDate", as_index=False)["Total Actual HC"]
+        monthly_pic = (
+            monthly_pic.dropna(subset=["MonthDate", "Actual HC PIC"])
+            .groupby("MonthDate", as_index=False)["Actual HC PIC"]
             .sum()
         )
 
         monthly_ratio = pd.merge(
             monthly_shipment,
-            monthly_hc,
+            monthly_pic,
             on="MonthDate",
             how="inner",
         )
-        monthly_ratio = monthly_ratio[monthly_ratio["Total Actual HC"] > 0].copy()
+        monthly_ratio = monthly_ratio[monthly_ratio["Actual HC PIC"] > 0].copy()
         if monthly_ratio.empty:
             return
 
-        monthly_ratio["Shipment per Actual HC"] = (
-            monthly_ratio["Total Shipment"] / monthly_ratio["Total Actual HC"]
+        monthly_ratio["Shipment per Actual PIC"] = (
+            monthly_ratio["Total Shipment"] / monthly_ratio["Actual HC PIC"]
         )
         monthly_ratio = monthly_ratio.sort_values("MonthDate")
         monthly_ratio["Month"] = monthly_ratio["MonthDate"].dt.strftime("%b-%y")
@@ -7089,19 +7089,19 @@ def main():
         fig = go.Figure(
             go.Bar(
                 x=monthly_ratio["Month"],
-                y=monthly_ratio["Shipment per Actual HC"],
+                y=monthly_ratio["Shipment per Actual PIC"],
                 width=0.28,
                 marker=dict(color=COLORS["blue"], line=dict(width=0)),
                 customdata=np.column_stack(
                     [
                         monthly_ratio["Total Shipment"],
-                        monthly_ratio["Total Actual HC"],
+                        monthly_ratio["Actual HC PIC"],
                     ]
                 ),
                 hovertemplate=(
-                    "%{x}<br>Shipment/HC: %{y:,.1f}"
+                    "%{x}<br>Shipment/Actual PIC: %{y:,.1f}"
                     "<br>Total Shipment: %{customdata[0]:,.0f}"
-                    "<br>Actual HC: %{customdata[1]:,.1f}"
+                    "<br>Actual HC (PIC): %{customdata[1]:,.1f}"
                     "<extra></extra>"
                 ),
                 showlegend=False,
@@ -7112,9 +7112,9 @@ def main():
         fig.add_trace(
             go.Scatter(
                 x=monthly_ratio["Month"],
-                y=monthly_ratio["Shipment per Actual HC"],
+                y=monthly_ratio["Shipment per Actual PIC"],
                 mode="lines+markers",
-                name="Shipment/HC Trend",
+                name="Shipment/Actual PIC Trend",
                 line=dict(color=COLORS["navy"], width=2),
                 marker=dict(
                     size=6,
@@ -7124,13 +7124,13 @@ def main():
                 customdata=np.column_stack(
                     [
                         monthly_ratio["Total Shipment"],
-                        monthly_ratio["Total Actual HC"],
+                        monthly_ratio["Actual HC PIC"],
                     ]
                 ),
                 hovertemplate=(
-                    "%{x}<br>Shipment/HC: %{y:,.1f}"
+                    "%{x}<br>Shipment/Actual PIC: %{y:,.1f}"
                     "<br>Total Shipment: %{customdata[0]:,.0f}"
-                    "<br>Actual HC: %{customdata[1]:,.1f}"
+                    "<br>Actual HC (PIC): %{customdata[1]:,.1f}"
                     "<extra></extra>"
                 ),
                 showlegend=False,
@@ -7139,7 +7139,7 @@ def main():
 
         for month_label, ratio_value in zip(
             monthly_ratio["Month"],
-            monthly_ratio["Shipment per Actual HC"],
+            monthly_ratio["Shipment per Actual PIC"],
         ):
             fig.add_annotation(
                 x=month_label,
@@ -7152,8 +7152,8 @@ def main():
             )
 
         fig.update_layout(
-            title="Monthly Shipment Volume per Actual HC",
-            yaxis_title="Shipments per Actual HC",
+            title="Monthly Shipment Volume per Actual PIC",
+            yaxis_title="Shipments per Actual PIC",
             hovermode="x",
         )
         fig = plotly_layout(
@@ -7167,7 +7167,7 @@ def main():
         )
         fig.update_layout(
             title=dict(
-                text="Monthly Shipment Volume per Actual HC",
+                text="Monthly Shipment Volume per Actual PIC",
                 x=0.015,
                 xanchor="left",
                 y=0.96,
@@ -7281,11 +7281,11 @@ def main():
         )
 
     st.markdown('<div style="height:12px;"></div>', unsafe_allow_html=True)
-    workload_trend_col, shipment_hc_col = st.columns(2, gap="medium")
+    workload_trend_col, shipment_pic_col = st.columns(2, gap="medium")
     with workload_trend_col:
         chart_section3_average_workload_trend(fte_trend_source)
-    with shipment_hc_col:
-        chart_section3_shipment_per_actual_hc(
+    with shipment_pic_col:
+        chart_section3_shipment_per_actual_pic(
             shipment_trend_source,
             hc_ratio_trend_source,
         )
