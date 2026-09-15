@@ -7170,7 +7170,6 @@ def main():
             font-size:14px;
             line-height:1.5;
         ">
-            <strong style="color:#C2410C;">CS Control Tower Effective Rate = CS Resolutions Rate.</strong><br>
             Follow the <strong>CS RESOLUTION DECISION RULE</strong> below:
             <div style="margin-top:6px;">
                 <strong>Rule 1 –</strong> Count as CS Resolution when CS owns and closes the resolution mainly through customer communication/negotiation, without another BU taking over the main corrective action.<br>
