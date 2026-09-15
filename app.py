@@ -6763,6 +6763,7 @@ def main():
     # Monthly trend for Average PIC Workload.
     # It follows the Office filter but intentionally keeps all available months.
     fte_trend_source = filter_office_only(fte, office)
+    shipment_trend_source = filter_office_only(shipment, office)
 
     def chart_section3_average_workload_trend(source: pd.DataFrame) -> None:
         if source is None or source.empty:
@@ -6922,6 +6923,135 @@ def main():
         )
         st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
+    def chart_section3_shipment_per_actual_fte(
+        shipment_source: pd.DataFrame,
+        fte_source: pd.DataFrame,
+    ) -> None:
+        """Monthly shipment volume divided by monthly Actual FTE."""
+        if shipment_source is None or shipment_source.empty:
+            return
+        if fte_source is None or fte_source.empty:
+            return
+        if not {"MonthDate", "Total Shipment"}.issubset(shipment_source.columns):
+            return
+        if not {"MonthDate", "Actual FTE"}.issubset(fte_source.columns):
+            return
+
+        monthly_shipment = shipment_source[["MonthDate", "Total Shipment"]].copy()
+        monthly_shipment["Total Shipment"] = pd.to_numeric(
+            monthly_shipment["Total Shipment"], errors="coerce"
+        )
+        monthly_shipment = (
+            monthly_shipment.dropna(subset=["MonthDate", "Total Shipment"])
+            .groupby("MonthDate", as_index=False)["Total Shipment"]
+            .sum()
+        )
+
+        monthly_fte = fte_source[["MonthDate", "Actual FTE"]].copy()
+        monthly_fte["Actual FTE"] = pd.to_numeric(
+            monthly_fte["Actual FTE"], errors="coerce"
+        )
+        monthly_fte = (
+            monthly_fte.dropna(subset=["MonthDate", "Actual FTE"])
+            .groupby("MonthDate", as_index=False)["Actual FTE"]
+            .sum()
+        )
+
+        monthly_ratio = pd.merge(
+            monthly_shipment,
+            monthly_fte,
+            on="MonthDate",
+            how="inner",
+        )
+        monthly_ratio = monthly_ratio[monthly_ratio["Actual FTE"] > 0].copy()
+        if monthly_ratio.empty:
+            return
+
+        monthly_ratio["Shipment per Actual FTE"] = (
+            monthly_ratio["Total Shipment"] / monthly_ratio["Actual FTE"]
+        )
+        monthly_ratio = monthly_ratio.sort_values("MonthDate")
+        monthly_ratio["Month"] = monthly_ratio["MonthDate"].dt.strftime("%b-%y")
+
+        fig = go.Figure(
+            go.Bar(
+                x=monthly_ratio["Month"],
+                y=monthly_ratio["Shipment per Actual FTE"],
+                width=0.28,
+                marker=dict(color=COLORS["blue"], line=dict(width=0)),
+                customdata=np.column_stack(
+                    [
+                        monthly_ratio["Total Shipment"],
+                        monthly_ratio["Actual FTE"],
+                    ]
+                ),
+                hovertemplate=(
+                    "%{x}<br>Shipment/FTE: %{y:,.1f}"
+                    "<br>Total Shipment: %{customdata[0]:,.0f}"
+                    "<br>Actual FTE: %{customdata[1]:,.2f}"
+                    "<extra></extra>"
+                ),
+                showlegend=False,
+            )
+        )
+
+        for month_label, ratio_value in zip(
+            monthly_ratio["Month"],
+            monthly_ratio["Shipment per Actual FTE"],
+        ):
+            fig.add_annotation(
+                x=month_label,
+                y=float(ratio_value),
+                text=f"<b>{ratio_value:,.1f}</b>",
+                showarrow=False,
+                yshift=7,
+                yanchor="bottom",
+                font=dict(size=12, color=COLORS["navy"]),
+            )
+
+        fig.update_layout(
+            title="Monthly Shipment Volume per Actual FTE",
+            yaxis_title="Shipments per Actual FTE",
+            hovermode="x",
+        )
+        fig = plotly_layout(
+            fig,
+            260,
+            show_legend=False,
+            margin_left=68,
+            margin_right=34,
+            margin_top=64,
+            margin_bottom=48,
+        )
+        fig.update_layout(
+            title=dict(
+                text="Monthly Shipment Volume per Actual FTE",
+                x=0.015,
+                xanchor="left",
+                y=0.96,
+                yanchor="top",
+                pad=dict(l=8, t=8, b=8),
+            )
+        )
+        fig.update_yaxes(
+            rangemode="tozero",
+            tickformat=",.0f",
+            separatethousands=True,
+        )
+        fig.update_xaxes(
+            type="category",
+            categoryorder="array",
+            categoryarray=monthly_ratio["Month"].tolist(),
+            tickmode="array",
+            tickvals=monthly_ratio["Month"].tolist(),
+            ticktext=[
+                f"<b>{month}</b>" for month in monthly_ratio["Month"].tolist()
+            ],
+            tickfont=dict(size=12, color=COLORS["navy"]),
+            domain=[0.18, 0.82],
+        )
+        st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+
     def section3_kpi_card(label: str, value: str, note: str = ""):
         note_html = (
             f'<div class="pic-kpi-note">{note}</div>'
@@ -7010,6 +7140,12 @@ def main():
 
     st.markdown('<div style="height:12px;"></div>', unsafe_allow_html=True)
     chart_section3_average_workload_trend(fte_trend_source)
+
+    st.markdown('<div style="height:12px;"></div>', unsafe_allow_html=True)
+    chart_section3_shipment_per_actual_fte(
+        shipment_trend_source,
+        fte_trend_source,
+    )
 
     if office == "All Offices":
         render_fte_office_comparison(f_fte, month)
