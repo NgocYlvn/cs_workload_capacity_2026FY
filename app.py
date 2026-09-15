@@ -4126,7 +4126,7 @@ def chart_case_allocation(df: pd.DataFrame):
     fig.update_layout(
         barmode="stack",
         title=dict(text=""),
-        xaxis_title="Workload (Hours)",
+        xaxis_title="Workload Allocation (Hours)",
         yaxis_title="",
     )
 
