@@ -5616,6 +5616,112 @@ def segment_workload_table(df: pd.DataFrame, mode_df: pd.DataFrame):
         },
     )
 
+def chart_monthly_total_shipment(shipment_df: pd.DataFrame):
+    """Display monthly Total Shipment Volume for the selected office scope."""
+    if shipment_df is None or shipment_df.empty:
+        st.info("No monthly shipment data available for selected filters.")
+        return
+    if not {"MonthDate", "Total Shipment"}.issubset(shipment_df.columns):
+        st.info("Monthly shipment data cannot be displayed because required columns are missing.")
+        return
+
+    monthly = shipment_df[["MonthDate", "Total Shipment"]].copy()
+    monthly["Total Shipment"] = pd.to_numeric(
+        monthly["Total Shipment"], errors="coerce"
+    )
+    monthly = (
+        monthly.dropna(subset=["MonthDate", "Total Shipment"])
+        .groupby("MonthDate", as_index=False)["Total Shipment"]
+        .sum()
+        .sort_values("MonthDate")
+    )
+    if monthly.empty:
+        st.info("No monthly shipment data available for selected filters.")
+        return
+
+    monthly["Month"] = monthly["MonthDate"].dt.strftime("%b-%y")
+
+    fig = go.Figure(
+        go.Bar(
+            x=monthly["Month"],
+            y=monthly["Total Shipment"],
+            width=0.34,
+            marker=dict(color=COLORS["blue"], line=dict(width=0)),
+            hovertemplate="%{x}<br>Total Shipment Volume: %{y:,.0f}<extra></extra>",
+            showlegend=False,
+        )
+    )
+    fig.add_trace(
+        go.Scatter(
+            x=monthly["Month"],
+            y=monthly["Total Shipment"],
+            mode="lines+markers",
+            line=dict(color=COLORS["navy"], width=2),
+            marker=dict(
+                size=6,
+                color="#FFFFFF",
+                line=dict(color=COLORS["navy"], width=2),
+            ),
+            hovertemplate="%{x}<br>Total Shipment Volume: %{y:,.0f}<extra></extra>",
+            showlegend=False,
+        )
+    )
+
+    for month_label, shipment_value in zip(
+        monthly["Month"], monthly["Total Shipment"]
+    ):
+        fig.add_annotation(
+            x=month_label,
+            y=float(shipment_value),
+            text=f"<b>{shipment_value:,.0f}</b>",
+            showarrow=False,
+            yshift=8,
+            yanchor="bottom",
+            font=dict(size=12, color=COLORS["navy"]),
+        )
+
+    fig.update_layout(
+        title="Monthly Total Shipment Volume",
+        yaxis_title="Total Shipment Volume",
+        hovermode="x",
+    )
+    fig = plotly_layout(
+        fig,
+        280,
+        show_legend=False,
+        margin_left=70,
+        margin_right=36,
+        margin_top=64,
+        margin_bottom=48,
+    )
+    fig.update_layout(
+        title=dict(
+            text="Monthly Total Shipment Volume",
+            x=0.015,
+            xanchor="left",
+            y=0.96,
+            yanchor="top",
+            pad=dict(l=8, t=8, b=8),
+        )
+    )
+    fig.update_yaxes(
+        rangemode="tozero",
+        tickformat=",.0f",
+        separatethousands=True,
+    )
+    fig.update_xaxes(
+        type="category",
+        categoryorder="array",
+        categoryarray=monthly["Month"].tolist(),
+        tickmode="array",
+        tickvals=monthly["Month"].tolist(),
+        ticktext=[f"<b>{month}</b>" for month in monthly["Month"].tolist()],
+        tickfont=dict(size=12, color=COLORS["navy"]),
+        domain=[0.12, 0.88],
+    )
+    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+
+
 def chart_shipment_modes(mode_df: pd.DataFrame):
     """Horizontal bar chart showing shipment volume and share by transportation mode."""
     if mode_df.empty:
@@ -6674,6 +6780,12 @@ def main():
             fmt_int(shipment_total),
             "",
         )
+
+    # Monthly trend follows the Office filter while retaining all available months.
+    monthly_shipment_source = filter_office_only(shipment, office)
+    st.markdown('<div style="height:12px;"></div>', unsafe_allow_html=True)
+    chart_monthly_total_shipment(monthly_shipment_source)
+
     # Customer shipment analysis:
     # Remove Transportation Mode chart/detail from the dashboard.
     # Show Top 15 Customers chart and Customer Volume Detail on the same row.
