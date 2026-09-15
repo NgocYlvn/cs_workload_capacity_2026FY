@@ -5013,6 +5013,10 @@ def chart_office_capacity_trend(df: pd.DataFrame):
         type="category",
         categoryorder="array",
         categoryarray=trend["Month"].tolist(),
+        tickmode="array",
+        tickvals=trend["Month"].tolist(),
+        ticktext=[f"<b>{month}</b>" for month in trend["Month"].tolist()],
+        tickfont=dict(size=12, color=COLORS["navy"]),
         domain=[0.08, 0.92],
     )
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
