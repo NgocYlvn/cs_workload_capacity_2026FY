@@ -6875,7 +6875,9 @@ def main():
     # Monthly trend for Average PIC Workload.
     # It follows the Office filter but intentionally keeps all available months.
     fte_trend_source = filter_office_only(fte, office)
-    shipment_trend_source = filter_office_only(shipment, office)
+    # Section 3 shipment/PIC trend: numerator comes exclusively from
+    # sheet "11. Vol. by Customer" and keeps all available months.
+    customer_shipment_trend_source = filter_office_only(customer_ns, office)
     hc_ratio_trend_source = filter_office_only(hc, office)
 
     def chart_section3_average_workload_trend(source: pd.DataFrame) -> None:
@@ -7037,22 +7039,22 @@ def main():
         st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
     def chart_section3_shipment_per_actual_pic(
-        shipment_source: pd.DataFrame,
+        customer_volume_source: pd.DataFrame,
         hc_source: pd.DataFrame,
     ) -> None:
-        """Monthly shipment volume divided by monthly Actual HC PIC."""
-        if shipment_source is None or shipment_source.empty:
+        """Monthly customer shipment volume divided by monthly Actual HC PIC."""
+        if customer_volume_source is None or customer_volume_source.empty:
             return
         if hc_source is None or hc_source.empty:
             return
-        if not {"MonthDate", "Total Shipment"}.issubset(shipment_source.columns):
+        if not {"MonthDate", "Volume"}.issubset(customer_volume_source.columns):
             return
         if not {"MonthDate", "Actual HC PIC"}.issubset(hc_source.columns):
             return
 
-        monthly_shipment = shipment_source[["MonthDate", "Total Shipment"]].copy()
+        monthly_shipment = customer_volume_source[["MonthDate", "Volume"]].copy()
         monthly_shipment["Total Shipment"] = pd.to_numeric(
-            monthly_shipment["Total Shipment"], errors="coerce"
+            monthly_shipment["Volume"], errors="coerce"
         )
         monthly_shipment = (
             monthly_shipment.dropna(subset=["MonthDate", "Total Shipment"])
@@ -7286,7 +7288,7 @@ def main():
         chart_section3_average_workload_trend(fte_trend_source)
     with shipment_pic_col:
         chart_section3_shipment_per_actual_pic(
-            shipment_trend_source,
+            customer_shipment_trend_source,
             hc_ratio_trend_source,
         )
 
