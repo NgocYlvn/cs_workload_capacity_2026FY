@@ -3942,22 +3942,26 @@ def render_case_office_cards(workload_df: pd.DataFrame):
             for activity, value in volumes.items()
         }
 
-        activity_cells = "".join(
-            f"""
-                    <div style="text-align:center;min-width:0;{('border-right:1px solid #E7ECF1;' if activity != 'E' else '')}">
-                      <div style="color:{activity_meta[activity][1]};font-size:16px;font-weight:800;">{activity}</div>
-                      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:1px;margin-top:5px;">
-                        <span style="color:#667085;font-size:8px;font-weight:600;">ACTIVITY</span>
-                        <span style="color:{COLORS['navy']};font-size:12px;font-weight:750;">{volumes[activity]:,.0f}</span>
-                      </div>
-                      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:1px;margin-top:3px;">
-                        <span style="color:#667085;font-size:8px;font-weight:600;">HOUR</span>
-                        <span style="color:{COLORS['navy']};font-size:12px;font-weight:750;">{vals[activity]:,.0f}</span>
-                      </div>
-                      <div style="color:#667085;font-size:14px;margin-top:5px;">{shares[activity]:.1%}</div>
-                    </div>
-            """
-            for activity in ("C", "A", "S", "E")
+        activities = ("C", "A", "S", "E")
+        activity_headers = "".join(
+            f'<div style="text-align:center;color:{activity_meta[activity][1]};'
+            f'font-size:16px;font-weight:800;">{activity}</div>'
+            for activity in activities
+        )
+        activity_values = "".join(
+            f'<div style="text-align:center;color:{COLORS["navy"]};'
+            f'font-size:13px;font-weight:750;">{volumes[activity]:,.0f}</div>'
+            for activity in activities
+        )
+        hour_values = "".join(
+            f'<div style="text-align:center;color:{COLORS["navy"]};'
+            f'font-size:13px;font-weight:750;">{vals[activity]:,.0f}</div>'
+            for activity in activities
+        )
+        share_values = "".join(
+            f'<div style="text-align:center;color:#667085;font-size:14px;">'
+            f'{shares[activity]:.1%}</div>'
+            for activity in activities
         )
 
         with card_col:
@@ -3968,7 +3972,7 @@ def render_case_office_cards(workload_df: pd.DataFrame):
                     border-top:4px solid {COLORS['navy']};
                     border-radius:12px;
                     padding:14px 11px 13px;
-                    min-height:204px;
+                    min-height:215px;
                     box-sizing:border-box;
                     box-shadow:0 2px 7px rgba(0,59,112,0.045);">
 
@@ -4000,11 +4004,15 @@ def render_case_office_cards(workload_df: pd.DataFrame):
 
                   <div style="
                       display:grid;
-                      grid-template-columns:repeat(4,minmax(0,1fr));
+                      grid-template-columns:56px repeat(4,minmax(0,1fr));
                       column-gap:3px;
+                      row-gap:8px;
                       border-top:1px solid #E7ECF1;
                       padding-top:11px;">
-                    {activity_cells}
+                    <div></div>{activity_headers}
+                    <div style="color:#667085;font-size:10px;font-weight:600;align-self:center;">ACTIVITY</div>{activity_values}
+                    <div style="color:#667085;font-size:10px;font-weight:600;align-self:center;">HOUR</div>{hour_values}
+                    <div></div>{share_values}
                   </div>
                 </div>
                 """
