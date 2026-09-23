@@ -3905,7 +3905,7 @@ def render_case_office_cards(workload_df: pd.DataFrame):
             font-size:20px;
             font-weight:700;
             margin:4px 0 10px 2px;">
-            C / A / S / E Activity (hour) by Office
+            C / A / S / E Volume (hour) by Office
         </div>
         """,
         unsafe_allow_html=True,
@@ -3992,7 +3992,7 @@ def render_case_office_cards(workload_df: pd.DataFrame):
                     <div style="text-align:right;min-width:135px;">
                       <div style="color:#667085;font-size:16px;font-weight:700;">TOTAL</div>
                       <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-top:4px;">
-                        <span style="color:#667085;font-size:11px;font-weight:600;">ACTIVITY</span>
+                        <span style="color:#667085;font-size:11px;font-weight:600;">VOLUME</span>
                         <span style="color:{COLORS['navy']};font-size:20px;font-weight:800;">{total_activity:,.0f}</span>
                       </div>
                       <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-top:3px;">
@@ -4010,7 +4010,7 @@ def render_case_office_cards(workload_df: pd.DataFrame):
                       border-top:1px solid #E7ECF1;
                       padding-top:11px;">
                     <div></div>{activity_headers}
-                    <div style="color:#667085;font-size:10px;font-weight:600;align-self:center;">ACTIVITY</div>{activity_values}
+                    <div style="color:#667085;font-size:10px;font-weight:600;align-self:center;">VOLUME</div>{activity_values}
                     <div style="color:#667085;font-size:10px;font-weight:600;align-self:center;">HOUR</div>{hour_values}
                     <div></div>{share_values}
                   </div>
@@ -4032,6 +4032,12 @@ def render_case_total_cards(workload_df: pd.DataFrame):
         "S": ("Supporting Volume", "Total Supporting (S)", COLORS["amber"]),
         "E": ("Exception Volume", "Total Exception (E)", COLORS["red"]),
     }
+    hour_map = {
+        "C": "Core Workload (min)",
+        "A": "Ancillary Workload (min)",
+        "S": "Supporting Workload (min)",
+        "E": "Exception Workload (min)",
+    }
 
     d = workload_df.copy()
     if "Office" in d.columns:
@@ -4042,11 +4048,17 @@ def render_case_total_cards(workload_df: pd.DataFrame):
         return
 
     totals = {}
+    hours = {}
     for activity, (source_col, _, _) in source_map.items():
         totals[activity] = (
             float(pd.to_numeric(d[source_col], errors="coerce").fillna(0).sum())
             if source_col in d.columns
             else 0.0
+        )
+        minute_col = hour_map[activity]
+        hours[activity] = (
+            float(pd.to_numeric(d[minute_col], errors="coerce").fillna(0).sum()) / 60.0
+            if minute_col in d.columns else 0.0
         )
 
     grand_total = float(sum(totals.values()))
@@ -4060,9 +4072,14 @@ def render_case_total_cards(workload_df: pd.DataFrame):
                 f"""
                 <div class="kpi-card" style="border-top:4px solid {color} !important;">
                     <div class="kpi-label" style="color:{color} !important;
-                         font-weight:700 !important;">{label}</div>
+                         font-size:16px !important;font-weight:700 !important;">{label}</div>
+                    <div style="color:#667085;font-size:12px;font-weight:700;">VOLUME</div>
                     <div class="kpi-value" style="color:{COLORS['navy']} !important;">
                         {value:,.0f}
+                    </div>
+                    <div style="color:#667085;font-size:12px;font-weight:700;">HOUR</div>
+                    <div style="color:{COLORS['navy']};font-size:20px;font-weight:800;">
+                        {hours[activity]:,.0f}
                     </div>
                     <div style="color:#667085;font-size:18px;
                          line-height:1.2;font-weight:500;text-align:center;
@@ -7373,7 +7390,7 @@ def main():
     segment_workload_table(f_workload, f_mode)
 
     
-    section_title("5. Workload Breakdown by Activity & Segment")
+    section_title("5. Workload Breakdown by Category & Segment")
 
     st.markdown(
         """
