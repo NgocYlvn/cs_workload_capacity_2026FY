@@ -4066,7 +4066,7 @@ def render_case_total_cards(workload_df: pd.DataFrame):
                      border-top:4px solid {color};border-radius:12px;
                      padding:15px 14px 14px;min-height:178px;box-sizing:border-box;
                      box-shadow:0 2px 7px rgba(0,59,112,0.045);text-align:center;">
-                    <div style="color:{color};font-size:14px;font-weight:700;line-height:1.35;">
+                    <div style="color:{color};font-size:16px;font-weight:700;line-height:1.35;">
                         {label}
                     </div>
                     <div style="display:grid;grid-template-columns:75px auto;
