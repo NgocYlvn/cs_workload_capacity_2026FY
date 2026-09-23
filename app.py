@@ -3955,7 +3955,7 @@ def render_case_office_cards(workload_df: pd.DataFrame):
         )
         hour_values = "".join(
             f'<div style="text-align:center;color:{COLORS["navy"]};'
-            f'font-size:14px;font-weight:750;">{vals[activity]:,.1f}</div>'
+            f'font-size:14px;font-weight:750;">{vals[activity]:,.0f}</div>'
             for activity in activities
         )
         share_values = "".join(
