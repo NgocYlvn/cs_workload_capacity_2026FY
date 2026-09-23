@@ -4356,7 +4356,7 @@ def render_workload_breakdown_table(df: pd.DataFrame):
         st.info("No workload breakdown data available for selected filters.")
         return
 
-    pair_panel_title("Category Breakdown")
+    pair_panel_title("Categories by Segment")
 
     display = summary.copy()
 
