@@ -3898,18 +3898,7 @@ def render_case_office_cards(workload_df: pd.DataFrame):
     if not offices:
         return
 
-    st.markdown(
-        f"""
-        <div style="
-            color:{COLORS['navy']};
-            font-size:20px;
-            font-weight:700;
-            margin:4px 0 10px 2px;">
-            C / A / S / E Volume (hour) by Office
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    pair_panel_title("C / A / S / E Volume & Hour by Office")
 
     # Keep Office cards compact when filters return fewer than 4 offices.
     # All Offices: 4 cards fill the row as before.
