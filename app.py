@@ -3905,7 +3905,7 @@ def render_case_office_cards(workload_df: pd.DataFrame):
             font-size:20px;
             font-weight:700;
             margin:4px 0 10px 2px;">
-            C / A / S / E Activity (hour) by Office
+            C / A / S / E Activity &amp; Hours by Office
         </div>
         """,
         unsafe_allow_html=True,
@@ -3950,12 +3950,12 @@ def render_case_office_cards(workload_df: pd.DataFrame):
         )
         activity_values = "".join(
             f'<div style="text-align:center;color:{COLORS["navy"]};'
-            f'font-size:13px;font-weight:750;">{volumes[activity]:,.0f}</div>'
+            f'font-size:14px;font-weight:750;">{volumes[activity]:,.0f}</div>'
             for activity in activities
         )
         hour_values = "".join(
             f'<div style="text-align:center;color:{COLORS["navy"]};'
-            f'font-size:13px;font-weight:750;">{vals[activity]:,.1f}</div>'
+            f'font-size:14px;font-weight:750;">{vals[activity]:,.1f}</div>'
             for activity in activities
         )
         share_values = "".join(
@@ -3972,7 +3972,7 @@ def render_case_office_cards(workload_df: pd.DataFrame):
                     border-top:4px solid {COLORS['navy']};
                     border-radius:12px;
                     padding:14px 11px 13px;
-                    min-height:215px;
+                    min-height:222px;
                     box-sizing:border-box;
                     box-shadow:0 2px 7px rgba(0,59,112,0.045);">
 
@@ -4006,12 +4006,12 @@ def render_case_office_cards(workload_df: pd.DataFrame):
                       display:grid;
                       grid-template-columns:56px repeat(4,minmax(0,1fr));
                       column-gap:3px;
-                      row-gap:8px;
+                      row-gap:9px;
                       border-top:1px solid #E7ECF1;
                       padding-top:11px;">
                     <div></div>{activity_headers}
-                    <div style="color:#667085;font-size:10px;font-weight:600;align-self:center;">ACTIVITY</div>{activity_values}
-                    <div style="color:#667085;font-size:10px;font-weight:600;align-self:center;">HOUR</div>{hour_values}
+                    <div style="color:#667085;font-size:11px;font-weight:600;align-self:center;">ACTIVITY</div>{activity_values}
+                    <div style="color:#667085;font-size:11px;font-weight:600;align-self:center;">HOUR</div>{hour_values}
                     <div></div>{share_values}
                   </div>
                 </div>
