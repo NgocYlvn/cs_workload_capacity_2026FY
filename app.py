@@ -2418,7 +2418,8 @@ def render_hc_office_comparison(hc_filtered_all_offices: pd.DataFrame) -> None:
             actual = weighted_period_avg(office_df, "Total Actual HC")
             required = weighted_period_avg(office_df, "Total Required HC")
             gap = required - actual
-            util = hc_capacity_utilization(office_df)
+            # Use the same HC totals that are displayed on this office card.
+            util = required / actual if pd.notna(actual) and actual > 0 and pd.notna(required) else float("nan")
             # Office status is determined by Office Workload (utilization),
             # using the standard workload thresholds:
             # < 90%       -> LESS LOAD / Green
@@ -2715,20 +2716,20 @@ def hc_variance_card(
     status_text: str,
     status_color: str,
     status_bg: str,
-    utilization: float,
+    gap_ratio: float,
 ):
     """Centered variance card to visually balance the HC cards."""
-    util_status_text, util_status_color, util_status_bg = status_from_util(utilization)
+    gap_ratio_text = "N/A" if pd.isna(gap_ratio) else f"{gap_ratio:+.1%}"
     st.markdown(
         f"""
         <div class="hc-kpi-card hc-variance-card">
             <div class="kpi-label">{label}</div>
             <div class="hc-variance-util">
                 <span class="status-badge"
-                      style="color:{util_status_color};background:{util_status_bg};">
-                    {util_status_text}
+                      style="color:{status_color};background:{status_bg};">
+                    {status_text}
                 </span>
-                <div class="hc-variance-util-value">{fmt_pct(utilization)}</div>
+                <div class="hc-variance-util-value">{gap_ratio_text}</div>
             </div>
             <div class="hc-main-row">
                 {ui_icon_svg("balance", "#6EA52B", "#F1F8E8")}
@@ -6724,7 +6725,7 @@ def main():
     required_pic = weighted_period_avg(f_hc, "Required HC PIC") if not f_hc.empty else 0.0
 
     hc_variance = required_hc - actual_hc
-    hc_utilization = hc_capacity_utilization(f_hc)
+    hc_gap_ratio = hc_variance / actual_hc if actual_hc > 0 else float("nan")
     
     if hc_variance > 0:
         variance_status = ("OVERLOAD", COLORS["red"], "#FEE2E2")
@@ -6763,11 +6764,11 @@ def main():
         hc_variance_card(
             "HC Gap",
             hc_variance,
-            "Required HC âˆ’ Actual HC",
+            "Required HC - Actual HC",
             variance_status[0],
             variance_status[1],
             variance_status[2],
-            hc_utilization,
+            hc_gap_ratio,
         )
 
     if office == "All Offices":
