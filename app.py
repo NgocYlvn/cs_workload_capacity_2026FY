@@ -30,13 +30,13 @@ import streamlit as st
 
 st.set_page_config(
     page_title="CS OPERATIONS PERFORMANCE DASHBOARD",
-    page_icon="ðŸ“Š",
+    page_icon="📊",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
 APP_TITLE = "CS OPERATIONS PERFORMANCE DASHBOARD"
-APP_SUBTITLE = "Capacity â€¢ Workload â€¢ Utilization â€¢ Performance"
+APP_SUBTITLE = "Capacity • Workload • Utilization • Performance"
 DEFAULT_FILE = "(Not for Office Input) MASTER DATA SOURCE.xlsm"
 APP_DIR = Path(__file__).resolve().parent
 DEFAULT_FILE_PATH = APP_DIR / DEFAULT_FILE
@@ -113,7 +113,7 @@ BUSINESS_COLORS = {
 
 # ============================================================
 # SHARED EXECUTIVE UI CONSTANTS
-# UI only â€” no business logic / calculation changes
+# UI only — no business logic / calculation changes
 # ============================================================
 
 UI = {
@@ -174,7 +174,7 @@ SHEET_NAMES = {
     "supporting": "7. S Vol.",
     "exception": "8. E Vol.",
 
-    # The new master workbook does not contain the former "Ghi chÃº" sheet.
+    # The new master workbook does not contain the former "Ghi chú" sheet.
     # Existing downstream fallback behavior is retained.
     "notes": "__NOT_USED_NOTES__",
 }
@@ -659,7 +659,7 @@ st.markdown(
 
 # ============================================================
 # EXECUTIVE / CORPORATE UI OVERRIDES
-# Shared styling layer only â€” business logic remains unchanged
+# Shared styling layer only — business logic remains unchanged
 # ============================================================
 
 st.markdown(
@@ -795,7 +795,7 @@ st.markdown(
         font-weight: 400 !important;
     }}
 
-    /* HC cards â€” equal structure */
+    /* HC cards — equal structure */
     .hc-kpi-card {{
         height: 184px !important;
         min-height: 184px !important;
@@ -820,7 +820,7 @@ st.markdown(
         font-weight: 700 !important;
     }}
 
-    /* Office Capacity Snapshot â€” semantic color hierarchy */
+    /* Office Capacity Snapshot — semantic color hierarchy */
     .hc-total-approved {{
         color: var(--navy) !important;
     }}
@@ -950,7 +950,7 @@ st.markdown(
 
 # ============================================================
 # FINAL UI/UX QUALITY OVERRIDES
-# UI only â€” no business logic / calculation changes
+# UI only — no business logic / calculation changes
 # ============================================================
 
 st.markdown(
@@ -1151,7 +1151,7 @@ st.markdown(
 
 # ============================================================
 # YUSEN 3C-INSPIRED FINAL UI LAYER
-# UI-only overrides â€” business logic/data/calculations unchanged.
+# UI-only overrides — business logic/data/calculations unchanged.
 # ============================================================
 
 st.markdown(
@@ -1298,7 +1298,7 @@ st.markdown(
         fill: var(--y-primary) !important;
     }}
 
-    /* HOME button â€” guarantee contrast */
+    /* HOME button — guarantee contrast */
     section[data-testid="stSidebar"] div[data-testid="stButton"] > button,
     section[data-testid="stSidebar"] .stButton > button {{
         background: #FFFFFF !important;
@@ -1430,9 +1430,9 @@ st.markdown(
 )
 
 # ============================================================
-# HOME / SIDEBAR / HEADER POLISH â€” YUSEN EXECUTIVE FORMAT
+# HOME / SIDEBAR / HEADER POLISH — YUSEN EXECUTIVE FORMAT
 # Consolidated UI layer for Sidebar + Main Header + Filter Summary + KPI hierarchy
-# UI only â€” business logic, calculations, filters and data mappings are unchanged
+# UI only — business logic, calculations, filters and data mappings are unchanged
 # ============================================================
 st.markdown(
     f"""
@@ -1459,7 +1459,7 @@ st.markdown(
     }}
 
     /* ------------------------------------------------------------
-       SIDEBAR â€” 248px clean executive navigation / filter rail
+       SIDEBAR — 248px clean executive navigation / filter rail
        ------------------------------------------------------------ */
     section[data-testid="stSidebar"] {{
         width: 248px !important;
@@ -1618,7 +1618,7 @@ st.markdown(
         margin:10px 0 9px 0 !important;
     }}
 
-    /* Upload â€” compact white card */
+    /* Upload — compact white card */
     section[data-testid="stSidebar"] [data-testid="stFileUploader"] {{
         margin-top:1px !important;
     }}
@@ -1648,7 +1648,7 @@ st.markdown(
         min-height:34px !important;
     }}
 
-    /* Sidebar footer â€” compact application metadata */
+    /* Sidebar footer — compact application metadata */
     .sidebar-footer {{
         margin-top:14px;
         padding-top:10px;
@@ -1671,7 +1671,7 @@ st.markdown(
     }}
 
     /* ------------------------------------------------------------
-       MAIN HEADER â€” compact executive card
+       MAIN HEADER — compact executive card
        ------------------------------------------------------------ */
     .main-header {{
         position:relative !important;
@@ -1809,7 +1809,7 @@ st.markdown(
 
 
     /* ------------------------------------------------------------
-       KPI ICON SYSTEM â€” clean executive layout
+       KPI ICON SYSTEM — clean executive layout
        Icons are concentrated in HC KPI cards and filter summary
        ------------------------------------------------------------ */
     .kpi-icon-circle {{
@@ -1889,7 +1889,7 @@ st.markdown(
         letter-spacing:-0.02em !important;
     }}
 
-    /* Section 1 HC cards â€” compact but fully readable */
+    /* Section 1 HC cards — compact but fully readable */
     .hc-kpi-card {{
         height:158px !important;
         min-height:158px !important;
@@ -1958,7 +1958,7 @@ st.markdown(
     }}
 
 
-    /* FTE Workload Status â€” align status text with adjacent KPI value */
+    /* FTE Workload Status — align status text with adjacent KPI value */
     .workload-status-text {{
         font-size:32px !important;
         line-height:1.05 !important;
@@ -2015,7 +2015,7 @@ st.markdown(
     }}
 
     /* ------------------------------------------------------------
-       LAPTOP 1366 Ã— 768
+       LAPTOP 1366 × 768
        Reduce whitespace, not core readability.
        ------------------------------------------------------------ */
     @media (max-width:1366px) {{
@@ -2129,7 +2129,7 @@ st.markdown(
 
 
 # ============================================================
-# OFFICE COMPARISON UI â€” ALL OFFICES ONLY
+# OFFICE COMPARISON UI — ALL OFFICES ONLY
 # UI layer only; KPI formulas / filters / business logic unchanged
 # ============================================================
 st.markdown(
@@ -2418,8 +2418,7 @@ def render_hc_office_comparison(hc_filtered_all_offices: pd.DataFrame) -> None:
             actual = weighted_period_avg(office_df, "Total Actual HC")
             required = weighted_period_avg(office_df, "Total Required HC")
             gap = required - actual
-            # Use the same HC totals that are displayed on this office card.
-            util = required / actual if pd.notna(actual) and actual > 0 and pd.notna(required) else float("nan")
+            util = hc_capacity_utilization(office_df)
             # Office status is determined by Office Workload (utilization),
             # using the standard workload thresholds:
             # < 90%       -> LESS LOAD / Green
@@ -2526,11 +2525,11 @@ def render_fte_office_comparison(fte_filtered_all_offices: pd.DataFrame, selecte
             </span>
             <span style="display:inline-flex;align-items:center;gap:7px;white-space:nowrap;">
                 <span style="width:10px;height:10px;border-radius:2px;background:{COLORS['high_load']};"></span>
-                High Load &gt;95â€“100%
+                High Load &gt;95–100%
             </span>
             <span style="display:inline-flex;align-items:center;gap:7px;white-space:nowrap;">
                 <span style="width:10px;height:10px;border-radius:2px;background:{COLORS['blue']};"></span>
-                Balanced 90â€“95%
+                Balanced 90–95%
             </span>
             <span style="display:inline-flex;align-items:center;gap:7px;white-space:nowrap;">
                 <span style="width:10px;height:10px;border-radius:2px;background:{COLORS['green']};"></span>
@@ -2716,20 +2715,20 @@ def hc_variance_card(
     status_text: str,
     status_color: str,
     status_bg: str,
-    hc_ratio: float,
+    utilization: float,
 ):
     """Centered variance card to visually balance the HC cards."""
-    hc_ratio_text = "N/A" if pd.isna(hc_ratio) else f"{hc_ratio:.1%}"
+    util_status_text, util_status_color, util_status_bg = status_from_util(utilization)
     st.markdown(
         f"""
         <div class="hc-kpi-card hc-variance-card">
             <div class="kpi-label">{label}</div>
             <div class="hc-variance-util">
                 <span class="status-badge"
-                      style="color:{status_color};background:{status_bg};">
-                    {status_text}
+                      style="color:{util_status_color};background:{util_status_bg};">
+                    {util_status_text}
                 </span>
-                <div class="hc-variance-util-value">{hc_ratio_text}</div>
+                <div class="hc-variance-util-value">{fmt_pct(utilization)}</div>
             </div>
             <div class="hc-main-row">
                 {ui_icon_svg("balance", "#6EA52B", "#F1F8E8")}
@@ -2951,7 +2950,7 @@ def plotly_layout(
     margin_top: int = 62,
     margin_bottom: int = 44,
 ) -> go.Figure:
-    """Shared Executive/Corporate Plotly layout â€” UI only."""
+    """Shared Executive/Corporate Plotly layout — UI only."""
     legend_cfg = dict(
         font=dict(size=UI["axis_size"]),
         bgcolor="rgba(0,0,0,0)",
@@ -3066,8 +3065,8 @@ def load_data(path: str, cache_token: str = "") -> Dict[str, pd.DataFrame]:
     except Exception as exc:
         logger.exception("Unable to open workbook %s", path)
         raise WorkbookLoadError(
-            "KhÃ´ng thá»ƒ má»Ÿ file Excel Ä‘Ã£ chá»n. Vui lÃ²ng kiá»ƒm tra Ä‘á»‹nh dáº¡ng "
-            "file, máº­t kháº©u báº£o vá»‡ vÃ  cáº¥u trÃºc workbook."
+            "Không thể mở file Excel đã chọn. Vui lòng kiểm tra định dạng "
+            "file, mật khẩu bảo vệ và cấu trúc workbook."
         ) from exc
 
     for key, sheet in SHEET_NAMES.items():
@@ -3087,8 +3086,8 @@ def load_data(path: str, cache_token: str = "") -> Dict[str, pd.DataFrame]:
         except Exception as exc:
             logger.exception("Unable to read sheet %r from workbook %s", sheet, path)
             raise WorkbookLoadError(
-                f"KhÃ´ng thá»ƒ Ä‘á»c sheet '{sheet}'. Vui lÃ²ng kiá»ƒm tra dá»¯ liá»‡u "
-                "hoáº·c Ä‘á»‹nh dáº¡ng cá»§a sheet nÃ y."
+                f"Không thể đọc sheet '{sheet}'. Vui lòng kiểm tra dữ liệu "
+                "hoặc định dạng của sheet này."
             ) from exc
 
     return data
@@ -3107,14 +3106,14 @@ def prepare_hc(df: pd.DataFrame) -> pd.DataFrame:
     df["Office"] = df[office_col].map(normalize_office)
     df["MonthDate"] = df[month_col].map(parse_month)
     mapping = {
-        "Approved HC MNG": ["Approved HC â€“ MNG", "Approved HC (MNG)"],
-        "Approved HC PIC": ["Approved HC â€“ PIC", "Approved HC (PIC)"],
+        "Approved HC MNG": ["Approved HC – MNG", "Approved HC (MNG)"],
+        "Approved HC PIC": ["Approved HC – PIC", "Approved HC (PIC)"],
         "Total Approved HC": ["Total Approved HC"],
-        "Actual HC MNG": ["Actual HC â€“ MNG", "Actual HC (MNG)"],
-        "Actual HC PIC": ["Actual HC â€“ PIC", "Actual HC (PIC)"],
+        "Actual HC MNG": ["Actual HC – MNG", "Actual HC (MNG)"],
+        "Actual HC PIC": ["Actual HC – PIC", "Actual HC (PIC)"],
         "Total Actual HC": ["Total Actual HC", "Total Actual  HC"],
-        "Required HC MNG": ["Required HC â€“ MNG", "Required HC (MNG)"],
-        "Required HC PIC": ["Required HC â€“ PIC", "Required HC (PIC)"],
+        "Required HC MNG": ["Required HC – MNG", "Required HC (MNG)"],
+        "Required HC PIC": ["Required HC – PIC", "Required HC (PIC)"],
         "Total Required HC": ["Total Required HC"],
         "HC Available Hours": [
             "Total Available Standard Time (95%x8x22xPIC)",
@@ -3683,7 +3682,7 @@ def prepare_case_detail(
 @st.cache_data(show_spinner=False)
 def prepare_code_note_map(df: pd.DataFrame) -> Dict[str, str]:
     """
-    Sheet 'Ghi chÃº':
+    Sheet 'Ghi chú':
         Col A = Scope of Job code
         Col B = description.
 
@@ -3725,9 +3724,9 @@ def add_code_description(
 
     Priority:
     1) A/S/E: source description already available in the corresponding sheet.
-    2) C: lookup suffix of Scope code against sheet 'Ghi chÃº'
+    2) C: lookup suffix of Scope code against sheet 'Ghi chú'
        e.g. AE-ABBB -> ABBB -> Air Freight Only.
-    3) Fallback: lookup whole code in 'Ghi chÃº'.
+    3) Fallback: lookup whole code in 'Ghi chú'.
     """
     if df is None or df.empty:
         return df
@@ -3847,7 +3846,7 @@ def render_case_office_cards(workload_df: pd.DataFrame):
     - Cards use sheet "4. Workload by Activity" as the single source of truth.
     - Total Activity sums activity-volume columns by Office.
     - C / A / S / E and Total Hour sum workload-minute columns by Office and
-      convert them to hours after Month / Office filtering. Round only for display.
+      convert them to hours after Month / Office filtering.
     - HPH is displayed as HLC to follow the dashboard's standard office naming.
     """
     if workload_df is None or workload_df.empty or "Office" not in workload_df.columns:
@@ -3906,7 +3905,7 @@ def render_case_office_cards(workload_df: pd.DataFrame):
             font-size:20px;
             font-weight:700;
             margin:4px 0 10px 2px;">
-            C / A / S / E Volume &amp; Hours by Office
+            C / A / S / E Activity (hour) by Office
         </div>
         """,
         unsafe_allow_html=True,
@@ -3951,12 +3950,12 @@ def render_case_office_cards(workload_df: pd.DataFrame):
         )
         activity_values = "".join(
             f'<div style="text-align:center;color:{COLORS["navy"]};'
-            f'font-size:14px;font-weight:750;">{volumes[activity]:,.0f}</div>'
+            f'font-size:13px;font-weight:750;">{volumes[activity]:,.0f}</div>'
             for activity in activities
         )
         hour_values = "".join(
             f'<div style="text-align:center;color:{COLORS["navy"]};'
-            f'font-size:14px;font-weight:750;">{vals[activity]:,.0f}</div>'
+            f'font-size:13px;font-weight:750;">{vals[activity]:,.0f}</div>'
             for activity in activities
         )
         share_values = "".join(
@@ -3973,7 +3972,7 @@ def render_case_office_cards(workload_df: pd.DataFrame):
                     border-top:4px solid {COLORS['navy']};
                     border-radius:12px;
                     padding:14px 11px 13px;
-                    min-height:222px;
+                    min-height:215px;
                     box-sizing:border-box;
                     box-shadow:0 2px 7px rgba(0,59,112,0.045);">
 
@@ -3993,7 +3992,7 @@ def render_case_office_cards(workload_df: pd.DataFrame):
                     <div style="text-align:right;min-width:135px;">
                       <div style="color:#667085;font-size:16px;font-weight:700;">TOTAL</div>
                       <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-top:4px;">
-                        <span style="color:#667085;font-size:11px;font-weight:600;">VOLUME</span>
+                        <span style="color:#667085;font-size:11px;font-weight:600;">ACTIVITY</span>
                         <span style="color:{COLORS['navy']};font-size:20px;font-weight:800;">{total_activity:,.0f}</span>
                       </div>
                       <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-top:3px;">
@@ -4007,12 +4006,12 @@ def render_case_office_cards(workload_df: pd.DataFrame):
                       display:grid;
                       grid-template-columns:56px repeat(4,minmax(0,1fr));
                       column-gap:3px;
-                      row-gap:9px;
+                      row-gap:8px;
                       border-top:1px solid #E7ECF1;
                       padding-top:11px;">
                     <div></div>{activity_headers}
-                    <div style="color:#667085;font-size:11px;font-weight:600;align-self:center;">VOLUME</div>{activity_values}
-                    <div style="color:#667085;font-size:11px;font-weight:600;align-self:center;">HOUR</div>{hour_values}
+                    <div style="color:#667085;font-size:10px;font-weight:600;align-self:center;">ACTIVITY</div>{activity_values}
+                    <div style="color:#667085;font-size:10px;font-weight:600;align-self:center;">HOUR</div>{hour_values}
                     <div></div>{share_values}
                   </div>
                 </div>
@@ -4023,15 +4022,15 @@ def render_case_office_cards(workload_df: pd.DataFrame):
 
 
 def render_case_total_cards(workload_df: pd.DataFrame):
-    """Section 5 activity volumes and workload hours across standard offices."""
+    """Section 5 C/A/S/E totals across the four standard offices."""
     if workload_df is None or workload_df.empty:
         return
 
     source_map = {
-        "C": ("Core Volume", "Core Workload (min)", "Total Core (C)", COLORS["blue"]),
-        "A": ("Ancillary Volume", "Ancillary Workload (min)", "Total Ancillary (A)", COLORS["green"]),
-        "S": ("Supporting Volume", "Supporting Workload (min)", "Total Supporting (S)", COLORS["amber"]),
-        "E": ("Exception Volume", "Exception Workload (min)", "Total Exception (E)", COLORS["red"]),
+        "C": ("Core Volume", "Total Core (C)", COLORS["blue"]),
+        "A": ("Ancillary Volume", "Total Ancillary (A)", COLORS["green"]),
+        "S": ("Supporting Volume", "Total Supporting (S)", COLORS["amber"]),
+        "E": ("Exception Volume", "Total Exception (E)", COLORS["red"]),
     }
 
     d = workload_df.copy()
@@ -4043,43 +4042,31 @@ def render_case_total_cards(workload_df: pd.DataFrame):
         return
 
     totals = {}
-    hours = {}
-    for activity, (volume_col, minute_col, _, _) in source_map.items():
+    for activity, (source_col, _, _) in source_map.items():
         totals[activity] = (
-            float(pd.to_numeric(d[volume_col], errors="coerce").fillna(0).sum())
-            if volume_col in d.columns else 0.0
-        )
-        hours[activity] = (
-            float(pd.to_numeric(d[minute_col], errors="coerce").fillna(0).sum()) / 60.0
-            if minute_col in d.columns else 0.0
+            float(pd.to_numeric(d[source_col], errors="coerce").fillna(0).sum())
+            if source_col in d.columns
+            else 0.0
         )
 
     grand_total = float(sum(totals.values()))
     total_cols = st.columns(4, gap="medium")
     for card_col, activity in zip(total_cols, ["C", "A", "S", "E"]):
-        _, _, label, color = source_map[activity]
+        _, label, color = source_map[activity]
         value = totals[activity]
         share = safe_div(value, grand_total)
         with card_col:
             st.markdown(
                 f"""
-                <div style="background:#FFFFFF;border:1px solid {COLORS['border']};
-                     border-top:4px solid {color};border-radius:12px;
-                     padding:15px 14px 14px;min-height:178px;box-sizing:border-box;
-                     box-shadow:0 2px 7px rgba(0,59,112,0.045);text-align:center;">
-                    <div style="color:{color};font-size:16px;font-weight:700;line-height:1.35;">
-                        {label}
+                <div class="kpi-card" style="border-top:4px solid {color} !important;">
+                    <div class="kpi-label" style="color:{color} !important;
+                         font-weight:700 !important;">{label}</div>
+                    <div class="kpi-value" style="color:{COLORS['navy']} !important;">
+                        {value:,.0f}
                     </div>
-                    <div style="display:grid;grid-template-columns:75px auto;
-                         column-gap:8px;row-gap:4px;align-items:baseline;
-                         max-width:190px;margin:9px auto 0;">
-                        <span style="color:#667085;font-size:11px;font-weight:600;">VOLUME</span>
-                        <span style="color:{COLORS['navy']};font-size:22px;font-weight:800;text-align:right;">{value:,.0f}</span>
-                        <span style="color:#667085;font-size:11px;font-weight:600;">HOUR</span>
-                        <span style="color:{COLORS['navy']};font-size:22px;font-weight:800;text-align:right;">{hours[activity]:,.0f}</span>
-                    </div>
-                    <div style="color:#667085;font-size:18px;line-height:1.2;
-                         font-weight:500;text-align:right;margin-top:6px;">
+                    <div style="color:#667085;font-size:18px;
+                         line-height:1.2;font-weight:500;text-align:center;
+                         margin-top:5px;">
                         {share:.1%}
                     </div>
                 </div>
@@ -4096,7 +4083,7 @@ def chart_case_allocation(df: pd.DataFrame):
         st.info("No C/A/S/E workload data available for selected filters.")
         return
 
-    pair_panel_title("Workload Composition by Category")
+    pair_panel_title("Workload Composition by Activity")
 
     plot_df = (
         summary[summary["Total Workload (min)"] > 0]
@@ -4357,7 +4344,7 @@ def render_workload_breakdown_table(df: pd.DataFrame):
         st.info("No workload breakdown data available for selected filters.")
         return
 
-    pair_panel_title("Categories by Segment")
+    pair_panel_title("Activity Breakdown")
 
     display = summary.copy()
 
@@ -4607,7 +4594,7 @@ def prepare_resolution(df: pd.DataFrame) -> pd.DataFrame:
 @st.cache_data(show_spinner=False)
 def prepare_yvf(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Sheet 'YVF' â€” source structure:
+    Sheet 'YVF' — source structure:
         OFFICE | [Month, if available] |
         Total YVF booking/month | Total IFF shipment/month | YVF booking ratio
 
@@ -4818,7 +4805,7 @@ def chart_office_capacity_trend(df: pd.DataFrame):
             if value
         )
     is_all_offices = len(visible_offices) != 1
-    chart_title = "HC Capacity Trend" if is_all_offices else f"HC Capacity Trend â€“ {visible_offices[0]}"
+    chart_title = "HC Capacity Trend" if is_all_offices else f"HC Capacity Trend – {visible_offices[0]}"
 
     trend_source = df[
         ["MonthDate", "Total Approved HC", "Total Actual HC", "Total Required HC"]
@@ -4911,7 +4898,7 @@ def chart_office_capacity_trend(df: pd.DataFrame):
         )
     )
 
-    # Actual HC line â€” baseline for the shaded Actual vs Required gap.
+    # Actual HC line — baseline for the shaded Actual vs Required gap.
     fig.add_trace(
         go.Scatter(
             x=trend["Month"],
@@ -5055,7 +5042,7 @@ def chart_workload_by_pic(fte_df: pd.DataFrame, selected_office: str):
     PIC Workload.
 
     Business display rule:
-    - PIC Workload (hrs) = CS FTE Factor Ã— Available Standard Time / PIC.
+    - PIC Workload (hrs) = CS FTE Factor × Available Standard Time / PIC.
     - Available Standard Time / PIC = 167.2 hrs/month.
     - Utilization = PIC Workload / 167.2 = CS FTE Factor.
 
@@ -5064,8 +5051,8 @@ def chart_workload_by_pic(fte_df: pd.DataFrame, selected_office: str):
     - All Offices: show Top 10 PICs by Utilization across all offices.
     - Colors:
         >100%      = Red (Overload)
-        >95%â€“100%  = Amber (High Load)
-        90%â€“95%    = Blue (Balanced)
+        >95%–100%  = Amber (High Load)
+        90%–95%    = Blue (Balanced)
         <90%       = Green (Less Load)
     """
     if fte_df is None or fte_df.empty:
@@ -5092,8 +5079,8 @@ def chart_workload_by_pic(fte_df: pd.DataFrame, selected_office: str):
     def _status(util):
         # Standard workload color rule:
         # >100% = Overload / Red
-        # >95%â€“100% = High Load / Amber
-        # 90%â€“95% = Balanced / Blue
+        # >95%–100% = High Load / Amber
+        # 90%–95% = Balanced / Blue
         # <90% = Less Load / Green
         if util > 1.00:
             return "Overload", COLORS["red"]
@@ -5123,7 +5110,7 @@ def chart_workload_by_pic(fte_df: pd.DataFrame, selected_office: str):
             lambda r: f"{r['Office']} | {r['CS PIC']}",
             axis=1,
         )
-        subtitle = "Top 10 PICs by Capacity Utilization â€“ All Offices"
+        subtitle = "Top 10 PICs by Capacity Utilization – All Offices"
     else:
         display = (
             pic_data[pic_data["Office"] == selected_office]
@@ -5134,7 +5121,7 @@ def chart_workload_by_pic(fte_df: pd.DataFrame, selected_office: str):
             .copy()
         )
         display["PIC Label"] = display["CS PIC"].astype(str)
-        subtitle = f"All PICs â€“ {selected_office}"
+        subtitle = f"All PICs – {selected_office}"
 
     if display.empty:
         st.info("No PIC workload data available for selected filters.")
@@ -5270,8 +5257,8 @@ def chart_workload_by_pic(fte_df: pd.DataFrame, selected_office: str):
             white-space:normal;
             flex-wrap:wrap;">
             <span><span style="display:inline-block;width:9px;height:9px;background:{COLORS['red']};margin-right:5px;border-radius:2px;"></span>Overload &gt;100%</span>
-            <span><span style="display:inline-block;width:9px;height:9px;background:{COLORS['high_load']};margin-right:5px;border-radius:2px;"></span>High Load &gt;95â€“100%</span>
-            <span><span style="display:inline-block;width:9px;height:9px;background:{COLORS['blue']};margin-right:5px;border-radius:2px;"></span>Balanced 90â€“95%</span>
+            <span><span style="display:inline-block;width:9px;height:9px;background:{COLORS['high_load']};margin-right:5px;border-radius:2px;"></span>High Load &gt;95–100%</span>
+            <span><span style="display:inline-block;width:9px;height:9px;background:{COLORS['blue']};margin-right:5px;border-radius:2px;"></span>Balanced 90–95%</span>
             <span><span style="display:inline-block;width:9px;height:9px;background:{COLORS['green']};margin-right:5px;border-radius:2px;"></span>Less Load &lt;90%</span>
         </div>
         """,
@@ -5327,7 +5314,7 @@ def chart_workload_composition(df: pd.DataFrame):
             text=[f"{row['Activity']}<br>{row['Share']*100:.1f}%" if row["Share"] > 0.06 else ""],
             hovertemplate=f"{row['Activity']}: {row['Hours']:,.1f} hrs ({row['Share']*100:.1f}%)<extra></extra>",
         ))
-    fig.update_layout(barmode="stack", xaxis_tickformat=".0%", title="Workload Composition â€“ C/A/S/E")
+    fig.update_layout(barmode="stack", xaxis_tickformat=".0%", title="Workload Composition – C/A/S/E")
     fig = plotly_layout(fig, 320, show_legend=True, legend_position="top", margin_left=52, margin_right=40, margin_top=66, margin_bottom=44)
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
@@ -5377,7 +5364,7 @@ def build_segment_workload(
     mode_df: Optional[pd.DataFrame] = None,
 ) -> pd.DataFrame:
     """
-    Section 4 source table â€” Workload by Segment.
+    Section 4 source table — Workload by Segment.
 
     Business fields:
     - Allocation Time (h): total workload hours from BU allocation.
@@ -5528,7 +5515,7 @@ def chart_service_matrix(
     df: pd.DataFrame,
     mode_df: Optional[pd.DataFrame] = None,
 ):
-    """Workload by Segment â€” compact pie chart."""
+    """Workload by Segment — compact pie chart."""
     seg = build_segment_workload(df, mode_df)
     if seg.empty or float(seg["Allocation Time (h)"].sum()) <= 0:
         st.info("No segment workload data available for selected filters.")
@@ -6085,7 +6072,7 @@ def render_yvf_table(df: pd.DataFrame):
 
 # ============================================================
 # COVER / WELCOME PAGE
-# UI only â€” does not change business logic or dashboard calculations
+# UI only — does not change business logic or dashboard calculations
 # ============================================================
 
 def render_cover_page() -> None:
@@ -6450,7 +6437,7 @@ footer{display:none!important}
 <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAKcAAAA8CAIAAACM1T07AAAuAUlEQVR42pV9d5xdVbX/Wnufc9vcOzOZmkmdFAhJSKN3RHgYighIL4+iFJUOCsIPFRQBIzwReSgPFLAQNCgIPoFAkABBUkiB9EwySSaTZGYy9dZzzt7r98dp+5RJePczH8jnllP2WnuV7/quddAwDAAgIgBAAAAARAQARCIiIgRARILACxHtnwCR+ykBASB6RwsezH3f/sh+EyB02MAp7E+JnB8Hv4yIQIFfk3f9ABT81P+yc1P2V1D5MaH9qy/8ci8PAAEBSDk9Ebl3Hb5Dilw2RlYs+nKkE7m80OEJCAFjV4RcSTk/VKWuXkf4BgAoeBJvKUmVfWDtyZaupyPO6gBAZHlVNbKvgMA7gbu00ZXyLju4Iqh89QArqmo8Bs4xnFYRUawAIF6J/c0QuCp1heN+6208VerDn8XXAV9KwaUOXL8t9ai6YXAJkICAHNlQnNgASDmx+lvvyOr+GFbfvc1NQKGvAbqr6N9cSItVYbraA6qBCQvVU03vH8oFIiANb49QuTVvAyhXErzPwLe9RQU4gE4G7yhidwN6oN6Uf7++2nnH0dTdHFoab/F9jSBfeuQIGAHBXzh1/dw31WVQtS+glRjYB851+kdC//fkmzLH3sRaZvc46k2h4rbC+1tdTfeY5MsyqHwI6q0RRHZz1KDFmRxUREX7seTKvfiS8HXUlStRRGsBAAObxz6FYRjOBlTl7UkkqKARfY3ZDQhIETu0X9MUY3JDd46Izq242qb4zrAZHFYPhrOJwcsLnj2yUQK2z99hw8UoztGG90T0xUOJGDd74B+obsLTcuZ8iFHHiBRR0KjIhzF9rloNc7f7M2KqjQoYCVL1BiM2CT3HZ6/ysJYTIWR7ANRvByIMX+QYuU5UI8HA9St//iWF7KgSZPnvUMA/Rp0WQpzLIxhWKIrPUl9aaAnIicvI2V7BJfY9NCJEF+8AiheWfIzNC9pJjP1I3WeBmBGibhtDiuJ4ByeWxqAqUDRQRc9UKhbVjkwRhnPKpAg14EpCmYUX1ceuj+vG1PjXPmDAF1P4xI4tDMbznpskR+rk2neMFc3//YVxLnOYHCH8OyXsV/dB4OcUyPzI3ahh7xMb33liIFLjDNusAarrA2SfC5UogdQEJbxHHbkOo7XhwE1xQ0jkLRGGhI6ODw34HfszCmuXKumAyN0YxUuIGKg5gftPJITAFTqvA0aY/pcj6x79OSIGskT3z1sL9R3ydR4dS+qkE+Gk1nsp0Se68b/y5we6SE7+jrabIAjbDyHJkiQllQyroysfEqf782DUGQUeVOVQ0xZfnBQRlRs1o6JLaN8OhnbRF9qxiICApp25+Trqen3w46boET1rGQVM6ECJbGhTIsRgO7GRY2z8GHO0iKlQDb2XL6Ga0LvBtB8fuzbEFqNhUdmUu3vzv39jVUN17rZLD6c4pCik4PHReOSuDrhEESdIqkk9IMgTxYK0QLaJqmGm4YI1bzO60QSp14rhQGk/SkgBfxWXNUUvOqT7iqVFCoJA0e94vo9C24s87+3aSjcttaS0JO3uK/zkz8veW7JVmNarD18oJQEyz2dTCIFAb20iUU1ke2BIReLuPaLW3nfoABG/C0OGtFOjYTV1v3E3Bf+jRrNEYWgzaMdCt0AhscedlSi8ilHtjiSQ8TsAyZeUEiGquTkQkZCACELSu593/O7Nte+u3l4pW5Lp01pqJ42qQUdDPLUGgAMkNzEOLhL6xcaHYZErixlOcYNZHfkRVRgQ1SJxRwSNCgKB6K+wB48pQvVwlWFAMT/+DfmyOBggmIT4a0lR3QmbRDXwChn/QNLl7R0CIEJJACSlkDv2Fd9d3fHrt9du29lPGgNCpvOMrt143hHZlBbRQEQMe5Ivktsomgb7g5si8Es8mO8LgeKk56+nFhuRhbTM9WHgmnBEf2tRSLkcTD6kCiFsjkJKFBaRf3R0o1zyrwSDdjIEypKXwvjfcaEjFzhGpTIiyVMjaQnY0Nn7swUrFi/fViRuMM1kGhIyAmQ0u7XhkhMmEiARMCR05IQ+jGiH3EHb6wGCIacTCmb354+/QC5MFMAzbIPr7hQvMHSuU1MXC4J1iAgmE8QJ0AX8wl4TSE1L3NgKo5GL6w8xipMrVlItvoVTprgiio1g+XAxESJRID8iAJSADJy9XjFFR8/Qq5+0L1qx/bOdvfli2QKSACTs9A0FQhblVWfMyOjMx3XQ11g7SAyu/P4qZhhBbEBNzIDCgaG7jBQDNsVAUmqaFyqaAYCmLhb4wLuSt6p5zn6Ml/sNP8HyaygOoIrDFcowNrmkgIeMbAuKuhJbsOAI29vnLrIDkhBIApEANAUVKlbb3sHP23s++nzXe591DAxZZcYZWYjIkSURTAmWWeEgiOsnHz7hzDljEQL6HBUNqMnQfiCKaPkn4C4CNjIMyamuXUlno9ilGlyr16BBcPOhfUok1fFhrIqFAEUMR2suBA3kb4i42kM49yWMVDhxmBAv6PExXHSyZU5AgAyIiAxLmkKUTat7oPT2iu1/eH/jtp2DZdQkYxoKyTkiS3A9I3jryNz1Z0y/59eLBy2TgVHF5N0XHFmV4JKQ2/qmGB4HzSQFoh8mbo/W+x01DcAhzhvo2c4gykRKXIRBkCOwOMN5ByJtvxEjkhvcuirjIBgYAZhCxoWU2NvLz0iBBfwkSSmCoAd+u/lzwEeGkC/EYJHXNxFedieJLOEEkIWysWzT3n8u2/bByu1tXfmSYXCNGGMSEwicccaJdMbOPWr8tacfMmlk7o5nFw8KsFADgp98a+60UdUaA4YUxc/JCz9dkaO6FyN1cR+Go7gMwKswKXpDLoTnY3kHrNIOgyX4iOww0aNa3gwU+GKTohgHRhAoEARx0KDXiWAVFFPGx1COEC7/AgFJAgBkSEA0WDRWtfeu2rJnydrdH27sHhwoAhByEiQYl4wkkJQmJROpmeMbzjnxoIuOm9zaWFURdNPT77/x4bYkVjQprz17zkXHH5TUmatP3rp4PCLflkYJDXTAglPE5QfK9sHkiPYj0f0jPOp+9lgVw/3eL/7bPIX9Mn5CjCsMxrIhGxULXga1AdU0UbE4LsKKSERCEgIwBACqWKJnyOjoyS/5vOOdVTtWbu6uFEqQ0klLmpJJkkgCRYWEKSyq0/mY0dWnnzj1kuMOntRUzRgwwP6icevTC99b0VGWyFjispMn/+y6E3QGyGLJBGpGOQwdSmEJEFFIOJ69inzyf6hQY1zoEx/2IsZY+NiToUIc+KLIX8SpeAUPdbNAWPohHIoIQlwVP1VjCBxJIlpCDhYrn23rfnvNrvfX7Nq3eyBfKRvSNCVZxJADkwSCgCEHTApRl9G+NH3MmcdOmjpxVG11JqmxJEeNLCnZko177nzyzR19RgW0NOc3fHX2nV+fqWvMi68gGMrE44kqFkZBkxWsECsMojBRIFrFcWt96H0znLnFoZkYKrY6Fj6OykNKVB+qrlJ8VTBocxBDWz120ysVObuUCZFc1kHDpZMVEYC0JFYsKlWMHd35DR3963f0btzW29bV3zNQLBqiIgilidICsiQwQtCQpRHqarTDJjTNntx46ISGqaNHNNSmk7qj8VIK07R686WnF3zw8qL1e8uIPNVSn7378uMuOG5CVVqPYWYqoqRQEqVs1XAgGpvYRYyrJ6rorkOFp6XWwzBSxg2ohWecXKXUMI5nSEqG7RfdQ6GH8g6GZRkILVVIhvwkDsJgMvmhkH1H9reElBVLlitW72CxayC/dlvXJ+v3rG3v3rmnv2SgyXXJNHSzQ46U4MQ1ltQzdVXJuhHZgyaO/Mphrccc1FiXS6cSGmMoBHmkXsuyhgqlD1a2/ejZhe279kmNJzK1syY1/exbp85oreecASBjdroXDSfChDufnBnh4mG8I/cJOfHchVABbtiCBmHUfkQLHq7n1YJFCPLBL4wzSxQTTqu+Sl0bhEhJ2rfZweKgvatdA4cghQRTEDImpGzf3ffqx1sWLd+6eeOOfKFcQZIIGkPGOSSSOiONEUkgCzSdjZnQNPeI1hnjRsye2FSfS2WTejrBkEBIIrdGqXEUQlRMyxK0Z9/gjY8sWLl+pyUM1JNplnz0xtO+esI0XWMVS+pSJhIaEAPy0GXPDtJwySfGYmdBUMT3cHhgHgqp8ZBiyb0KXggWw3jGreszVY5sPMnoizJlYqpnGAmw90+ukUJa0s5QZFtHz8IVWz9YsX19e8/O3qJZrmhoMi4RCRCkJGEx1BJNzXVTxjUcO33M7CmjxzXXjm+ubsgmSUpL2pE8MUTOEJHZ20oIKSUBoCS5ePW2pxcs/deabUa5SERA/LIzDr987pye/tKGzn3tHb0d7XsrUvzl4StHVKfDZfN4Ol3Mxth/NQwwjig1fLWNFH+KcT0FOByoqppncmP42HA/PoAMRi6xHO9AFdlNMQMcRCIv9hWSJBFDzBcra9r2LFrW9o+PNmza3ktELMGBMSGkMIU0TdRYY1ViQkvtIYeMnXPw6OkTm2dOakxqGmPMPo/GGOPM51VKSa4LsTMLU8qNO7oXrdj6x4Xr1m/vJ8akKEthkCRAPmJE9UDvkEYSAQSwiaNrXn30yomjasjBTKRXtFN54qFuiqDzCkd8GKlp7od8PZzUVaQ9HKErnKsYZkcohg9kFB6UrwjYDx2jAPLwlkKFS32vQU4pmxCAJADs7Sv89b3Pfv3nD3u6+yjBhUSLmMAEsyALZn1N+tBDx597/JTDDxnZNCLLuGZH1JyhzpExADttQ0SGCE7hW5AkIimlkLJi0a6ewRffXPXKe2sGugcgmTS4BhxRmkhETCNESbJvoAgIFgFDGt+ce/mnV46qr5IEDCFIs/NTR4gEMhi0zGpoFg5p4wrEoERtEMna0S0axpQUYbiKa7hACABommao9EL7xRBCgHFMY4Nz0S4PSenbsC9X2mAHScOSa7fu/p8FH320anvXYMG0TJMQJSSlrGlqOGzGxNOPPujwg5tb6rLVVXqCc40zdDYwSLCBAUJH2oiIjKFX6TEtsbtnaM2mPQv/vWnN+p3buvr6S6ZFjCHpCLquJTKpRDKRziRzKa2lqXbRsq2loTxnEiU/Zsa4X9x1zuSWGk3jGClfOsV+PIBdjd2yajUS9x/S+61eCoEvcKII5VMVmVKZjJ5Ci6Ef7QetixzIAXEwiNw5pFJQm70IUBKRJCmpUDb+vWbbgjeXL/pkw74CmDyRYJDW9Skt9YdPG3fiUYccOW1Mc006k9Q1jkKSkMSYE6czRiSlu4gMwO+yk073DSJCpWK+v6xt9758NqMff9SkkzRiwNJJrSqdqqnJNY3INtWmqzNJZGzllj1/eWuNVbI4Ql0mceF/zL7j8pMbqtO6xn1543ApN8YQH4KEOFLInOE2IIWOBqgkNaR0rqiBcoCPiNHMcVicIIS8OdGc0krmkakO2B6GUcjJ56YRKlvCtn5CyHyhsq2z5+Fn/ve9jzaYXEvoXE+mc3piwkFjvnPRMUdPH51LJ3WOREAMOWPMdThSCCFJ1zkCkPR5kqSAPYwhIkOGyJiDyZMUUkqSJO3cS0oJlkBTyKGStWff0DOvLX990YYKaildTB5de/91p58wY7TOgdnuAjEuUAlSs10j5vdxKu1/FIaoY2vKEZ5CoD1QLcBhLL4StdAUzI9C8Zbm5vgu9KMoqmqfKYLIRtM534eFEBsCKaUlZMeefff/4pWFH2wqYSKhJVJGZcqUCXdcdfLRM8Y31WVN0zJMYVoWEQMAFCAQgNCwZKFo5PPFVevbTzpyysimEcBciqzPtSA3jCHvZoQkIaRlCWGXKyQQQblsrt6yZ/6/1n68bPvu/pIg0JEdOX3UXZcdfcy0UVVJHujYc+6IQozhUFExBqcL0M1VpnO0zzWY+oLSeeQtskdEULJzCtPdlK6oULdd5EQaKLGbo0RxNVMV4qFheXYYFD8Bob3legeGnn7p3ef+8M5gmQzK1NVlLz9z1gVnzJk9ZTRjHIGQsa6B4rq2zg1bO7fv7OrqHujrz/cOFHv6y715UTSILOuYmY1nfXmOgg+6t49kb38JDBgxIM4AgRChUDJ27h3YtGvfys27N6zr2L6nf8e+/ny+ICxAxlvHNJ572szzT54+a3ITIgNJyABIAkKoi4yGbz+DSK1aZWCSx5skFdQdtkoJAUr8cITFSNE2CHtELjUILhGgUakEqHcKxLYffm54T5MSe6jsCgLTku8vXffAvD9t2d5pYLqptuHcrx17x1WnNo7IGIa5a0/vmvU731m8Ztmq9p27eyumJMaJkSSUUth1bI5S43zS+OYF/33zqMaspmmcMyc+liRJAklB1D9Y3tM92NOf7+4aaNvZvWZbz6bOoY6uIbNYIiFIA8m4BTgipU1urjpk1oRLT5t9xJTRCV0DAG4H/zEZd4DKEr1xZ80DBSNSyIX0BTnq6J0Hh036KRhu778wE22uU+v3WKlUYgk98X1fwzC5AmQSIpuLRgS9A8V7Hn5x4TtLyqQxQ37r25ddd/EJmVQiXyj9+W+LF7yyyCiWqptHtk4c0zpu9LgxDQ311ckEL5QrSKJUKd//yPyu3ryu6YfOnjz/sRtaGnIADBky5vJtpCQpQQpBsGvv0Mb2ng1b92zb2b19V09Hz2Bff6k0WKhUjEoiYepJlEQkpk9quumCI888eVZVKpFMaIwxIuluRsd4eIGQ3+OJwyZJdhcKRnKwUDAVBsaJAlBrcFtSvCBjCDw4vCWIAXGdIInCOLxDQgpWjfCAYBP62k1AJMGw5JJPN/503gurN27XefLs/zj66ou/UlOd+tNf3l6zth00ffaU8T+879qxoxqaGmsSCY0xpnFmh82GJVeu3fbor97p7SvU5VI3XXPG1Ref0lCbZQyJgKQ0hZM02juUEEhSc31VfW3mqJljhCTDEmVD5EuVHXt6P/y8440PN7dt2QmIDKhrT9feXV3ZTErnjDHG0EmAiDAIsQZKf6B2EqFa5gKlHdiHOkBJa6PESH8MhAO1RKhgMd3ebnjvhh2oskm9yk4QMqR49UI3Xw/ODokzPk5xTNH/CLeVSNhtQZXK399Zde+Pny+WClNbm6655ryZU8atWLXp01UbD5o0+qTjZ04c15zNpDSNCWHbaRAkpaDBfHnTtr3/fG/V395YWhHysBljbrv2jKNnT0ildM40YCiFNExhWZZpWPmiuW+gIKQ0TLNYMgYLlf58cXCwODBQ6OrLt+3p39tf2ttbKOXLAiCZ0cbU5ebMnHDVWUccOXVsOqmrKTepaxbMTkNRi9/0iRTsBwjXvNRqR4iDiqBMXlCKF0GWaKAGigrhKBQsuwyskHkPmoyAwQc0DNMxUgofPowmevMH0Cc5oDK2wNMk0xKlcuUvry+996GXJBqXXHDKD245//N12xYv3XDR2ceOaalP6tzGEAzD2rcvP5iv5IvFQrnc0TW4ZEXbx59s7t/TR5o85oTp37vh7GmTmhMInAHjCEyTBFvady9ZuvHj5Rs3te3t2zdUKAtL6BZjJoIpyZICmOCMNE4cLCSGyeSIlrpjZ00670tzjpw6NpfWdM4Y1xjDQAjl8WcVX0X7i1XDO0LhGsYxapQcLNoV45elUB0xEPL0fr3GawlRzEOo9THAVPCnDHmZn2GYrhFTSbQe3uJ3VnoOJ8CkdEVuVzsMw3rol68//eK/aqr5Uz+56tQTZyBiuWKlEhpjPstISurp6f9k5cYFry//+9tLQVpoitGto085afbc02bPntY6qjEnJQBJx6AgA4R8sbKxrYMzRgRCCMuShYrZ21/ctbuvqzefL1tCUCKhNTfVjG4ZUVtb1dJY09JQXZ9LaswBVbkdXnHuvKFgp+EG6VCyEhouEnZ5aiqvyst1fDZQ6fB/CEOVKeXsGBJ0sD6jxslI0RIqIXl84EAIFwKFtChTT+11xgDgZpOLbb8iASQQEDAvyhCC7vvpH3/70vvjWhtfeurOaQc1285X1zQCkkKqQf5Aobx1++7e3r2jGtKnfvmIS84/Zc708amkjq4/YswRuushKZtJHj5jEoQG4CCzN64HiklJghwgBxGYRCSQKAFQ2uAtkY3ihekdFI6GKDZf8rIUSQTAHCgpglMARns6XCEQ2mUnSQwZ4wjqjA+1h8OdxBSAvInCQ4dieqT9qR4OSq0OrTAME0ElJ5Hbhe3xOhwcR0pZKFUcXJAIEJK6xhgSMgCQUj7+zP/Oe+KV1taGN/7wQHNDlmuMOSKxUbnyqjVbP1vbtntfb1t7x65dvbMOnXr2V46ac2hrIqHpHHWNgd1kgn4oSxRynug2KzPGVFeIob4ZZ1mFICHJ5S0jIDK/gxp9VASHy1O9lfK55e5bPb1DlpAN9TWppB5Xw1LSGmkvmlTuAgaGSr39+drqqtqarFqOhIDtjRn24I4ziCFNqmDRcB8RkQYqqOt6DFLiEb/+LenRJ196661/2zkTB/rFvDsOmznZjiDfWLj85/PmZ2qTTz50Y11tinEnxrY7gDa37fj9H/+ZytZMmTz++ONn5KrSVZlUQue6rmmcg9t5pADO/tAyhUPtXyja1Rdbp7w8GUASSUkI1Nbe8ePH/zgwZGo6meXiTdecf+Lxs5AhxrXLUKQZXIXN3f+BdKQPRLB+4/brb/x/+cLQVd+49M5vX2ZfiF3zjWU5S5IucwQRqFAq33bXwx9//GlTY+MfXvh5y8h6xsCNNtwQnWEcCxtDtI0YaqWCqGKcj9JCwV4orfQOZFeqb/3m1xe+88mm9t2WsKRF7324ctb0SYByY1vn3T/8jWTWj+66Zvah4znnJG2ulBQICNA6bvR37/xPjiyR1DXObYPvDU8gqW4lqUQWnodCV/7kuTQp7dY7u7LqlPjs6ioCNTc1dHcN/mvZZmR08Lj6Iw6fxpmGLMQ6srEFB5K2eyWUwQcgpet7pSCQDtBITAL+c+HHHXu7hCy9889Ft95wCQdkrsxVZ0oEUkoi2r13329++8qlF57ROq6FCHbs7F788afFoV2D/UPrN7Y3NY4AQPRdhZ+go89GdzusyfUABEpfl8OZx+DUE1Jzd/fFXNtOXjHYv2knnXOQC2SYy6ZvuuHrYFlABEh/e+P93v582RD3PvDcnu6hmbMnnnfWselUgiGQJCGEEFIKIYk4Z+lkIplKaJx7lVGAUH+f28FAUkophJRCgs1lQGCuVWfoUymFZUkhpPd1YUkp7BVJJPTG+qyUFYkik05nsxmu2Rk68yp1dnXGsqRlCZvc4eXnLnEPmXuhDAGd6U0ABFMmj09pLJ3SW1vHcI6u70VJJAQJQXa9x74XwzDf/2jlC398c0dHt72X6+tqGkfUJpJVNTm9ob7WmV/hRn+SSJJfDnFdjLRffm8FqlM4AsxVjDS/qSM8tDDPPFhccYs3xJEREtO1r5998vxX3vto6TqOxY7Onr+++fGOXT3vf7ymsa5m/jP3ZbPpctkQUkhJCV3Tdc2yhJRkiy2ZTCKiFKJiWl1dA30DQ7rGRtTkstmUrmsISCRNIUzT6tnX19PTl0lnRo9qrsqmkwmNM6yYlmlZUhCQZIwNDua7uvvr63N1I2o0ze5dsWdDEREIQiGlMA2G3LSEDcYgMoeiJcGyZMWwCoVix64uIho1qrG2OpdI6JoGiEiSpJSmJfKFUr5Q0nUtoWsa5zYOl0wljz9u5rzHflgYqhw+Y6KucSGkJFkqml3d/b39A0lda6yrzeYymsYt01q3cesjv3ixKLhdAdQTWk1t5oknfrT4w89POnrqtEPGco0hgGmaQlK5VO7q6WVANbU1dSNquMalkJYlSuVKf++gEKKmpiqby+o6Z4wrUE2AnhUY3hPsuEMAzTMZar1N4bx4toGklJKAMfzebVecf9k9Fcw2NTRkMrXPv/gH1PRrrpzbOKLqd39886ln/1YyTGEYP7j72vPOOu47dz66bMUGU0oujT8+P+/IOVM2be285a55S9dsNyominIinTjxyKkv/M+D6VTCtKxFH6x85NFn17W1W5UKarmWkY1XXHTa9++4kiW0F/+88Ge/eLlYrlRVZb4695jfL3hzaLCgI5x2wqz/eujmUc0jJDBCxkEQkJBcCgvIBAkkpDcORpKUQgpJS5Zv+MlDz6zZsKVU7CcJeip71Oyp999742EzJ2mcI8Kb7yx77Mn5G7bvNgyByDWNaRxQGAkaeu2V3zz+1IK167cMDg6OHdnw+oLHUyn9tb8vfvix57fu7C4V8tyyakfUXPeNc2/7zuWPPPnS8394fSBfZjx1w12/yKTg5BMPO/bwmU89+yoR/+0Lrz7/m/tmHTqRJH3w7zVPPv3y8s82lIpDKA2WyN5x89W3X39uX9/QDx5+ceGHawaGStIyM0lt1pyDXn7m/lxVGhA4Qz+nwZg5R1EklYGPtASrwBTDBkFAXdNPOGrqWWccV6PhxRfMffLXL1WIDpnYcvuNF3BNu/DcL6Uz+lC+d6BYSqczmq7dc/s1RYs6+/L7BsxEQi+Wyldc/5OPPt1mVKxDp4y9/fbL5849aTBfJilIWIsWf3rVN3+4avPu+hFN37juP48/7si+IfOpZ9948tnXAGHShLF9/ZX+AnV25V97ddGUcWM418uS/rFo6e8XLKxYIAGApAAmgLsug4hISOG2qtu+Uaz+fMulV96zZNWWYkUcfdxxp5x2qkT+4aq2S6++Z93G7UKItxatuO7meas2dyY0/aLzvzSpdbRh8sEijWhofuqXP5kxfdIpJx++d1/3QH6Aa0BEbds6b7v75zt2bedgXnLRV3/wwK1zz/xyV1dfR+felcvXWORQ+kY11R08cXwuU3XGaUdpHHZ17Soapq6xdFL7dPXGG2595L3lG4pl47BDp55/4fmTJkxOJVLlivnk0/P/+sZ7A0ODo1uav3vnVd/77tVNjY0kpc0lQBuU9uQWGvAUR7bSlN7IcOXXJ/C43EZkjn/98fe/MWP6lNUrN+3o7Emj8eP7rtE0NAyTcZZJJ4QlpSU1nTOG2VxKYyQti4ikFJvaOrZu3W5aFprGrNmTrrv87Gw2093TzzV9YKj0X0++bGASy6Uf3H316aceZZjykmsfXL95z+NP/PnS809hnJFFkkRLffad1+bVVKdvu+/J+X99V5Bcunxd5RsiqyFDkqgxYIQEwAA1hhoBtw2dJSUQDA6Vbv/eTwcLg0KwM885/Ymf3AjI7v3xb1959Y2hgvmdOx5Z8Puf/flvi4dM1HQ4b+4xjz5445Llay+77nGrbJUHB6ZPncA5qxuRJUtYQoCUUtIHS9cPDBZ1rSJMY+rBLRefe0oulzFNK1uV/N1vHvjqhXdt2VlMJbQf/79vHjVnMudcSMkZSCElCgAsFis3fe+JglFIkPGlk4779eN3MUBZwXy+bBli8SdrUZMozNaW6qvPP7G+rhouPz2Z0BgbZk5KsPoZrh2gF9TGoIlekkIemGfrgRBy1MiGPd1D73y4EmUhlUsed+RUO9hwBgIQA+BOVkUgPBoLUS5bxTkxFFwTCxa8fubXbvzO7Y/s6uwyTOuzTTvWb+2UQJSseuTnz51zwa0XX/H9HTt7JJFZrnR2doEkkCZKUV+TqsmlM6nE+PEtaFpIUthsOmSInDHGOOMaY0wDTADTkDE7H7DJk909/Tu2bktqJY3BLdd/PZ1OplPJ668+W+OgcWtn+46uff35QoGkISzo6S0AQMUUhASMMaREQkeAhK4BoZRAhAQ4qXU0QxSSE7J5j7/wtQtuue2exzs7uzjjyWSCM0QgriEhabrGGGNogxMghSWJlq3e0rmr1zLNpM6vv/KsqnSqKpOqHZEeO64ulUo2N9YjJojzj1dt+cqF91x6/U/fem+FaVrklbuUne0nl26BSu2SdqM5VOhXFKTD+uif11brcJkRoX1Ht2GWOJSpwuyY0TmCtJvQGGdo5zJEzA5+EXBUS/3DD97ysyd+393ZYVrmts6ebZ1LPlm27je/+v6+gZJlISJnSDNmHtI6rplraSnBsgQZRn19dX7XPiLLnhVERDLQH0/IEBl3bBEiEDLOgel2P7MTGwuSBIZhmUIytBijXFXaTvub6nMJzgikUTGJaOqUMe++v9S0Kv94a9nt33962WebKqaZ0tiXTz6ytiYrhNQ4swfZ2J00c2ZM/NZ1F784/x+FwYFSubR5e0fbzt1rP9v4p9/9tLG5niG6k12AeTtNIpEkQVKK7n0DFpGUBBpLJZJONRABABJJ/ebrL9y5q2d7Z09Fis7uwc6ejctXbLj39ktuuPYcjTMVRyR1rrQ7Aggjs2GZL10Kd8V5eRUqmJgTBhJwRiQMkqaQZAq7E80hsNpxspCSMxRCWpID2n+IgBefe+rCv/3yxu98s7l5tKaniPE9fYWH/uvFbFVKS6RQS3Fil1545iM/uunRH10/78HrH3voxscevXnc2GYAktIiaTptDpIcVhQhATJkyDgg90JTez8BMNN0ebkkTdMEoKp01hKaKWT7jl1EEoBM05RSAMlMklelU9ddec5RR00DKSpSLPj7B3s6B0ZWZy/+2kmP/vg6KWS5YiICSItISElSSoZwz51Xvjr/sXPPPauhvkHXdACxYevu+a++CwSMcSIUljQqlsPGQyCyQJpSCiFkbXUOTIOjYRmlFZ9tMi3LlocUEjk7/tgZb/3t8Ttvuvygcc0JhiDFoCFenP+uZVpqDQcd8BrDcx5JKbGQm3+6DDTysj/wbYU3BzEw4ISAEpoNm0hCEFI6zgABOJOAUtM+XrGlXBGvv72sUjYZ04Bxhtg/UNiwaWd1LnPPLRe/+dqvvnTaiSCIcSoVy9MPHjf14LFJPQnp3Lz//sve7oFy2SgWy6Vi+bX/fX/P7n0gBUiLpEnCIikBCBmzU2nOuALTgT9hE4lA5kulvoFisVQuFUp/+svCP73y3sTpU8syKyU89NjzvX2Dlmk9+bvXi2XTqsDMww9taqhtaam7/vKzSEgoV757x6Xzn7vn9ZcffOQHV6VTaXKjYxIWgiGlKQQtW7lhx86uqZNH/2rezX99aV51XZPEpMfX5pomJVYMa/GSNVJKhkxKQrKAKlKaUsKcmZNGjq7niBbBM8+/tnnzTmEJy7RWrm3fsbNr6Yq12arUnd8+/51Xf/7gvVchCRCGFKZpSbWPcrjeWVC4tYhIcdWXOHq1P2iMbL6RlKxsmFxHnUhapaF8qSqd4JwlUT/koNbla7YS8Kd+98Y/317S091DHJMJziWZlty2c+/5F958wvFzRo4eVSmZa1ZukHqKEV196VfHtDTce+vXr7n5YcO01m8sHjX3ltlTWxnJ3Z27+/sGl3/4vLAsZJITGMK0YQCGjOtM1ySiZIzZqbjT+yqlaVQ0bgBAd0/P9BNv4JyXKpU0mfN/+8BVl84956Jb93btatv4+dkXfbe2tubzdZslJRqbRj7x8N012UzZMP/96TpJJkl88KFnUUfG9BFV6WNnT3zggW9Pah09VCijTklGplWuGObqzzf/bN5zJ514xKhRI3u6ByqlYiKRrEmxC8/5clUmPXJkg1izWUjj17+dv279+q+fd8YZXz6cyEywCkkwLZFJJZ775T1X3PhAV1//3v6BuZffe9C40RXL3LZhx2+fue+FF163BIwZ25yrrfnwo9UmEQrr5BNmVmUSAORtXZ9YidGZOeQW5AAJ+P333x8I/VS4LDioUeGMwMa2jt+/8FewREpLVKWTueraY2dPS2ga19hBk8eu/HR1YaiYAKupNvndWy7bs2NrlQ71NQlL8q+ceuRHH69o29K+avX6dRu3g2W1jhxx562Xf+OKMzWdTxjX8pVTjm7b0l4czFdK5c7d3X37emurc7fffMX0aeMff+LFvt592QRnZNbUjThkyvgnnvyDtERtNmsa5RkzDh43ZqT3BIjPN7S9vODtBGFNMlGT1tKcUtzKJeCIWRNvvO6Cpobas848ecfO7nxB9Bet3r58Y412yslH/s9T97eOa2acVQyztXXUnJkHHzpjyrSpE3SGfT09pVJv+472dxev/NpZJ33v/icr+XxK14UlEsnslIPGrlq1dnP73tXr27du70onkzMOGf/UL74/e8YkQJh16MGrP1s30DugMRCGcd01F/7j7Y+WfrJGZ3o2ndCS6S+deFhLc91Zpx+3d29fvrdAUg4ODKaYdeIJMy+74D/29fatWL1p+eotK1dt7O0baqlNXX/teffdcUVC15AhqOO9IYDkB1pt0Ivmg92NgeKgWnj0BxSRTUEulY3+wYIQ0s4PU4lkda6KMwYMhBClcqV3IE8SqrPpTCZZLhtCSoZM07SqTLJQLBWK5XyhbFhWNpOqyqSrsxnNJjQhWqZVLFcGh4rFUgWIEgktnU6lk7qm876+IeeMgImkXlWVGhoq2S1PDLGqKp1OJRy/JGWxVCmWDSGkX8EGQMRMJlWdq2IMLSFLxfJgoTSULwFRdS6TrUolkwmd83yx/I1vz/tk6WdjDx7/l2fuLVcMzvlPH/vdgpdfkWBJkX7vnefq6qoAGCPOGEumktlsulQsF8tG2RBElNJ5LpepyqQ4QyKqVIx8sdQ/kJdCZjOp2ppssWyWKwYRMYa6rtfV5jhnliUM08oXyoZpAVEqqeeyGU3jliWGCuWBwYIkoXFelU5V5zKJhM4Y84C5wMCnuK4a9fkpWkyBSJnpFGb+uUdKJvSm+hpSMkBvjrGmabksz2Uz4EwiglQyodqcXDaTy2ZCrd0eAZJxXpVJV2XSCE6nGrnFtLoR1Y69QYc0mWpI+fVWt0Bh33M6nUylkj4FyN4E6JR+iYAzls2mc7mM92un4xVh3fodSz5pGyjgjGx2MF8moP7ugbateyQAMJarqW9ubqzJJRgyJI6MMYacs1Rtrt4pEgM5oL4dWElN49XZTK4qDQAMEBF0Xa/OZZxNiMymeei6lkjouWzGNldSkpS2S+UJXa+vzWF4CLk65wcprskZA6OwXLKdYZreGDiKpXljbCutz78AZSyVN13O7UdQHk6kgLuRgwfGazmHksq8jiAnxE0omCNK71tSzUw9iJqUDhYkj2YZE/IQETAGe7oGLrnm0TVrtwnLamppTmfY3t09xaE+nVea6rPfv/vmC8892VFyu9mGMWTIMDyYgmzpk90+TYH5SsrDdpygDxmguikDfL6QcGg4VnQcBKtwxVyM1fSe8RT6De2vbZVUXv+wbLGYxxyFOSrRDrHIXNphOMLB0d7DdtQrU88Venvsg5gcoAJACrmvb+i/n3vtrYWf7O7uq1QqGofmhvq5px//zSvPaKrPMY7uYD6/lOW+o+qQmzaHdDFCoYTwNMjwc+AiEwzjnuniFuL8bBwjM0hsxbKlTsEmpsAztPbb66Y+0cRvZR1+UkFsm3Vg6K7KqThQox18oVH46E5piB93H4x6PIKzbaZFxRCmJRjDZEJnNjdb4RWiakaG61IN7r8oTx7VRvb9Th0OcLbpwD3MgfZYle2pSj3E/1VnJMZM04LQSFCHpEQRNfUar+iA3fVRfn9MA6Uz80AdXI3x34w/cvxkEYo8csEnMcQ0pcTRk1RCKUUnVIWk7pseJ/Hw5hQe+CFv+3/QXOQhjm5vs3ufWmxW781jj59ArjxFEwJPpoBw+4A3xhWCHbixj31Qejmji6WI05/7HG71PtDjIzCGxK9Q7TAymUWd3YmhR8FE/SCpR6PQA55UrmOo40UxsXSgDmJVrhR4ck1wKKj6mD67rUW5xP8Psz/vHyo5O4cAAAAASUVORK5CYII=" class="cover-logo-real" alt="Yusen Logistics">
 <h1 class="cover-title">CS OPERATIONS PERFORMANCE DASHBOARD</h1>
 <div class="cover-title-accent"></div>
-<div class="cover-subtitle">Capacity â€¢ Workload â€¢ Utilization â€¢ Performance</div>
+<div class="cover-subtitle">Capacity • Workload • Utilization • Performance</div>
 <div class="cover-separator"></div>
 <div class="cover-pillars">
 <div class="cover-pillar"><div class="cover-icon icon-capacity"><svg viewBox="0 0 32 32"><circle cx="16" cy="9" r="4"></circle><circle cx="7" cy="12" r="3"></circle><circle cx="25" cy="12" r="3"></circle><path d="M9 25v-3c0-4 3-7 7-7s7 3 7 7v3"></path><path d="M2 24v-2c0-3 2-5 5-5"></path><path d="M30 24v-2c0-3-2-5-5-5"></path></svg></div><div class="cover-pillar-title">Capacity</div><div class="cover-pillar-note">HC Capacity,<br>Requirement & Gap</div></div>
@@ -6458,7 +6445,7 @@ footer{display:none!important}
 <div class="cover-pillar"><div class="cover-icon icon-productivity"><svg viewBox="0 0 32 32"><path d="M5 25h22"></path><rect x="7" y="17" width="4" height="8"></rect><rect x="14" y="12" width="4" height="13"></rect><rect x="21" y="7" width="4" height="18"></rect><path d="M6 13l6-5 5 2 8-7"></path><path d="M22 3h4v4"></path></svg></div><div class="cover-pillar-title">UTILIZATION</div><div class="cover-pillar-note">Office Workload,<br>CS Allocation</div></div>
 <div class="cover-pillar"><div class="cover-icon icon-insights"><svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="10"></circle><circle cx="16" cy="16" r="5"></circle><path d="M16 16l8-8"></path><path d="M22 8h4v4"></path></svg></div><div class="cover-pillar-title">PERFORMANCE</div><div class="cover-pillar-note">CS Resolution,<br>YVF Booking Adoption</div></div>
 </div>
-<a href="?enter=1" target="_self" class="cover-cta"><span class="cover-cta-icon">â†—</span><span>VIEW DASHBOARD</span><span class="cover-cta-arrow">â†’</span></a>
+<a href="?enter=1" target="_self" class="cover-cta"><span class="cover-cta-icon">↗</span><span>VIEW DASHBOARD</span><span class="cover-cta-arrow">→</span></a>
 <div class="cover-right-footer"><span class="cover-headset"><svg viewBox="0 0 32 32"><path d="M5 17v-2a11 11 0 0 1 22 0v2"></path><rect x="3" y="16" width="5" height="9" rx="2"></rect><rect x="24" y="16" width="5" height="9" rx="2"></rect><path d="M24 26c-2 3-5 3-8 3"></path></svg></span><span class="footer-divider"></span><span>CS DIVISION</span><span class="footer-divider"></span><span>FY2026</span></div>
 </div>
 
@@ -6524,8 +6511,8 @@ def main():
 
     if not file_path.exists():
         st.error(
-            f"KhÃ´ng tÃ¬m tháº¥y file dá»¯ liá»‡u: {file_path}. "
-            "Vui lÃ²ng Ä‘áº·t file Excel cÃ¹ng thÆ° má»¥c app.py hoáº·c upload file á»Ÿ Sidebar."
+            f"Không tìm thấy file dữ liệu: {file_path}. "
+            "Vui lòng đặt file Excel cùng thư mục app.py hoặc upload file ở Sidebar."
         )
         st.stop()
 
@@ -6564,7 +6551,7 @@ def main():
         supporting_detail = prepare_case_detail(raw["supporting"], "Supporting Activity")
         exception_detail = prepare_case_detail(raw["exception"], "Exception Handling")
 
-        # Code description lookup from sheet "Ghi chÃº".
+        # Code description lookup from sheet "Ghi chú".
         code_note_map = prepare_code_note_map(raw["notes"])
 
         # Add one consistent "Code Description" field to all C/A/S/E sources.
@@ -6601,8 +6588,8 @@ def main():
             "UPLOAD EXCEL FILE",
             type=["xlsx", "xlsm"],
             help=(
-                "Há»— trá»£ Ä‘á»‹nh dáº¡ng .xlsx vÃ  .xlsm. Náº¿u khÃ´ng upload, Dashboard "
-                "sáº½ Ä‘á»c file máº·c Ä‘á»‹nh trong cÃ¹ng thÆ° má»¥c vá»›i file Python."
+                "Hỗ trợ định dạng .xlsx và .xlsm. Nếu không upload, Dashboard "
+                "sẽ đọc file mặc định trong cùng thư mục với file Python."
             ),
             key="excel_uploader",
         )
@@ -6630,9 +6617,9 @@ def main():
             <div class="sidebar-footer">
                 <span>Version 1.0</span>
                 <span class="footer-sep">|</span>
-                <span>Â© 2026 CS Division</span>
+                <span>© 2026 CS Division</span>
                 <span class="footer-sep">|</span>
-                <span>ðŸ”’ Internal Use Only</span>
+                <span>🔒 Internal Use Only</span>
             </div>
             """,
             unsafe_allow_html=True,
@@ -6703,7 +6690,7 @@ def main():
         st.markdown(
             """
             <div class="warning-box">
-            WARNING: Má»™t sá»‘ dá»¯ liá»‡u workload hoáº·c CS FTE cÃ³ thá»ƒ chÆ°a Ä‘áº§y Ä‘á»§. Dashboard váº«n cháº¡y dynamic vÃ  sáº½ tá»± cáº­p nháº­t khi bá»• sung dá»¯ liá»‡u vÃ o file nguá»“n.
+            WARNING: Một số dữ liệu workload hoặc CS FTE có thể chưa đầy đủ. Dashboard vẫn chạy dynamic và sẽ tự cập nhật khi bổ sung dữ liệu vào file nguồn.
             </div>
             """,
             unsafe_allow_html=True,
@@ -6725,7 +6712,7 @@ def main():
     required_pic = weighted_period_avg(f_hc, "Required HC PIC") if not f_hc.empty else 0.0
 
     hc_variance = required_hc - actual_hc
-    hc_ratio = required_hc / actual_hc if actual_hc > 0 else float("nan")
+    hc_utilization = hc_capacity_utilization(f_hc)
     
     if hc_variance > 0:
         variance_status = ("OVERLOAD", COLORS["red"], "#FEE2E2")
@@ -6764,11 +6751,11 @@ def main():
         hc_variance_card(
             "HC Gap",
             hc_variance,
-            "Required HC - Actual HC",
+            "Required HC − Actual HC",
             variance_status[0],
             variance_status[1],
             variance_status[2],
-            hc_ratio,
+            hc_utilization,
         )
 
     if office == "All Offices":
@@ -7244,7 +7231,7 @@ def main():
             "Total Available Time",
             fmt_num(total_available, 1)
             if not pd.isna(total_available) else "N/A",
-            "95% Ã— 8 Ã— 22 Ã— PIC (hour)",
+            "95% × 8 × 22 × PIC (hour)",
         )
 
     with p2:
@@ -7386,7 +7373,7 @@ def main():
     segment_workload_table(f_workload, f_mode)
 
     
-    section_title("5. Workload Breakdown by Category & Segment")
+    section_title("5. Workload Breakdown by Activity & Segment")
 
     st.markdown(
         """
@@ -7409,7 +7396,7 @@ def main():
         )
         render_case_total_cards(f_workload_4_offices)
 
-    # C/A/S/E summary cards by Office â€” same executive idea as the HC office cards.
+    # C/A/S/E summary cards by Office — same executive idea as the HC office cards.
     render_case_office_cards(f_workload)
 
     # Summary table + C/A/S/E allocation chart
@@ -7434,10 +7421,10 @@ def main():
     )
 
     casetab_c, casetab_a, casetab_s, casetab_e = st.tabs([
-        "C Â· Core Service",
-        "A Â· Ancillary Service",
-        "S Â· Supporting Activity",
-        "E Â· Exception Handling",
+        "C · Core Service",
+        "A · Ancillary Service",
+        "S · Supporting Activity",
+        "E · Exception Handling",
     ])
     with casetab_c:
         render_activity_detail_table(f_core_detail, "Core Service")
@@ -7487,9 +7474,9 @@ def main():
                 stretch_to_container=True,
             )
 
-    section_title("6. Control Tower effectiveness")
+    section_title("6. Control Tower effectiveness = CS Resolutions Rate")
 
-    # Definition note â€” UI only; no business logic/calculation changes.
+    # Definition note — UI only; no business logic/calculation changes.
     st.markdown(
         """
         <div style="
@@ -7503,7 +7490,11 @@ def main():
             font-size:14px;
             line-height:1.5;
         ">
-            CS Control Tower Effectiveness = CS manages the case end-to-end: receiving, identifying and assessing the issue â†’ engaging the right owner â†’ driving a timely resolution â†’ filtering &amp; communicating relevant updates â†’ closing the case.
+            Follow the <strong>CS RESOLUTION DECISION RULE</strong> below:
+            <div style="margin-top:6px;">
+                <strong>Rule 1 –</strong> Count as CS Resolution when CS owns and closes the resolution mainly through customer communication/negotiation, without another BU taking over the main corrective action.<br>
+                <strong>Rule 2 –</strong> Do not count when CS only forwards the request to another BU and relays the response back to the customer.<br>
+        </div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -7608,7 +7599,7 @@ def main():
 
 # ============================================================
 # SIDEBAR MICRO-POLISH FINAL
-# UI ONLY â€” no changes to filters, upload logic, session state,
+# UI ONLY — no changes to filters, upload logic, session state,
 # calculations, charts, or main dashboard layout.
 # ============================================================
 st.markdown(
@@ -7738,7 +7729,7 @@ st.markdown(
 
 
 # ============================================================
-# SIDEBAR POSITIONING FINAL â€” UI ONLY
+# SIDEBAR POSITIONING FINAL — UI ONLY
 # HOME icon / filter breathing room / lower upload & footer
 # ============================================================
 st.markdown(
