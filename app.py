@@ -7474,7 +7474,7 @@ def main():
                 stretch_to_container=True,
             )
 
-    section_title("6. Control Tower effectiveness")
+    section_title("6. Control Tower effectiveness = CS Resolutions Rate")
 
     # Definition note — UI only; no business logic/calculation changes.
     st.markdown(
@@ -7490,11 +7490,7 @@ def main():
             font-size:14px;
             line-height:1.5;
         ">
-            Follow the <strong>CS RESOLUTION DECISION RULE</strong> below:
-            <div style="margin-top:6px;">
-                <strong>Rule 1 –</strong> Count as CS Resolution when CS owns and closes the resolution mainly through customer communication/negotiation, without another BU taking over the main corrective action.<br>
-                <strong>Rule 2 –</strong> Do not count when CS only forwards the request to another BU and relays the response back to the customer.<br>
-        </div>
+            <strong>CS Control Tower Effectiveness</strong> = CS manages the case end-to-end: receiving, identifying and assessing the issue → engaging the right owner → driving a timely resolution → filtering &amp; communicating relevant updates → closing the case.
         </div>
         """,
         unsafe_allow_html=True,
