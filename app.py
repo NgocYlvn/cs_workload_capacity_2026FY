@@ -4095,7 +4095,7 @@ def chart_case_allocation(df: pd.DataFrame):
         st.info("No C/A/S/E workload data available for selected filters.")
         return
 
-    pair_panel_title("Workload Composition by Activity")
+    pair_panel_title("Workload Composition by Category")
 
     plot_df = (
         summary[summary["Total Workload (min)"] > 0]
@@ -4356,7 +4356,7 @@ def render_workload_breakdown_table(df: pd.DataFrame):
         st.info("No workload breakdown data available for selected filters.")
         return
 
-    pair_panel_title("Activity Breakdown")
+    pair_panel_title("Category Breakdown")
 
     display = summary.copy()
 
