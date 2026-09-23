@@ -3950,12 +3950,12 @@ def render_case_office_cards(workload_df: pd.DataFrame):
         )
         activity_values = "".join(
             f'<div style="text-align:center;color:{COLORS["navy"]};'
-            f'font-size:13px;font-weight:750;">{volumes[activity]:,.0f}</div>'
+            f'font-size:14px;font-weight:750;">{volumes[activity]:,.0f}</div>'
             for activity in activities
         )
         hour_values = "".join(
             f'<div style="text-align:center;color:{COLORS["navy"]};'
-            f'font-size:13px;font-weight:750;">{vals[activity]:,.0f}</div>'
+            f'font-size:14px;font-weight:750;">{vals[activity]:,.0f}</div>'
             for activity in activities
         )
         share_values = "".join(
@@ -3972,7 +3972,7 @@ def render_case_office_cards(workload_df: pd.DataFrame):
                     border-top:4px solid {COLORS['navy']};
                     border-radius:12px;
                     padding:14px 11px 13px;
-                    min-height:215px;
+                    min-height:225px;
                     box-sizing:border-box;
                     box-shadow:0 2px 7px rgba(0,59,112,0.045);">
 
@@ -3993,11 +3993,11 @@ def render_case_office_cards(workload_df: pd.DataFrame):
                       <div style="color:#667085;font-size:16px;font-weight:700;">TOTAL</div>
                       <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-top:4px;">
                         <span style="color:#667085;font-size:11px;font-weight:600;">VOLUME</span>
-                        <span style="color:{COLORS['navy']};font-size:20px;font-weight:800;">{total_activity:,.0f}</span>
+                        <span style="color:{COLORS['navy']};font-size:18px;font-weight:800;">{total_activity:,.0f}</span>
                       </div>
                       <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-top:3px;">
                         <span style="color:#667085;font-size:11px;font-weight:600;">HOUR</span>
-                        <span style="color:{COLORS['navy']};font-size:20px;font-weight:800;">{total:,.0f}</span>
+                        <span style="color:{COLORS['navy']};font-size:18px;font-weight:800;">{total:,.0f}</span>
                       </div>
                     </div>
                   </div>
@@ -4010,8 +4010,8 @@ def render_case_office_cards(workload_df: pd.DataFrame):
                       border-top:1px solid #E7ECF1;
                       padding-top:11px;">
                     <div></div>{activity_headers}
-                    <div style="color:#667085;font-size:10px;font-weight:600;align-self:center;">VOLUME</div>{activity_values}
-                    <div style="color:#667085;font-size:10px;font-weight:600;align-self:center;">HOUR</div>{hour_values}
+                    <div style="color:#667085;font-size:11px;font-weight:600;align-self:center;">VOLUME</div>{activity_values}
+                    <div style="color:#667085;font-size:11px;font-weight:600;align-self:center;">HOUR</div>{hour_values}
                     <div></div>{share_values}
                   </div>
                 </div>
