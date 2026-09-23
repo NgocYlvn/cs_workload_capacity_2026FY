@@ -4075,7 +4075,7 @@ def render_case_total_cards(workload_df: pd.DataFrame):
                         <span style="color:#667085;font-size:11px;font-weight:600;">VOLUME</span>
                         <span style="color:{COLORS['navy']};font-size:22px;font-weight:800;text-align:right;">{value:,.0f}</span>
                         <span style="color:#667085;font-size:11px;font-weight:600;">HOUR</span>
-                        <span style="color:{COLORS['navy']};font-size:22px;font-weight:800;text-align:right;">{hours[activity]:,.1f}</span>
+                        <span style="color:{COLORS['navy']};font-size:22px;font-weight:800;text-align:right;">{hours[activity]:,.0f}</span>
                     </div>
                     <div style="color:#667085;font-size:18px;line-height:1.2;
                          font-weight:500;text-align:center;margin-top:6px;">
