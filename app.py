@@ -4027,10 +4027,10 @@ def render_case_total_cards(workload_df: pd.DataFrame):
         return
 
     source_map = {
-        "C": ("Core Volume", "Total Core (C)", COLORS["blue"]),
-        "A": ("Ancillary Volume", "Total Ancillary (A)", COLORS["green"]),
-        "S": ("Supporting Volume", "Total Supporting (S)", COLORS["amber"]),
-        "E": ("Exception Volume", "Total Exception (E)", COLORS["red"]),
+        "C": ("Core Volume", "Total Volume - Core (C)", COLORS["blue"]),
+        "A": ("Ancillary Volume", "Total Volume - Ancillary (A)", COLORS["green"]),
+        "S": ("Supporting Volume", "Total Volume - Supporting (S)", COLORS["amber"]),
+        "E": ("Exception Volume", "Total Volume - Exception (E)", COLORS["red"]),
     }
 
     d = workload_df.copy()
