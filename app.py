@@ -3997,7 +3997,7 @@ def render_case_office_cards(workload_df: pd.DataFrame):
                       </div>
                       <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-top:3px;">
                         <span style="color:#667085;font-size:11px;font-weight:600;">HOUR</span>
-                        <span style="color:{COLORS['navy']};font-size:20px;font-weight:800;">{total:,.1f}</span>
+                        <span style="color:{COLORS['navy']};font-size:20px;font-weight:800;">{total:,.0f}</span>
                       </div>
                     </div>
                   </div>
