@@ -3905,7 +3905,7 @@ def render_case_office_cards(workload_df: pd.DataFrame):
             font-size:20px;
             font-weight:700;
             margin:4px 0 10px 2px;">
-            C / A / S / E Activity &amp; Hours by Office
+            C / A / S / E Volume &amp; Hours by Office
         </div>
         """,
         unsafe_allow_html=True,
