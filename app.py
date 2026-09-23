@@ -10,9 +10,7 @@ from __future__ import annotations
 
 import re
 import html
-import hashlib
 import logging
-import tempfile
 import textwrap
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Tuple
@@ -6506,25 +6504,17 @@ def main():
     # Cover page is displayed before any Excel loading/filtering.
     render_cover_gate()
 
-    # Load default workbook first. Upload remains below Month / Office filters.
+    # Load the default workbook.
     file_path = DEFAULT_FILE_PATH
     cache_token = ""
-
-    # If an uploaded workbook was already saved in this session, reuse the saved file.
-    uploaded_path_cached = st.session_state.get("dashboard_uploaded_path")
-    uploaded_sig_cached = st.session_state.get("dashboard_uploaded_sig")
-
-    if uploaded_path_cached and Path(uploaded_path_cached).exists():
-        file_path = Path(uploaded_path_cached)
-        cache_token = uploaded_sig_cached or ""
-    elif file_path.exists():
+    if file_path.exists():
         stat = file_path.stat()
         cache_token = f"{stat.st_mtime_ns}_{stat.st_size}"
 
     if not file_path.exists():
         st.error(
             f"Không tìm thấy file dữ liệu: {file_path}. "
-            "Vui lòng đặt file Excel cùng thư mục app.py hoặc upload file ở Sidebar."
+            "Vui lòng đặt file Excel cùng thư mục app.py."
         )
         st.stop()
 
@@ -6585,7 +6575,7 @@ def main():
     ))
     office_options = ["All Offices"] + sorted(set(STANDARD_OFFICES + [o for o in offices_from_data if o]))
 
-    # Sidebar order: Month -> Office -> Upload file. No Year and no Reset button.
+    # Sidebar order: Month -> Office. No Year and no Reset button.
     # UI only: styled to match the approved Yusen executive HOME format.
     with st.sidebar:
         if st.button("HOME", icon=":material/home:", use_container_width=True, key="back_to_cover_btn"):
@@ -6595,35 +6585,6 @@ def main():
         month = st.selectbox("MONTH", month_options, key="month_filter")
         office = st.selectbox("OFFICE", office_options, key="office_filter")
         st.markdown('<div class="sidebar-bottom-anchor"></div>', unsafe_allow_html=True)
-        st.markdown("---")
-        uploaded = st.file_uploader(
-            "UPLOAD EXCEL FILE",
-            type=["xlsx", "xlsm"],
-            help=(
-                "Hỗ trợ định dạng .xlsx và .xlsm. Nếu không upload, Dashboard "
-                "sẽ đọc file mặc định trong cùng thư mục với file Python."
-            ),
-            key="excel_uploader",
-        )
-        if uploaded is not None:
-            new_bytes = uploaded.getvalue()
-            new_sig = hashlib.sha256(new_bytes).hexdigest()
-
-            if st.session_state.get("dashboard_uploaded_sig") != new_sig:
-                upload_dir = Path(tempfile.gettempdir()) / "cs_workload_dashboard"
-                upload_dir.mkdir(parents=True, exist_ok=True)
-                upload_suffix = Path(uploaded.name).suffix.lower()
-                tmp_path = upload_dir / f"workbook_{new_sig[:20]}{upload_suffix}"
-
-                # Content-addressed filenames prevent different user sessions
-                # from overwriting one another on the Streamlit server.
-                if not tmp_path.exists() or tmp_path.stat().st_size != len(new_bytes):
-                    tmp_path.write_bytes(new_bytes)
-
-                st.session_state["dashboard_uploaded_sig"] = new_sig
-                st.session_state["dashboard_uploaded_path"] = str(tmp_path)
-                st.rerun()
-
         st.markdown(
             """
             <div class="sidebar-footer">
@@ -7611,7 +7572,7 @@ def main():
 
 # ============================================================
 # SIDEBAR MICRO-POLISH FINAL
-# UI ONLY — no changes to filters, upload logic, session state,
+# UI ONLY — no changes to filters, session state,
 # calculations, charts, or main dashboard layout.
 # ============================================================
 st.markdown(
@@ -7672,37 +7633,6 @@ st.markdown(
         margin: 9px 0 9px 0 !important;
     }
 
-    /* Upload title */
-    section[data-testid="stSidebar"] [data-testid="stFileUploader"] {
-        margin-top: 0 !important;
-    }
-
-    /* Compact upload card */
-    section[data-testid="stSidebar"] [data-testid="stFileUploader"] section {
-        min-height: 78px !important;
-        padding: 7px 8px !important;
-        border-radius: 8px !important;
-    }
-
-    section[data-testid="stSidebar"] [data-testid="stFileUploader"] section * {
-        font-size: 10.8px !important;
-        line-height: 1.25 !important;
-    }
-
-    section[data-testid="stSidebar"] [data-testid="stFileUploader"] button {
-        min-height: 32px !important;
-        height: 32px !important;
-        padding: 0 12px !important;
-        border-radius: 7px !important;
-        font-size: 11.5px !important;
-    }
-
-    /* Remove visual clutter from uploader help icon where possible */
-    section[data-testid="stSidebar"] [data-testid="stFileUploader"] [data-testid="stTooltipIcon"] {
-        opacity: 0.55 !important;
-        transform: scale(0.88);
-    }
-
     /* Footer */
     .sidebar-footer {
         margin-top: 12px !important;
@@ -7742,7 +7672,7 @@ st.markdown(
 
 # ============================================================
 # SIDEBAR POSITIONING FINAL — UI ONLY
-# HOME icon / filter breathing room / lower upload & footer
+# HOME icon / filter breathing room / footer position
 # ============================================================
 st.markdown(
     """
@@ -7753,8 +7683,7 @@ st.markdown(
         min-height: 14px !important;
     }
 
-    /* Push Upload + Version area lower on normal laptop screens.
-       This is visual spacing only; upload/filter logic is unchanged. */
+    /* Push the footer lower on normal laptop screens. */
     .sidebar-bottom-anchor {
         height: clamp(150px, 28vh, 360px) !important;
         min-height: 150px !important;
