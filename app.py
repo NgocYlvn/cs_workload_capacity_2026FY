@@ -5892,7 +5892,7 @@ def chart_resolution(df: pd.DataFrame):
     agg["Resolution Rate"] = np.where(agg["Total Abnormality"] > 0, agg["Resolved"] / agg["Total Abnormality"], np.nan)
     agg["Month"] = agg["MonthDate"].dt.strftime("%b-%y")
     # Use numeric x positions so the resolution-rate marker stays exactly at
-    # the horizontal centre of its corresponding "Resolved by CS" bar.
+    # the horizontal centre of its corresponding "Control Tower Effectiveness Cases" bar.
     month_x = np.arange(len(agg), dtype=float)
     bar_offset = 0.18
     bar_width = 0.34
