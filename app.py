@@ -3931,12 +3931,34 @@ def render_case_office_cards(workload_df: pd.DataFrame):
             activity: float(pd.to_numeric(row.get(activity, 0), errors="coerce") or 0)
             for activity in ["C", "A", "S", "E"]
         }
+        volumes = {
+            activity: float(row[f"{activity} Volume"])
+            for activity in ["C", "A", "S", "E"]
+        }
         total = float(row["Total Hour"])
         total_activity = float(row["Total Activity"])
         shares = {
-            activity: safe_div(value, total)
-            for activity, value in vals.items()
+            activity: safe_div(value, total_activity)
+            for activity, value in volumes.items()
         }
+
+        activity_cells = "".join(
+            f"""
+                    <div style="text-align:center;min-width:0;{('border-right:1px solid #E7ECF1;' if activity != 'E' else '')}">
+                      <div style="color:{activity_meta[activity][1]};font-size:16px;font-weight:800;">{activity}</div>
+                      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:1px;margin-top:5px;">
+                        <span style="color:#667085;font-size:8px;font-weight:600;">ACTIVITY</span>
+                        <span style="color:{COLORS['navy']};font-size:12px;font-weight:750;">{volumes[activity]:,.0f}</span>
+                      </div>
+                      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:1px;margin-top:3px;">
+                        <span style="color:#667085;font-size:8px;font-weight:600;">HOUR</span>
+                        <span style="color:{COLORS['navy']};font-size:12px;font-weight:750;">{vals[activity]:,.0f}</span>
+                      </div>
+                      <div style="color:#667085;font-size:14px;margin-top:5px;">{shares[activity]:.1%}</div>
+                    </div>
+            """
+            for activity in ("C", "A", "S", "E")
+        )
 
         with card_col:
             card_html = f"""
@@ -3945,8 +3967,8 @@ def render_case_office_cards(workload_df: pd.DataFrame):
                     border:1px solid {COLORS['border']};
                     border-top:4px solid {COLORS['navy']};
                     border-radius:12px;
-                    padding:14px 16px 13px;
-                    min-height:192px;
+                    padding:14px 11px 13px;
+                    min-height:204px;
                     box-sizing:border-box;
                     box-shadow:0 2px 7px rgba(0,59,112,0.045);">
 
@@ -3963,25 +3985,15 @@ def render_case_office_cards(workload_df: pd.DataFrame):
                       {html.escape(office)}
                     </div>
 
-                    <div style="text-align:right;">
-                      <div style="
-                          color:#667085;
-                          font-size:12px;
-                          font-weight:600;">
-                        TOTAL ACTIVITY
+                    <div style="text-align:right;min-width:135px;">
+                      <div style="color:#667085;font-size:12px;font-weight:600;">TOTAL</div>
+                      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-top:4px;">
+                        <span style="color:#667085;font-size:11px;font-weight:600;">ACTIVITY</span>
+                        <span style="color:{COLORS['navy']};font-size:20px;font-weight:800;">{total_activity:,.0f}</span>
                       </div>
-                      <div style="
-                          color:{COLORS['navy']};
-                          font-size:23px;
-                          font-weight:800;
-                          margin-top:2px;">
-                        {total_activity:,.0f}
-                      </div>
-                      <div style="color:#667085;font-size:12px;font-weight:600;margin-top:5px;">
-                        TOTAL HOUR
-                      </div>
-                      <div style="color:{COLORS['navy']};font-size:18px;font-weight:800;margin-top:2px;">
-                        {total:,.0f}
+                      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-top:3px;">
+                        <span style="color:#667085;font-size:11px;font-weight:600;">HOUR</span>
+                        <span style="color:{COLORS['navy']};font-size:18px;font-weight:800;">{total:,.0f}</span>
                       </div>
                     </div>
                   </div>
@@ -3989,37 +4001,10 @@ def render_case_office_cards(workload_df: pd.DataFrame):
                   <div style="
                       display:grid;
                       grid-template-columns:repeat(4,minmax(0,1fr));
+                      column-gap:3px;
                       border-top:1px solid #E7ECF1;
                       padding-top:11px;">
-                    <div style="text-align:center;border-right:1px solid #E7ECF1;">
-                      <div style="color:{activity_meta['C'][1]};font-size:16px;font-weight:800;">C (hour)</div>
-                      <div style="color:{COLORS['navy']};font-size:18px;font-weight:750;margin-top:4px;">{vals['C']:,.0f}</div>
-                    </div>
-                    <div style="text-align:center;border-right:1px solid #E7ECF1;">
-                      <div style="color:{activity_meta['A'][1]};font-size:16px;font-weight:800;">A (hour)</div>
-                      <div style="color:{COLORS['navy']};font-size:18px;font-weight:750;margin-top:4px;">{vals['A']:,.0f}</div>
-                    </div>
-                    <div style="text-align:center;border-right:1px solid #E7ECF1;">
-                      <div style="color:{activity_meta['S'][1]};font-size:16px;font-weight:800;">S (hour)</div>
-                      <div style="color:{COLORS['navy']};font-size:18px;font-weight:750;margin-top:4px;">{vals['S']:,.0f}</div>
-                    </div>
-                    <div style="text-align:center;">
-                      <div style="color:{activity_meta['E'][1]};font-size:16px;font-weight:800;">E (hour)</div>
-                      <div style="color:{COLORS['navy']};font-size:18px;font-weight:750;margin-top:4px;">{vals['E']:,.0f}</div>
-                    </div>
-                  </div>
-
-                  <div style="
-                      display:grid;
-                      grid-template-columns:repeat(4,minmax(0,1fr));
-                      margin-top:4px;
-                      color:#667085;
-                      font-size:16px;
-                      text-align:center;">
-                    <div>{shares['C']:.1%}</div>
-                    <div>{shares['A']:.1%}</div>
-                    <div>{shares['S']:.1%}</div>
-                    <div>{shares['E']:.1%}</div>
+                    {activity_cells}
                   </div>
                 </div>
                 """
