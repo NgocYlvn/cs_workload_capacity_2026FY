@@ -2418,7 +2418,7 @@ def render_hc_office_comparison(hc_filtered_all_offices: pd.DataFrame) -> None:
             actual = weighted_period_avg(office_df, "Total Actual HC")
             required = weighted_period_avg(office_df, "Total Required HC")
             gap = required - actual
-            util = hc_capacity_utilization(office_df)
+            util = required / actual if pd.notna(actual) and actual > 0 else float("nan")
             # Office status is determined by Office Workload (utilization),
             # using the standard workload thresholds:
             # < 90%       -> LESS LOAD / Green
@@ -6712,7 +6712,7 @@ def main():
     required_pic = weighted_period_avg(f_hc, "Required HC PIC") if not f_hc.empty else 0.0
 
     hc_variance = required_hc - actual_hc
-    hc_utilization = hc_capacity_utilization(f_hc)
+    hc_utilization = required_hc / actual_hc if pd.notna(actual_hc) and actual_hc > 0 else float("nan")
     
     if hc_variance > 0:
         variance_status = ("OVERLOAD", COLORS["red"], "#FEE2E2")
