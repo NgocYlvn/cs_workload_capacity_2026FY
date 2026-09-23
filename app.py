@@ -2716,10 +2716,10 @@ def hc_variance_card(
     status_text: str,
     status_color: str,
     status_bg: str,
-    gap_ratio: float,
+    hc_ratio: float,
 ):
     """Centered variance card to visually balance the HC cards."""
-    gap_ratio_text = "N/A" if pd.isna(gap_ratio) else f"{gap_ratio:+.1%}"
+    hc_ratio_text = "N/A" if pd.isna(hc_ratio) else f"{hc_ratio:.1%}"
     st.markdown(
         f"""
         <div class="hc-kpi-card hc-variance-card">
@@ -2729,7 +2729,7 @@ def hc_variance_card(
                       style="color:{status_color};background:{status_bg};">
                     {status_text}
                 </span>
-                <div class="hc-variance-util-value">{gap_ratio_text}</div>
+                <div class="hc-variance-util-value">{hc_ratio_text}</div>
             </div>
             <div class="hc-main-row">
                 {ui_icon_svg("balance", "#6EA52B", "#F1F8E8")}
@@ -6725,7 +6725,7 @@ def main():
     required_pic = weighted_period_avg(f_hc, "Required HC PIC") if not f_hc.empty else 0.0
 
     hc_variance = required_hc - actual_hc
-    hc_gap_ratio = hc_variance / actual_hc if actual_hc > 0 else float("nan")
+    hc_ratio = required_hc / actual_hc if actual_hc > 0 else float("nan")
     
     if hc_variance > 0:
         variance_status = ("OVERLOAD", COLORS["red"], "#FEE2E2")
@@ -6768,7 +6768,7 @@ def main():
             variance_status[0],
             variance_status[1],
             variance_status[2],
-            hc_gap_ratio,
+            hc_ratio,
         )
 
     if office == "All Offices":
