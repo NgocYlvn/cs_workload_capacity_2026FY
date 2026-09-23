@@ -7474,7 +7474,7 @@ def main():
                 stretch_to_container=True,
             )
 
-    section_title("6. Control Tower effectiveness = CS Resolutions Rate")
+    section_title("6. Control Tower effectiveness")
 
     # Definition note — UI only; no business logic/calculation changes.
     st.markdown(
