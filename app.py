@@ -3844,18 +3844,18 @@ def render_case_office_cards(workload_df: pd.DataFrame):
 
     IMPORTANT:
     - Cards use sheet "4. Workload by Activity" as the single source of truth.
-    - C / A / S / E values are summed from the corresponding activity-volume
-      columns by Office after the dashboard Month / Office filters are applied.
+    - C / A / S / E values are summed from the corresponding workload-minute
+      columns by Office and converted to hours after Month / Office filtering.
     - HPH is displayed as HLC to follow the dashboard's standard office naming.
     """
     if workload_df is None or workload_df.empty or "Office" not in workload_df.columns:
         return
 
     source_map = {
-        "C": "Core Volume",
-        "A": "Ancillary Volume",
-        "S": "Supporting Volume",
-        "E": "Exception Volume",
+        "C": "Core Workload (min)",
+        "A": "Ancillary Workload (min)",
+        "S": "Supporting Workload (min)",
+        "E": "Exception Workload (min)",
     }
     d = workload_df[["Office"]].copy()
     d["Office"] = workload_df["Office"].astype(str).str.strip().str.upper()
@@ -3865,7 +3865,7 @@ def render_case_office_cards(workload_df: pd.DataFrame):
         if source_col in workload_df.columns:
             d[activity] = pd.to_numeric(
                 workload_df[source_col], errors="coerce"
-            ).fillna(0.0)
+            ).fillna(0.0) / 60.0
         else:
             d[activity] = 0.0
 
@@ -3891,7 +3891,7 @@ def render_case_office_cards(workload_df: pd.DataFrame):
             font-size:20px;
             font-weight:700;
             margin:4px 0 10px 2px;">
-            C / A / S / E Activity by Office
+            C / A / S / E Activity (hour) by Office
         </div>
         """,
         unsafe_allow_html=True,
@@ -3953,7 +3953,7 @@ def render_case_office_cards(workload_df: pd.DataFrame):
                           color:#667085;
                           font-size:12px;
                           font-weight:600;">
-                        TOTAL ACTIVITY
+                        TOTAL ACTIVITY (hour)
                       </div>
                       <div style="
                           color:{COLORS['navy']};
@@ -3971,19 +3971,19 @@ def render_case_office_cards(workload_df: pd.DataFrame):
                       border-top:1px solid #E7ECF1;
                       padding-top:11px;">
                     <div style="text-align:center;border-right:1px solid #E7ECF1;">
-                      <div style="color:{activity_meta['C'][1]};font-size:16px;font-weight:800;">C</div>
+                      <div style="color:{activity_meta['C'][1]};font-size:16px;font-weight:800;">C (hour)</div>
                       <div style="color:{COLORS['navy']};font-size:18px;font-weight:750;margin-top:4px;">{vals['C']:,.0f}</div>
                     </div>
                     <div style="text-align:center;border-right:1px solid #E7ECF1;">
-                      <div style="color:{activity_meta['A'][1]};font-size:16px;font-weight:800;">A</div>
+                      <div style="color:{activity_meta['A'][1]};font-size:16px;font-weight:800;">A (hour)</div>
                       <div style="color:{COLORS['navy']};font-size:18px;font-weight:750;margin-top:4px;">{vals['A']:,.0f}</div>
                     </div>
                     <div style="text-align:center;border-right:1px solid #E7ECF1;">
-                      <div style="color:{activity_meta['S'][1]};font-size:16px;font-weight:800;">S</div>
+                      <div style="color:{activity_meta['S'][1]};font-size:16px;font-weight:800;">S (hour)</div>
                       <div style="color:{COLORS['navy']};font-size:18px;font-weight:750;margin-top:4px;">{vals['S']:,.0f}</div>
                     </div>
                     <div style="text-align:center;">
-                      <div style="color:{activity_meta['E'][1]};font-size:16px;font-weight:800;">E</div>
+                      <div style="color:{activity_meta['E'][1]};font-size:16px;font-weight:800;">E (hour)</div>
                       <div style="color:{COLORS['navy']};font-size:18px;font-weight:750;margin-top:4px;">{vals['E']:,.0f}</div>
                     </div>
                   </div>
