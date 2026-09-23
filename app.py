@@ -5887,12 +5887,12 @@ def chart_resolution(df: pd.DataFrame):
     if df is None or df.empty:
         st.info("No CS Resolution data available for selected filters.")
         return
-    pair_panel_title("CS Control Tower Effectiveness Trend")
+    pair_panel_title("CS Resolution Trend")
     agg = df.groupby("MonthDate", as_index=False).agg(**{"Total Abnormality": ("Total Abnormality", "sum"), "Resolved": ("Resolved", "sum")}).sort_values("MonthDate")
     agg["Resolution Rate"] = np.where(agg["Total Abnormality"] > 0, agg["Resolved"] / agg["Total Abnormality"], np.nan)
     agg["Month"] = agg["MonthDate"].dt.strftime("%b-%y")
     # Use numeric x positions so the resolution-rate marker stays exactly at
-    # the horizontal centre of its corresponding "Control Tower Effectiveness Cases" bar.
+    # the horizontal centre of its corresponding "Resolved by CS" bar.
     month_x = np.arange(len(agg), dtype=float)
     bar_offset = 0.18
     bar_width = 0.34
@@ -5901,7 +5901,7 @@ def chart_resolution(df: pd.DataFrame):
     fig = go.Figure()
     fig.add_trace(go.Bar(x=total_x, width=bar_width, y=agg["Total Abnormality"], name="Total Exception Case", marker_color="#8EB7D8", text=agg["Total Abnormality"], texttemplate="%{text:,.0f}", textposition="outside", cliponaxis=False, customdata=agg["Month"], hovertemplate="%{customdata}<br>Total Exception Case: %{y:,.0f}<extra></extra>"))
     fig.add_trace(go.Bar(x=resolved_x, width=bar_width, y=agg["Resolved"], name="Resolved by CS", marker_color=BUSINESS_COLORS["actual"], text=agg["Resolved"], texttemplate="%{text:,.0f}", textposition="outside", cliponaxis=False, customdata=agg["Month"], hovertemplate="%{customdata}<br>Resolved by CS: %{y:,.0f}<extra></extra>"))
-    fig.add_trace(go.Scatter(x=resolved_x, y=agg["Resolution Rate"], name="Control Tower Effectiveness Rate", mode="lines+markers+text", line=dict(color="#F97316", width=3), marker=dict(size=8, color="#F97316", line=dict(color="#FFFFFF", width=1.5)), text=agg["Resolution Rate"], texttemplate="%{text:.1%}", textposition="bottom center", yaxis="y2", customdata=agg["Month"], hovertemplate="%{customdata}<br>Control Tower Effectiveness Cases: %{y:.1%}<extra></extra>"))
+    fig.add_trace(go.Scatter(x=resolved_x, y=agg["Resolution Rate"], name="CS Resolution Rate", mode="lines+markers+text", line=dict(color="#F97316", width=3), marker=dict(size=8, color="#F97316", line=dict(color="#FFFFFF", width=1.5)), text=agg["Resolution Rate"], texttemplate="%{text:.1%}", textposition="bottom center", yaxis="y2", customdata=agg["Month"], hovertemplate="%{customdata}<br>CS Resolution Rate: %{y:.1%}<extra></extra>"))
     fig.update_layout(title_text="", barmode="overlay", yaxis=dict(title="Cases", rangemode="tozero"), yaxis2=dict(title="Resolution Rate", overlaying="y", side="right", tickformat=".0%", range=[0, 1.20], showgrid=False))
     fig = plotly_layout(fig, 390, show_legend=True, legend_position="top", margin_left=58, margin_right=68, margin_top=38, margin_bottom=44)
     fig.update_xaxes(tickmode="array", tickvals=month_x, ticktext=agg["Month"].tolist(), range=[-0.55, len(agg) - 0.45])
@@ -5939,8 +5939,8 @@ def render_cs_solution_table(df: pd.DataFrame):
     display = display.rename(
         columns={
             "Total Abnormality": "Total Exception Case",
-            "Resolved": "Control Tower Effectiveness Cases",
-            "Resolution Rate (%)": "Control Tower Effectiveness Rate",
+            "Resolved": "Resolved by CS",
+            "Resolution Rate (%)": "CS Resolution Rate",
         }
     )
 
@@ -7523,7 +7523,7 @@ def main():
             )
         with cs2:
             kpi_card(
-                "Control Tower Effectiveness Cases",
+                "Resolved by CS",
                 fmt_int(resolved),
                 "",
             )
