@@ -4078,7 +4078,7 @@ def render_case_total_cards(workload_df: pd.DataFrame):
                         <span style="color:{COLORS['navy']};font-size:22px;font-weight:800;text-align:right;">{hours[activity]:,.0f}</span>
                     </div>
                     <div style="color:#667085;font-size:18px;line-height:1.2;
-                         font-weight:500;text-align:center;margin-top:6px;">
+                         font-weight:500;text-align:right;margin-top:6px;">
                         {share:.1%}
                     </div>
                 </div>
