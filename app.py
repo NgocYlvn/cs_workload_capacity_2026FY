@@ -3846,7 +3846,7 @@ def render_case_office_cards(workload_df: pd.DataFrame):
     - Cards use sheet "4. Workload by Activity" as the single source of truth.
     - Total Activity sums activity-volume columns by Office.
     - C / A / S / E and Total Hour sum workload-minute columns by Office and
-      convert them to hours after Month / Office filtering.
+      convert them to hours after Month / Office filtering. Round only for display.
     - HPH is displayed as HLC to follow the dashboard's standard office naming.
     """
     if workload_df is None or workload_df.empty or "Office" not in workload_df.columns:
@@ -3955,7 +3955,7 @@ def render_case_office_cards(workload_df: pd.DataFrame):
         )
         hour_values = "".join(
             f'<div style="text-align:center;color:{COLORS["navy"]};'
-            f'font-size:13px;font-weight:750;">{vals[activity]:,.0f}</div>'
+            f'font-size:13px;font-weight:750;">{vals[activity]:,.1f}</div>'
             for activity in activities
         )
         share_values = "".join(
@@ -3997,7 +3997,7 @@ def render_case_office_cards(workload_df: pd.DataFrame):
                       </div>
                       <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-top:3px;">
                         <span style="color:#667085;font-size:11px;font-weight:600;">HOUR</span>
-                        <span style="color:{COLORS['navy']};font-size:20px;font-weight:800;">{total:,.0f}</span>
+                        <span style="color:{COLORS['navy']};font-size:20px;font-weight:800;">{total:,.1f}</span>
                       </div>
                     </div>
                   </div>
