@@ -4022,15 +4022,15 @@ def render_case_office_cards(workload_df: pd.DataFrame):
 
 
 def render_case_total_cards(workload_df: pd.DataFrame):
-    """Section 5 C/A/S/E totals across the four standard offices."""
+    """Section 5 activity volumes and workload hours across standard offices."""
     if workload_df is None or workload_df.empty:
         return
 
     source_map = {
-        "C": ("Core Volume", "Total Volume - Core (C)", COLORS["blue"]),
-        "A": ("Ancillary Volume", "Total Volume - Ancillary (A)", COLORS["green"]),
-        "S": ("Supporting Volume", "Total Volume - Supporting (S)", COLORS["amber"]),
-        "E": ("Exception Volume", "Total Volume - Exception (E)", COLORS["red"]),
+        "C": ("Core Volume", "Core Workload (min)", "Total Volume - Core (C)", COLORS["blue"]),
+        "A": ("Ancillary Volume", "Ancillary Workload (min)", "Total Volume - Ancillary (A)", COLORS["green"]),
+        "S": ("Supporting Volume", "Supporting Workload (min)", "Total Volume - Supporting (S)", COLORS["amber"]),
+        "E": ("Exception Volume", "Exception Workload (min)", "Total Volume - Exception (E)", COLORS["red"]),
     }
 
     d = workload_df.copy()
@@ -4042,31 +4042,40 @@ def render_case_total_cards(workload_df: pd.DataFrame):
         return
 
     totals = {}
-    for activity, (source_col, _, _) in source_map.items():
+    hours = {}
+    for activity, (volume_col, minute_col, _, _) in source_map.items():
         totals[activity] = (
-            float(pd.to_numeric(d[source_col], errors="coerce").fillna(0).sum())
-            if source_col in d.columns
-            else 0.0
+            float(pd.to_numeric(d[volume_col], errors="coerce").fillna(0).sum())
+            if volume_col in d.columns else 0.0
+        )
+        hours[activity] = (
+            float(pd.to_numeric(d[minute_col], errors="coerce").fillna(0).sum()) / 60.0
+            if minute_col in d.columns else 0.0
         )
 
     grand_total = float(sum(totals.values()))
     total_cols = st.columns(4, gap="medium")
     for card_col, activity in zip(total_cols, ["C", "A", "S", "E"]):
-        _, label, color = source_map[activity]
+        _, _, label, color = source_map[activity]
         value = totals[activity]
         share = safe_div(value, grand_total)
         with card_col:
             st.markdown(
                 f"""
                 <div class="kpi-card" style="border-top:4px solid {color} !important;">
-                    <div class="kpi-label" style="color:{color} !important;
-                         font-weight:700 !important;">{label}</div>
-                    <div class="kpi-value" style="color:{COLORS['navy']} !important;">
-                        {value:,.0f}
+                    <div class="kpi-label" style="color:{color} !important;font-weight:700 !important;">
+                        {label}
                     </div>
-                    <div style="color:#667085;font-size:18px;
-                         line-height:1.2;font-weight:500;text-align:center;
-                         margin-top:5px;">
+                    <div style="display:grid;grid-template-columns:75px auto;
+                         column-gap:8px;row-gap:4px;align-items:baseline;
+                         max-width:190px;margin:9px auto 0;">
+                        <span style="color:#667085;font-size:11px;font-weight:600;">ACTIVITY</span>
+                        <span style="color:{COLORS['navy']};font-size:22px;font-weight:800;text-align:right;">{value:,.0f}</span>
+                        <span style="color:#667085;font-size:11px;font-weight:600;">HOUR</span>
+                        <span style="color:{COLORS['navy']};font-size:22px;font-weight:800;text-align:right;">{hours[activity]:,.1f}</span>
+                    </div>
+                    <div style="color:#667085;font-size:18px;line-height:1.2;
+                         font-weight:500;text-align:center;margin-top:6px;">
                         {share:.1%}
                     </div>
                 </div>
@@ -7373,7 +7382,7 @@ def main():
     segment_workload_table(f_workload, f_mode)
 
     
-    section_title("5. Workload Breakdown by Category & Segment")
+    section_title("5. Workload Breakdown by Activity & Segment")
 
     st.markdown(
         """
