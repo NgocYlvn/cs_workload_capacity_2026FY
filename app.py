@@ -4070,21 +4070,27 @@ def render_case_total_cards(workload_df: pd.DataFrame):
         with card_col:
             st.markdown(
                 f"""
-                <div class="kpi-card" style="border-top:4px solid {color} !important;">
-                    <div class="kpi-label" style="color:{color} !important;
-                         font-size:16px !important;font-weight:700 !important;">{label}</div>
-                    <div style="color:#667085;font-size:12px;font-weight:700;">VOLUME</div>
-                    <div class="kpi-value" style="color:{COLORS['navy']} !important;">
-                        {value:,.0f}
-                    </div>
-                    <div style="color:#667085;font-size:12px;font-weight:700;">HOUR</div>
-                    <div style="color:{COLORS['navy']};font-size:20px;font-weight:800;">
-                        {hours[activity]:,.0f}
-                    </div>
-                    <div style="color:#667085;font-size:18px;
-                         line-height:1.2;font-weight:500;text-align:center;
-                         margin-top:5px;">
-                        {share:.1%}
+                <div style="background:#FFFFFF;border:1px solid {COLORS['border']};
+                     border-top:4px solid {color};border-radius:14px;
+                     padding:14px 16px;min-height:170px;box-sizing:border-box;
+                     box-shadow:0 2px 10px rgba(0,0,0,0.035);
+                     display:flex;flex-direction:column;align-items:center;
+                     justify-content:center;gap:10px;">
+                    <div style="color:{color};font-size:16px;font-weight:700;
+                         text-align:center;line-height:1.2;">{label}</div>
+                    <div style="width:180px;max-width:100%;">
+                        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;">
+                            <span style="color:#667085;font-size:11px;font-weight:600;">VOLUME</span>
+                            <span style="color:{COLORS['navy']};font-size:18px;font-weight:800;">{value:,.0f}</span>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-top:10px;">
+                            <span style="color:#667085;font-size:11px;font-weight:600;">HOUR</span>
+                            <span style="color:{COLORS['navy']};font-size:18px;font-weight:800;">{hours[activity]:,.0f}</span>
+                        </div>
+                        <div style="color:#667085;font-size:16px;line-height:1.2;
+                             font-weight:500;text-align:right;margin-top:12px;">
+                            {share:.1%}
+                        </div>
                     </div>
                 </div>
                 """,
