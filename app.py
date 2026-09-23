@@ -3844,8 +3844,9 @@ def render_case_office_cards(workload_df: pd.DataFrame):
 
     IMPORTANT:
     - Cards use sheet "4. Workload by Activity" as the single source of truth.
-    - C / A / S / E values are summed from the corresponding workload-minute
-      columns by Office and converted to hours after Month / Office filtering.
+    - Total Activity sums activity-volume columns by Office.
+    - C / A / S / E and Total Hour sum workload-minute columns by Office and
+      convert them to hours after Month / Office filtering.
     - HPH is displayed as HLC to follow the dashboard's standard office naming.
     """
     if workload_df is None or workload_df.empty or "Office" not in workload_df.columns:
@@ -3856,6 +3857,12 @@ def render_case_office_cards(workload_df: pd.DataFrame):
         "A": "Ancillary Workload (min)",
         "S": "Supporting Workload (min)",
         "E": "Exception Workload (min)",
+    }
+    volume_map = {
+        "C": "Core Volume",
+        "A": "Ancillary Volume",
+        "S": "Supporting Volume",
+        "E": "Exception Volume",
     }
     d = workload_df[["Office"]].copy()
     d["Office"] = workload_df["Office"].astype(str).str.strip().str.upper()
@@ -3868,14 +3875,21 @@ def render_case_office_cards(workload_df: pd.DataFrame):
             ).fillna(0.0) / 60.0
         else:
             d[activity] = 0.0
+        volume_col = volume_map[activity]
+        d[f"{activity} Volume"] = (
+            pd.to_numeric(workload_df[volume_col], errors="coerce").fillna(0.0)
+            if volume_col in workload_df.columns else 0.0
+        )
 
     d = d[d["Office"] != ""].copy()
     if d.empty:
         return
 
-    summary = d.groupby("Office", as_index=False)[["C", "A", "S", "E"]].sum()
-
-    summary["Total"] = summary[["C", "A", "S", "E"]].sum(axis=1)
+    summary = d.groupby("Office", as_index=False).sum(numeric_only=True)
+    summary["Total Activity"] = summary[
+        [f"{activity} Volume" for activity in ("C", "A", "S", "E")]
+    ].sum(axis=1)
+    summary["Total Hour"] = summary[["C", "A", "S", "E"]].sum(axis=1)
 
     present = summary["Office"].astype(str).tolist()
     offices = [o for o in STANDARD_OFFICES if o in present]
@@ -3917,7 +3931,8 @@ def render_case_office_cards(workload_df: pd.DataFrame):
             activity: float(pd.to_numeric(row.get(activity, 0), errors="coerce") or 0)
             for activity in ["C", "A", "S", "E"]
         }
-        total = float(sum(vals.values()))
+        total = float(row["Total Hour"])
+        total_activity = float(row["Total Activity"])
         shares = {
             activity: safe_div(value, total)
             for activity, value in vals.items()
@@ -3931,7 +3946,7 @@ def render_case_office_cards(workload_df: pd.DataFrame):
                     border-top:4px solid {COLORS['navy']};
                     border-radius:12px;
                     padding:14px 16px 13px;
-                    min-height:180px;
+                    min-height:192px;
                     box-sizing:border-box;
                     box-shadow:0 2px 7px rgba(0,59,112,0.045);">
 
@@ -3953,13 +3968,19 @@ def render_case_office_cards(workload_df: pd.DataFrame):
                           color:#667085;
                           font-size:12px;
                           font-weight:600;">
-                        TOTAL ACTIVITY (hour)
+                        TOTAL ACTIVITY
                       </div>
                       <div style="
                           color:{COLORS['navy']};
                           font-size:23px;
                           font-weight:800;
                           margin-top:2px;">
+                        {total_activity:,.0f}
+                      </div>
+                      <div style="color:#667085;font-size:12px;font-weight:600;margin-top:5px;">
+                        TOTAL HOUR
+                      </div>
+                      <div style="color:{COLORS['navy']};font-size:18px;font-weight:800;margin-top:2px;">
                         {total:,.0f}
                       </div>
                     </div>
