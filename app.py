@@ -5939,8 +5939,8 @@ def render_cs_solution_table(df: pd.DataFrame):
     display = display.rename(
         columns={
             "Total Abnormality": "Total Exception Case",
-            "Resolved": "Resolved by CS",
-            "Resolution Rate (%)": "CS Resolution Rate",
+            "Resolved": "Control Tower Effectiveness Cases",
+            "Resolution Rate (%)": "Control Tower Effectiveness Rate",
         }
     )
 
