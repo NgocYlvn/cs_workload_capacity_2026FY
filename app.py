@@ -5898,8 +5898,8 @@ def chart_resolution(df: pd.DataFrame):
     resolved_x = month_x + bar_offset
     fig = go.Figure()
     fig.add_trace(go.Bar(x=total_x, width=bar_width, y=agg["Total Abnormality"], name="Total Exception Case", marker_color="#8EB7D8", text=agg["Total Abnormality"], texttemplate="%{text:,.0f}", textposition="outside", cliponaxis=False, customdata=agg["Month"], hovertemplate="%{customdata}<br>Total Exception Case: %{y:,.0f}<extra></extra>"))
-    fig.add_trace(go.Bar(x=resolved_x, width=bar_width, y=agg["Resolved"], name="Control Tower Effectiveness Cases", marker_color=BUSINESS_COLORS["actual"], text=agg["Resolved"], texttemplate="%{text:,.0f}", textposition="outside", cliponaxis=False, customdata=agg["Month"], hovertemplate="%{customdata}<br>Control Tower Effectiveness Cases: %{y:,.0f}<extra></extra>"))
-    fig.add_trace(go.Scatter(x=resolved_x, y=agg["Resolution Rate"], name="Control Tower Effectiveness Rate", mode="lines+markers+text", line=dict(color="#F97316", width=3), marker=dict(size=8, color="#F97316", line=dict(color="#FFFFFF", width=1.5)), text=agg["Resolution Rate"], texttemplate="%{text:.1%}", textposition="bottom center", yaxis="y2", customdata=agg["Month"], hovertemplate="%{customdata}<br>Control Tower Effectiveness Rate: %{y:.1%}<extra></extra>"))
+    fig.add_trace(go.Bar(x=resolved_x, width=bar_width, y=agg["Resolved"], name="CS Control Tower Effectiveness Cases", marker_color=BUSINESS_COLORS["actual"], text=agg["Resolved"], texttemplate="%{text:,.0f}", textposition="outside", cliponaxis=False, customdata=agg["Month"], hovertemplate="%{customdata}<br>Control Tower Effectiveness Cases: %{y:,.0f}<extra></extra>"))
+    fig.add_trace(go.Scatter(x=resolved_x, y=agg["Resolution Rate"], name="CS Control Tower Effectiveness Rate", mode="lines+markers+text", line=dict(color="#F97316", width=3), marker=dict(size=8, color="#F97316", line=dict(color="#FFFFFF", width=1.5)), text=agg["Resolution Rate"], texttemplate="%{text:.1%}", textposition="bottom center", yaxis="y2", customdata=agg["Month"], hovertemplate="%{customdata}<br>Control Tower Effectiveness Rate: %{y:.1%}<extra></extra>"))
     max_rate = pd.to_numeric(agg["Resolution Rate"], errors="coerce").max()
     rate_axis_max = max(0.01, float(max_rate) * 1.25) if pd.notna(max_rate) else 0.01
     fig.update_layout(
@@ -5947,8 +5947,8 @@ def render_cs_solution_table(df: pd.DataFrame):
     display = display.rename(
         columns={
             "Total Abnormality": "Total Exception Case",
-            "Resolved": "Control Tower Effectiveness Cases",
-            "Resolution Rate (%)": "Control Tower Effectiveness Rate",
+            "Resolved": "CS Control Tower Effectiveness Cases",
+            "Resolution Rate (%)": "CS Control Tower Effectiveness Rate",
         }
     )
 
@@ -7497,7 +7497,7 @@ def main():
             )
         with cs2:
             kpi_card(
-                "Control Tower Effectiveness Cases",
+                "CS Control Tower Effectiveness Cases",
                 fmt_int(resolved),
                 "",
             )
@@ -7505,7 +7505,7 @@ def main():
             st.markdown(
                 f"""
                 <div class="kpi-card">
-                    <div class="kpi-label">Control Tower Effectiveness Rate</div>
+                    <div class="kpi-label">CS Control Tower Effectiveness Rate</div>
                     <div class="kpi-value" style="
                         font-size:38px !important;
                         font-weight:800 !important;
