@@ -10,6 +10,8 @@ from __future__ import annotations
 
 import re
 import html
+import hashlib
+import hmac
 import logging
 import textwrap
 from pathlib import Path
@@ -6507,6 +6509,30 @@ def render_cover_gate() -> None:
         st.stop()
 
 
+def render_password_gate() -> None:
+    """Require the dashboard password before loading workbook data."""
+    if st.session_state.get("dashboard_authenticated", False):
+        return
+
+    st.title("CS Operations Performance Dashboard")
+    st.write("Enter the password to view the dashboard.")
+    left, center, right = st.columns([1, 1.2, 1])
+    with center:
+        with st.form("dashboard_password_form", clear_on_submit=True):
+            password = st.text_input("Password", type="password")
+            submitted = st.form_submit_button("Open Dashboard", use_container_width=True)
+
+        if submitted:
+            password_hash = hashlib.sha256(password.encode("utf-8")).hexdigest()
+            expected_hash = "1c6a5e884aa2538830fdd26e29205792f2722a7e7682ad970bb88171643f682c"
+            if hmac.compare_digest(password_hash, expected_hash):
+                st.session_state["dashboard_authenticated"] = True
+                st.rerun()
+            else:
+                st.error("Incorrect password. Please try again.")
+    st.stop()
+
+
 
 # ============================================================
 # MAIN APP
@@ -6516,6 +6542,7 @@ def render_cover_gate() -> None:
 def main():
     # Cover page is displayed before any Excel loading/filtering.
     render_cover_gate()
+    render_password_gate()
 
     # Load the default workbook.
     file_path = DEFAULT_FILE_PATH
