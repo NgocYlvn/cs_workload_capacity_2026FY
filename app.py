@@ -2418,7 +2418,11 @@ def render_hc_office_comparison(hc_filtered_all_offices: pd.DataFrame) -> None:
             actual = weighted_period_avg(office_df, "Total Actual HC")
             required = weighted_period_avg(office_df, "Total Required HC")
             gap = required - actual
-            util = required / actual if pd.notna(actual) and actual > 0 else float("nan")
+            # Average the monthly Office Workload values (Required HC / Actual HC).
+            # Dividing the period averages would weight months by their Actual HC.
+            monthly_hc = office_df.groupby("MonthDate")[["Total Required HC", "Total Actual HC"]].sum(min_count=1)
+            monthly_util = monthly_hc["Total Required HC"] / monthly_hc["Total Actual HC"].replace(0, np.nan)
+            util = float(monthly_util.mean()) if monthly_util.notna().any() else float("nan")
             # Office status is determined by Office Workload (utilization),
             # using the standard workload thresholds:
             # < 90%       -> LESS LOAD / Green
@@ -2435,7 +2439,7 @@ def render_hc_office_comparison(hc_filtered_all_offices: pd.DataFrame) -> None:
         with col:
             _office_compare_card(
                 office_name,
-                "Office Workload",
+                "Average Office Workload",
                 "N/A" if pd.isna(util) else fmt_pct(util),
                 [
                     ("Approved HC", "N/A" if pd.isna(approved) else fmt_num(approved, 2), ""),
