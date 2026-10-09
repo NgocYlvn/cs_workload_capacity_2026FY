@@ -3140,11 +3140,12 @@ def prepare_single_service(df: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows, columns=columns)
 
 
-def render_service_volume_offices(data: pd.DataFrame) -> None:
-    """Compare all four offices for the selected month(s), using sheet-10 totals."""
+def render_service_volume_offices(data: pd.DataFrame, office: str = "All Offices") -> None:
+    """Show all offices or the selected office, using sheet-10 totals."""
     _office_comparison_heading("Single & Multi-Service Shipment Volume by Office", emphasized=True)
     codes = {"AE": "AEA", "AI": "AIA", "OE": "OEO", "OI": "OIO", "CC": "C", "TR": "T", "WH": "WG, WB"}
-    for col, office_name in zip(st.columns(4, gap="small"), STANDARD_OFFICES):
+    visible_offices = STANDARD_OFFICES if office == "All Offices" else [office]
+    for col, office_name in zip(st.columns(len(visible_offices), gap="small"), visible_offices):
         office_df = data[data["Office"] == office_name] if not data.empty else pd.DataFrame()
         with col:
             header = f'<div style="font-size:18px;font-weight:800;color:#06183F;background:#F3F7FA;padding:8px 12px;">{office_name}</div>'
@@ -6905,7 +6906,7 @@ def main():
     with shipment_trend_col:
         chart_monthly_total_shipment(monthly_shipment_source, height=264)
 
-    render_service_volume_offices(apply_filters(single_service, year, month, "All Offices"))
+    render_service_volume_offices(apply_filters(single_service, year, month, office), office)
 
     # Customer shipment analysis:
     # Remove Transportation Mode chart/detail from the dashboard.
