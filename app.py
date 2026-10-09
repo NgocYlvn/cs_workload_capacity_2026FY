@@ -153,6 +153,7 @@ CORPORATE_PALETTE = [
 ]
 
 SHEET_NAMES = {
+    "single_service": "10. Single service volume",
     "hc": " 1.  Office Cap. & Workload",
     "resolution": "9. CS Resolutions Rate",
     "workload": "4. Workload by Activity",
@@ -3082,10 +3083,11 @@ def load_data(path: str, cache_token: str = "") -> Dict[str, pd.DataFrame]:
             df = pd.read_excel(
                 xls,
                 sheet_name=sheet,
-                header=1,
+                header=None if key == "single_service" else 1,
             )
             df.columns = [clean_col(c) for c in df.columns]
-            df = df.dropna(how="all")
+            if key != "single_service":
+                df = df.dropna(how="all")
             data[key] = df
         except Exception as exc:
             logger.exception("Unable to read sheet %r from workbook %s", sheet, path)
@@ -3096,6 +3098,95 @@ def load_data(path: str, cache_token: str = "") -> Dict[str, pd.DataFrame]:
 
     return data
 
+
+
+def prepare_single_service(df: pd.DataFrame) -> pd.DataFrame:
+    """Read merged month blocks from row 2; exclude grand totals/subtotals."""
+    measures = SERVICE_ORDER + ["Multi", "Total"]
+    columns = ["Office", "Customer", "MonthDate"] + measures
+    if df.empty or len(df) < 4:
+        return pd.DataFrame(columns=columns)
+    # load_data preserves row positions for this sheet.
+    rows = []
+    for start in range(3, df.shape[1]):
+        value = df.iloc[1, start]
+        if pd.isna(value):
+            continue
+        label = str(value).strip()
+        # Full English month names follow the dashboard's FY2026 convention.
+        date = parse_month(label[:3] if label.lower() in {
+            "january", "february", "march", "april", "may", "june",
+            "july", "august", "september", "october", "november", "december"
+        } else value)
+        if pd.isna(date) or start + 8 >= df.shape[1]:
+            continue
+        headers = [clean_col(df.iloc[3, start + i]) for i in range(7)]
+        if not all(re.match(r"^" + service + r"\b", header, re.I)
+                   for service, header in zip(SERVICE_ORDER, headers)):
+            continue
+        for _, source in df.iloc[4:].iterrows():
+            office_name = normalize_office(source.iloc[0])
+            customer = source.iloc[1]
+            if office_name not in STANDARD_OFFICES or pd.isna(customer):
+                continue
+            if str(customer).strip().lower() in {"", "total", "grand total", "subtotal"}:
+                continue
+            values = pd.to_numeric(source.iloc[start:start + 9], errors="coerce")
+            if values.isna().all():
+                continue
+            row = {"Office": office_name, "Customer": str(customer).strip(), "MonthDate": date}
+            row.update(dict(zip(measures, values.fillna(0).tolist())))
+            rows.append(row)
+    return pd.DataFrame(rows, columns=columns)
+
+
+def render_service_volume_offices(data: pd.DataFrame) -> None:
+    """Compare all four offices for the selected month(s), using sheet-10 totals."""
+    _office_comparison_heading("Single & Multi-Service Shipment Volume by Office", emphasized=True)
+    st.caption("Month filter applies to all four offices. Percentages = Volume / Office Total Shipment Volume.")
+    codes = {"AE": "AEA", "AI": "AIA", "OE": "OEO", "OI": "OIO", "CC": "C", "TR": "T", "WH": "WG, WB"}
+    for col, office_name in zip(st.columns(4, gap="small"), STANDARD_OFFICES):
+        office_df = data[data["Office"] == office_name] if not data.empty else pd.DataFrame()
+        with col:
+            header = f'<div style="font-size:20px;font-weight:800;color:#06183F;background:#F3F7FA;padding:12px 16px;">{office_name}</div>'
+            if office_df.empty:
+                body = '<div style="min-height:426px;display:flex;flex-direction:column;align-items:center;justify-content:center;"><b style="color:#06183F;">NO DATA</b><p style="font-size:12px;color:#64748B;">No records for selected month</p></div>'
+            else:
+                totals = office_df[SERVICE_ORDER + ["Multi", "Total"]].sum()
+                total = float(totals["Total"])
+                single = float(totals[SERVICE_ORDER].sum())
+                def share(value):
+                    return f"{value / total:.1%}" if total > 0 else "N/A"
+                def summary(label, value):
+                    return (
+                        '<div style="background:#EEF7FC;border-radius:8px;padding:10px 12px;margin:8px 0;color:#003B70;">'
+                        f'<div style="font-size:12px;font-weight:700;">{label}</div>'
+                        '<div style="display:flex;justify-content:space-between;align-items:baseline;font-size:26px;font-weight:800;line-height:1.2;">'
+                        f'<span>{fmt_int(value)}</span><span>{share(value)}</span></div></div>'
+                    )
+                lines = "".join(
+                    f'<tr style="border-bottom:1px solid #E8EEF3;"><td style="padding:5px 0;">{service} <span style="color:#64748B;font-size:10px;">({codes[service]})</span></td><td style="text-align:right;">{fmt_int(totals[service])}</td><td style="text-align:right;">{share(totals[service])}</td></tr>'
+                    for service in SERVICE_ORDER
+                )
+                body = (
+                    '<div style="padding:12px 16px;min-height:426px;box-sizing:border-box;color:#06183F;">'
+                    '<div style="color:#64748B;font-size:12px;font-weight:700;">TOTAL SHIPMENT VOLUME</div>'
+                    f'<div style="font-size:36px;font-weight:850;line-height:1.2;margin-bottom:14px;">{fmt_int(total)}</div>'
+                    + summary("Multi-Service Shipment Volume", float(totals["Multi"]))
+                    + summary("Single-Service Shipment Volume", single)
+                    + '<div style="font-size:12px;font-weight:700;margin:10px 0 4px;">Single-Service Detail</div>'
+                    + '<table style="width:100%;font-size:12px;border-collapse:collapse;"><thead style="background:#F3F7FA;"><tr><th style="text-align:left;">Service</th><th style="text-align:right;">Volume</th><th style="text-align:right;">%</th></tr></thead>'
+                    + f'<tbody>{lines}</tbody></table></div>'
+                )
+            st.markdown(
+                '<div style="border:1px solid #D9E2EC;border-radius:14px;overflow:hidden;background:white;">' + header + body + '</div>',
+                unsafe_allow_html=True,
+            )
+            if not office_df.empty and (
+                abs(float(totals["Multi"]) + single - total) > 0.01
+                or (office_df[SERVICE_ORDER + ["Multi", "Total"]] < 0).any().any()
+            ):
+                st.caption("Source data needs review: negative volumes or totals do not reconcile.")
 
 
 @st.cache_data(show_spinner=False)
@@ -5646,7 +5737,7 @@ def segment_workload_table(df: pd.DataFrame, mode_df: pd.DataFrame):
         },
     )
 
-def chart_monthly_total_shipment(shipment_df: pd.DataFrame):
+def chart_monthly_total_shipment(shipment_df: pd.DataFrame, height: int = 280):
     """Display monthly Total Shipment Volume for the selected office scope."""
     if shipment_df is None or shipment_df.empty:
         st.info("No monthly shipment data available for selected filters.")
@@ -5717,7 +5808,7 @@ def chart_monthly_total_shipment(shipment_df: pd.DataFrame):
     )
     fig = plotly_layout(
         fig,
-        280,
+        height,
         show_legend=False,
         margin_left=70,
         margin_right=36,
@@ -6568,6 +6659,7 @@ def main():
         except WorkbookLoadError as exc:
             st.error(str(exc))
             st.stop()
+        single_service = prepare_single_service(raw["single_service"])
         hc = prepare_hc(raw["hc"])
         workload = prepare_workload(raw["workload"])
         fte = prepare_fte(raw["fte"])
@@ -6606,7 +6698,7 @@ def main():
         supporting_detail = add_code_description(supporting_detail, "Supporting Activity", code_note_map)
         exception_detail = add_code_description(exception_detail, "Exception Handling", code_note_map)
 
-    periods = all_periods(hc, workload, fte, shipment, customer, customer_ns, resolution)
+    periods = all_periods(hc, workload, fte, shipment, customer, customer_ns, resolution, single_service)
     month_options = ["All"] + [format_month(p) for p in periods]
 
     offices_from_data = sorted(set(
@@ -6794,28 +6886,32 @@ def main():
     )
     active_customers = calculate_active_customers(f_shipment)
 
-    # KPI order requested:
-    # 1) Active Customers
-    # 2) Total Shipment Volume
-    # Use the full section width so the two KPI cards form a balanced row.
-    sk1, sk2 = st.columns(2, gap="medium")
-    with sk1:
-        shipment_kpi_card(
-            "ACTIVE CUSTOMERS",
-            fmt_int(active_customers),
-            "",
-        )
-    with sk2:
-        shipment_kpi_card(
-            "TOTAL SHIPMENT VOLUME",
-            fmt_int(shipment_total),
-            "",
-        )
-
-    # Monthly trend follows the Office filter while retaining all available months.
+    # Approved layout: stacked KPIs (25%) beside monthly trend (75%).
+    # Fixed card heights + gap match the chart height exactly.
     monthly_shipment_source = filter_office_only(shipment, office)
-    st.markdown('<div style="height:12px;"></div>', unsafe_allow_html=True)
-    chart_monthly_total_shipment(monthly_shipment_source)
+    shipment_kpi_col, shipment_trend_col = st.columns([1, 3], gap="medium")
+    with shipment_kpi_col:
+        st.markdown(
+            f"""
+            <div style="display:flex;flex-direction:column;gap:16px;">
+                <div class="shipment-kpi-card" style="height:124px !important;min-height:124px !important;">
+                    <div class="shipment-kpi-label">ACTIVE CUSTOMERS</div>
+                    <div class="shipment-kpi-value">{fmt_int(active_customers)}</div>
+                    <div class="shipment-kpi-note"></div>
+                </div>
+                <div class="shipment-kpi-card" style="height:124px !important;min-height:124px !important;">
+                    <div class="shipment-kpi-label">TOTAL SHIPMENT VOLUME</div>
+                    <div class="shipment-kpi-value">{fmt_int(shipment_total)}</div>
+                    <div class="shipment-kpi-note"></div>
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    with shipment_trend_col:
+        chart_monthly_total_shipment(monthly_shipment_source, height=264)
+
+    render_service_volume_offices(apply_filters(single_service, year, month, "All Offices"))
 
     # Customer shipment analysis:
     # Remove Transportation Mode chart/detail from the dashboard.
