@@ -3148,14 +3148,14 @@ def render_service_volume_offices(data: pd.DataFrame, office: str = "All Offices
     .service-mix-card .mix-office {font-size:18px;font-weight:800;line-height:1.2;}
     .service-mix-card .mix-total {text-align:right;}
     .service-mix-card .mix-total-number {font-size:28px;font-weight:850;line-height:1.1;}
-    .service-mix-card .mix-total-label {font-size:10px;color:#64748B;line-height:1.3;margin-top:3px;}
+    .service-mix-card .mix-total-label {font-size:11px;color:#5B6575;line-height:1.3;margin-top:3px;}
     .service-mix-card .mix-summaries {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:10px 0;}
     .service-mix-card .mix-summary {background:#EEF7FC;border-radius:8px;padding:8px 4px;text-align:center;}
     .service-mix-card .mix-label {font-size:11px;font-weight:700;line-height:1.3;color:#003B70;}
     .service-mix-card .mix-volume {font-size:20px;font-weight:800;line-height:1.2;margin:4px 0 2px;color:#003B70;}
     .service-mix-card .mix-share {font-size:12px;line-height:1.2;color:#003B70;}
-    .service-mix-card .mix-details {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:8px;row-gap:5px;margin-top:8px;}
-    .service-mix-card .mix-service {display:grid;grid-template-columns:19px minmax(0,1fr) auto;gap:3px;align-items:baseline;font-size:11px;line-height:1.3;color:#06183F !important;white-space:nowrap;}
+    .service-mix-card .mix-details {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:20px;row-gap:5px;margin-top:8px;}
+    .service-mix-card .mix-service {display:block;font-size:11px;line-height:1.3;color:#06183F !important;white-space:nowrap;}
     .service-mix-card .mix-code {font-weight:750;}
     .service-mix-card .mix-no-data {height:170px;display:flex;align-items:center;justify-content:center;font-size:13px;color:#64748B;}
     </style>"""
@@ -3178,15 +3178,15 @@ def render_service_volume_offices(data: pd.DataFrame, office: str = "All Offices
                 def summary(label, value):
                     return f'<div class="mix-summary"><div class="mix-label">{label}</div><div class="mix-volume">{fmt_int(value)}</div><div class="mix-share">{share(value)}</div></div>'
                 lines = "".join(
-                    f'<div class="mix-service"><span class="mix-code">{service}</span><span>{fmt_int(totals[service])} shipments</span><span>{share(totals[service])}</span></div>'
+                    f'<div class="mix-service"><span class="mix-code">{service}:</span> {fmt_int(totals[service])} Shpt · {share(totals[service])}</div>'
                     for service in SERVICE_ORDER
                 )
                 content = (
                     '<div class="mix-head">' + office_heading
                     + f'<div class="mix-total"><div class="mix-total-number">{fmt_int(total)}</div><div class="mix-total-label">Total Shipment Volume</div></div></div>'
                     + '<div class="mix-summaries">'
-                    + summary("Multi-Service", float(totals["Multi"]))
-                    + summary("Single-Service", single) + '</div>'
+                    + summary("Single-Service", single)
+                    + summary("Multi-Service", float(totals["Multi"])) + '</div>'
                     + f'<div class="mix-details">{lines}</div>'
                 )
             st.markdown('<div class="service-mix-card">' + content + '</div>', unsafe_allow_html=True)
