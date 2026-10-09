@@ -3143,14 +3143,13 @@ def prepare_single_service(df: pd.DataFrame) -> pd.DataFrame:
 def render_service_volume_offices(data: pd.DataFrame) -> None:
     """Compare all four offices for the selected month(s), using sheet-10 totals."""
     _office_comparison_heading("Single & Multi-Service Shipment Volume by Office", emphasized=True)
-    st.caption("Month filter applies to all four offices. Percentages = Volume / Office Total Shipment Volume.")
     codes = {"AE": "AEA", "AI": "AIA", "OE": "OEO", "OI": "OIO", "CC": "C", "TR": "T", "WH": "WG, WB"}
     for col, office_name in zip(st.columns(4, gap="small"), STANDARD_OFFICES):
         office_df = data[data["Office"] == office_name] if not data.empty else pd.DataFrame()
         with col:
-            header = f'<div style="font-size:20px;font-weight:800;color:#06183F;background:#F3F7FA;padding:12px 16px;">{office_name}</div>'
+            header = f'<div style="font-size:18px;font-weight:800;color:#06183F;background:#F3F7FA;padding:8px 12px;">{office_name}</div>'
             if office_df.empty:
-                body = '<div style="min-height:426px;display:flex;flex-direction:column;align-items:center;justify-content:center;"><b style="color:#06183F;">NO DATA</b><p style="font-size:12px;color:#64748B;">No records for selected month</p></div>'
+                body = '<div style="height:334px;display:flex;flex-direction:column;align-items:center;justify-content:center;"><b style="color:#06183F;font-size:14px;">NO DATA</b></div>'
             else:
                 totals = office_df[SERVICE_ORDER + ["Multi", "Total"]].sum()
                 total = float(totals["Total"])
@@ -3159,34 +3158,29 @@ def render_service_volume_offices(data: pd.DataFrame) -> None:
                     return f"{value / total:.1%}" if total > 0 else "N/A"
                 def summary(label, value):
                     return (
-                        '<div style="background:#EEF7FC;border-radius:8px;padding:10px 12px;margin:8px 0;color:#003B70;">'
-                        f'<div style="font-size:12px;font-weight:700;">{label}</div>'
-                        '<div style="display:flex;justify-content:space-between;align-items:baseline;font-size:26px;font-weight:800;line-height:1.2;">'
+                        '<div style="background:#EEF7FC;border-radius:8px;padding:6px 8px;margin:5px 0;color:#003B70;">'
+                        f'<div style="font-size:11px;font-weight:700;">{label}</div>'
+                        '<div style="display:flex;justify-content:space-between;align-items:baseline;font-size:20px;font-weight:800;line-height:1.2;">'
                         f'<span>{fmt_int(value)}</span><span>{share(value)}</span></div></div>'
                     )
                 lines = "".join(
-                    f'<tr style="border-bottom:1px solid #E8EEF3;"><td style="padding:5px 0;">{service} <span style="color:#64748B;font-size:10px;">({codes[service]})</span></td><td style="text-align:right;">{fmt_int(totals[service])}</td><td style="text-align:right;">{share(totals[service])}</td></tr>'
+                    f'<tr style="border-bottom:1px solid #E8EEF3;"><td style="padding:3px 0;">{service} <span style="color:#64748B;font-size:10px;">({codes[service]})</span></td><td style="text-align:right;">{fmt_int(totals[service])}</td><td style="text-align:right;">{share(totals[service])}</td></tr>'
                     for service in SERVICE_ORDER
                 )
                 body = (
-                    '<div style="padding:12px 16px;min-height:426px;box-sizing:border-box;color:#06183F;">'
-                    '<div style="color:#64748B;font-size:12px;font-weight:700;">TOTAL SHIPMENT VOLUME</div>'
-                    f'<div style="font-size:36px;font-weight:850;line-height:1.2;margin-bottom:14px;">{fmt_int(total)}</div>'
+                    '<div style="padding:8px 12px;height:334px;box-sizing:border-box;color:#06183F;">'
+                    '<div style="color:#64748B;font-size:11px;font-weight:700;">TOTAL SHIPMENT VOLUME</div>'
+                    f'<div style="font-size:28px;font-weight:850;line-height:1.2;margin-bottom:6px;">{fmt_int(total)}</div>'
                     + summary("Multi-Service Shipment Volume", float(totals["Multi"]))
                     + summary("Single-Service Shipment Volume", single)
-                    + '<div style="font-size:12px;font-weight:700;margin:10px 0 4px;">Single-Service Detail</div>'
-                    + '<table style="width:100%;font-size:12px;border-collapse:collapse;"><thead style="background:#F3F7FA;"><tr><th style="text-align:left;">Service</th><th style="text-align:right;">Volume</th><th style="text-align:right;">%</th></tr></thead>'
+                    + '<div style="font-size:11px;font-weight:700;margin:6px 0 3px;">Single-Service Detail</div>'
+                    + '<table style="width:100%;font-size:11px;line-height:1.25;border-collapse:collapse;"><thead style="background:#F3F7FA;"><tr><th style="text-align:left;">Service</th><th style="text-align:right;">Volume</th><th style="text-align:right;">%</th></tr></thead>'
                     + f'<tbody>{lines}</tbody></table></div>'
                 )
             st.markdown(
-                '<div style="border:1px solid #D9E2EC;border-radius:14px;overflow:hidden;background:white;">' + header + body + '</div>',
+                '<div style="border:1px solid #D9E2EC;border-radius:14px;overflow:hidden;background:white;height:372px;box-sizing:border-box;">' + header + body + '</div>',
                 unsafe_allow_html=True,
             )
-            if not office_df.empty and (
-                abs(float(totals["Multi"]) + single - total) > 0.01
-                or (office_df[SERVICE_ORDER + ["Multi", "Total"]] < 0).any().any()
-            ):
-                st.caption("Source data needs review: negative volumes or totals do not reconcile.")
 
 
 @st.cache_data(show_spinner=False)
