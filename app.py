@@ -5967,16 +5967,22 @@ def customer_detail_volume_table(df: pd.DataFrame):
     )
 
     pair_panel_title("Customer Shipment Volume Detail")
+    # Older Streamlit versions do not expose row_height; keep compatibility.
+    import inspect
+    compact_options = {}
+    if "row_height" in inspect.signature(st.dataframe).parameters:
+        compact_options["row_height"] = 32
     st.dataframe(
         styled_ranking,
         use_container_width=True,
         hide_index=True,
         height=SHIPMENT_PAIR_HEIGHT,  # keep full-height scrollable detail for all customers
         column_config={
-            "Rank": st.column_config.NumberColumn("Rank", width=60, format="%d"),
-            "Customer": st.column_config.TextColumn("Customer", width=420),
-            "Shipment Volume": st.column_config.NumberColumn("Shipment Volume", width=150, format="%,.0f"),
+            "Rank": st.column_config.NumberColumn("Rank", width=50, format="%d"),
+            "Customer": st.column_config.TextColumn("Customer"),
+            "Shipment Volume": st.column_config.NumberColumn("Shipments", width=140, format="%,.0f"),
         },
+        **compact_options,
     )
 
 
