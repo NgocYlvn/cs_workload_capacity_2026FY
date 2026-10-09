@@ -6924,7 +6924,10 @@ def main():
         chart_top_customers(f_customer_ns)
 
     with customer_detail_col:
-        customer_detail_volume_table(f_customer_ns)
+        # Detail table uses sheet 10 monthly Total, independently of Top 15 source.
+        customer_service_detail = apply_filters(single_service, year, month, office)
+        customer_service_detail = customer_service_detail.rename(columns={"Total": "Volume"})
+        customer_detail_volume_table(customer_service_detail)
 
 
     section_title("3. Workload per PIC")
