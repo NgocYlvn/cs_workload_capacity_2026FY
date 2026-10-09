@@ -3145,7 +3145,9 @@ def render_service_volume_offices(data: pd.DataFrame, office: str = "All Offices
     _office_comparison_heading("Single & Multi-Service Shipment Volume by Office", emphasized=True)
     codes = {"AE": "AEA", "AI": "AIA", "OE": "OEO", "OI": "OIO", "CC": "C", "TR": "T", "WH": "WG, WB"}
     visible_offices = STANDARD_OFFICES if office == "All Offices" else [office]
-    for col, office_name in zip(st.columns(len(visible_offices), gap="small"), visible_offices):
+    # Keep the same quarter-width card even when only one office is selected.
+    card_columns = st.columns(4, gap="small")
+    for col, office_name in zip(card_columns, visible_offices):
         office_df = data[data["Office"] == office_name] if not data.empty else pd.DataFrame()
         with col:
             header = f'<div style="font-size:18px;font-weight:800;color:#06183F;background:#F3F7FA;padding:8px 12px;">{office_name}</div>'
