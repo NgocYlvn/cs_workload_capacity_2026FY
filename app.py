@@ -5962,7 +5962,7 @@ def customer_detail_volume_table(df: pd.DataFrame):
     styled_ranking = (
         ranking.style
         .set_properties(subset=["Rank"], **{"text-align": "center"})
-        .set_properties(subset=["Shipment Volume"], **{"text-align": "right"})
+        .set_properties(subset=["Shipment Volume"], **{"text-align": "center"})
         .set_properties(subset=["Customer"], **{"text-align": "left"})
     )
 
