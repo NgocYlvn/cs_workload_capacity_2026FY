@@ -3141,18 +3141,33 @@ def prepare_single_service(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def render_service_volume_offices(data: pd.DataFrame, office: str = "All Offices") -> None:
-    """Show all offices or the selected office, using sheet-10 totals."""
+    """Show service mix with the approved compact card design."""
     _office_comparison_heading("Single & Multi-Service Shipment Volume by Office", emphasized=True)
-    codes = {"AE": "AEA", "AI": "AIA", "OE": "OEO", "OI": "OIO", "CC": "C", "TR": "T", "WH": "WG, WB"}
+    st.markdown("""<style>
+    .service-mix-card {height:280px;box-sizing:border-box;background:#fff;border:1px solid #D9E2EC;border-top:4px solid #003B70;border-radius:14px;padding:12px;box-shadow:0 2px 8px rgba(6,24,63,.04);color:#06183F;}
+    .service-mix-card .mix-head {display:flex;justify-content:space-between;align-items:flex-start;gap:8px;padding-bottom:8px;border-bottom:1px solid #D9E2EC;}
+    .service-mix-card .mix-office {font-size:18px;font-weight:800;line-height:1.2;}
+    .service-mix-card .mix-total {text-align:right;}
+    .service-mix-card .mix-total-number {font-size:28px;font-weight:850;line-height:1.1;}
+    .service-mix-card .mix-total-label {font-size:10px;color:#64748B;line-height:1.3;margin-top:3px;}
+    .service-mix-card .mix-summaries {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:10px 0;}
+    .service-mix-card .mix-summary {background:#EEF7FC;border-radius:8px;padding:8px 4px;text-align:center;}
+    .service-mix-card .mix-label {font-size:11px;font-weight:700;line-height:1.3;color:#003B70;}
+    .service-mix-card .mix-volume {font-size:20px;font-weight:800;line-height:1.2;margin:4px 0 2px;color:#003B70;}
+    .service-mix-card .mix-share {font-size:12px;line-height:1.2;color:#003B70;}
+    .service-mix-card .mix-details {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:10px;row-gap:5px;margin-top:10px;}
+    .service-mix-card .mix-service {display:grid;grid-template-columns:19px minmax(0,1fr) auto;gap:3px;align-items:baseline;font-size:10px;line-height:1.3;white-space:nowrap;}
+    .service-mix-card .mix-code {font-weight:750;}
+    .service-mix-card .mix-no-data {height:218px;display:flex;align-items:center;justify-content:center;font-size:13px;color:#64748B;}
+    </style>""", unsafe_allow_html=True)
     visible_offices = STANDARD_OFFICES if office == "All Offices" else [office]
-    # Keep the same quarter-width card even when only one office is selected.
     card_columns = st.columns(4, gap="small")
     for col, office_name in zip(card_columns, visible_offices):
         office_df = data[data["Office"] == office_name] if not data.empty else pd.DataFrame()
         with col:
-            header = f'<div style="font-size:18px;font-weight:800;color:#06183F;background:#F3F7FA;padding:8px 12px;">{office_name}</div>'
+            office_heading = f'<div class="mix-office">{html.escape(str(office_name))}</div>'
             if office_df.empty:
-                body = '<div style="height:334px;display:flex;flex-direction:column;align-items:center;justify-content:center;"><b style="color:#06183F;font-size:14px;">NO DATA</b></div>'
+                content = '<div class="mix-head">' + office_heading + '</div><div class="mix-no-data">NO DATA</div>'
             else:
                 totals = office_df[SERVICE_ORDER + ["Multi", "Total"]].sum()
                 total = float(totals["Total"])
@@ -3160,30 +3175,20 @@ def render_service_volume_offices(data: pd.DataFrame, office: str = "All Offices
                 def share(value):
                     return f"{value / total:.1%}" if total > 0 else "N/A"
                 def summary(label, value):
-                    return (
-                        '<div style="background:#EEF7FC;border-radius:8px;padding:6px 8px;margin:5px 0;color:#003B70;">'
-                        f'<div style="font-size:11px;font-weight:700;">{label}</div>'
-                        '<div style="display:flex;justify-content:space-between;align-items:baseline;font-size:20px;font-weight:800;line-height:1.2;">'
-                        f'<span>{fmt_int(value)}</span><span>{share(value)}</span></div></div>'
-                    )
+                    return f'<div class="mix-summary"><div class="mix-label">{label}</div><div class="mix-volume">{fmt_int(value)}</div><div class="mix-share">{share(value)}</div></div>'
                 lines = "".join(
-                    f'<tr style="border-bottom:1px solid #E8EEF3;"><td style="padding:3px 0;">{service} <span style="color:#64748B;font-size:10px;">({codes[service]})</span></td><td style="text-align:right;">{fmt_int(totals[service])}</td><td style="text-align:right;">{share(totals[service])}</td></tr>'
+                    f'<div class="mix-service"><span class="mix-code">{service}</span><span>{fmt_int(totals[service])} shipments</span><span>{share(totals[service])}</span></div>'
                     for service in SERVICE_ORDER
                 )
-                body = (
-                    '<div style="padding:8px 12px;height:334px;box-sizing:border-box;color:#06183F;">'
-                    '<div style="color:#64748B;font-size:11px;font-weight:700;">TOTAL SHIPMENT VOLUME</div>'
-                    f'<div style="font-size:28px;font-weight:850;line-height:1.2;margin-bottom:6px;">{fmt_int(total)}</div>'
-                    + summary("Multi-Service Shipment Volume", float(totals["Multi"]))
-                    + summary("Single-Service Shipment Volume", single)
-                    + '<div style="font-size:11px;font-weight:700;margin:6px 0 3px;">Single-Service Detail</div>'
-                    + '<table style="width:100%;font-size:11px;line-height:1.25;border-collapse:collapse;"><thead style="background:#F3F7FA;"><tr><th style="text-align:left;">Service</th><th style="text-align:right;">Volume</th><th style="text-align:right;">%</th></tr></thead>'
-                    + f'<tbody>{lines}</tbody></table></div>'
+                content = (
+                    '<div class="mix-head">' + office_heading
+                    + f'<div class="mix-total"><div class="mix-total-number">{fmt_int(total)}</div><div class="mix-total-label">Total Shipment Volume</div></div></div>'
+                    + '<div class="mix-summaries">'
+                    + summary("Multi-Service", float(totals["Multi"]))
+                    + summary("Single-Service", single) + '</div>'
+                    + f'<div class="mix-details">{lines}</div>'
                 )
-            st.markdown(
-                '<div style="border:1px solid #D9E2EC;border-radius:14px;overflow:hidden;background:white;height:372px;box-sizing:border-box;">' + header + body + '</div>',
-                unsafe_allow_html=True,
-            )
+            st.markdown('<div class="service-mix-card">' + content + '</div>', unsafe_allow_html=True)
 
 
 @st.cache_data(show_spinner=False)
