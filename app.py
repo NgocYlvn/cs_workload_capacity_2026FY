@@ -3142,10 +3142,9 @@ def prepare_single_service(df: pd.DataFrame) -> pd.DataFrame:
 
 def render_service_volume_offices(data: pd.DataFrame, office: str = "All Offices") -> None:
     """Show service mix with the approved compact card design."""
-    _office_comparison_heading("Single & Multi-Service Shipment Volume by Office", emphasized=True)
-    st.markdown("""<style>
-    .service-mix-card {height:280px;box-sizing:border-box;background:#fff;border:1px solid #D9E2EC;border-top:4px solid #003B70;border-radius:14px;padding:12px;box-shadow:0 2px 8px rgba(6,24,63,.04);color:#06183F;}
-    .service-mix-card .mix-head {display:flex;justify-content:space-between;align-items:flex-start;gap:8px;padding-bottom:8px;border-bottom:1px solid #D9E2EC;}
+    card_css = """<style>
+    .service-mix-card {height:255px;box-sizing:border-box;background:#fff;border:1px solid #D9E2EC;border-top:4px solid #003B70;border-radius:14px;padding:12px;box-shadow:0 2px 8px rgba(6,24,63,.04);color:#06183F;}
+    .service-mix-card .mix-head {display:flex;justify-content:space-between;align-items:flex-start;gap:8px;height:56px;box-sizing:border-box;padding-bottom:8px;border-bottom:1px solid #D9E2EC;}
     .service-mix-card .mix-office {font-size:18px;font-weight:800;line-height:1.2;}
     .service-mix-card .mix-total {text-align:right;}
     .service-mix-card .mix-total-number {font-size:28px;font-weight:850;line-height:1.1;}
@@ -3155,11 +3154,13 @@ def render_service_volume_offices(data: pd.DataFrame, office: str = "All Offices
     .service-mix-card .mix-label {font-size:11px;font-weight:700;line-height:1.3;color:#003B70;}
     .service-mix-card .mix-volume {font-size:20px;font-weight:800;line-height:1.2;margin:4px 0 2px;color:#003B70;}
     .service-mix-card .mix-share {font-size:12px;line-height:1.2;color:#003B70;}
-    .service-mix-card .mix-details {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:10px;row-gap:5px;margin-top:10px;}
-    .service-mix-card .mix-service {display:grid;grid-template-columns:19px minmax(0,1fr) auto;gap:3px;align-items:baseline;font-size:10px;line-height:1.3;white-space:nowrap;}
+    .service-mix-card .mix-details {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:8px;row-gap:5px;margin-top:8px;}
+    .service-mix-card .mix-service {display:grid;grid-template-columns:19px minmax(0,1fr) auto;gap:3px;align-items:baseline;font-size:11px;line-height:1.3;color:#06183F !important;white-space:nowrap;}
     .service-mix-card .mix-code {font-weight:750;}
-    .service-mix-card .mix-no-data {height:218px;display:flex;align-items:center;justify-content:center;font-size:13px;color:#64748B;}
-    </style>""", unsafe_allow_html=True)
+    .service-mix-card .mix-no-data {height:170px;display:flex;align-items:center;justify-content:center;font-size:13px;color:#64748B;}
+    </style>"""
+    # Emit CSS with the heading to avoid an empty Markdown block above cards.
+    st.markdown(card_css + '<div class="office-comparison-heading is-emphasized" style="margin-bottom:0;">Single &amp; Multi-Service Shipment Volume by Office</div>', unsafe_allow_html=True)
     visible_offices = STANDARD_OFFICES if office == "All Offices" else [office]
     card_columns = st.columns(4, gap="small")
     for col, office_name in zip(card_columns, visible_offices):
