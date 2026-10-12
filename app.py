@@ -274,8 +274,8 @@ st.markdown(
         font-size: 18px;
         font-weight: 800;
         margin: 22px 0 8px 0;
-        border-left: 5px solid {COLORS['amber']};
-        padding-left: 10px;
+        border-left: none !important;
+        padding-left: 0 !important;
     }}
     .kpi-card {{
         background: {COLORS['white']};
@@ -731,8 +731,8 @@ st.markdown(
         font-weight: 700 !important;
         color: var(--navy) !important;
         margin: 20px 0 10px 0 !important;
-        padding: 0 0 0 10px !important;
-        border-left: 4px solid var(--orange) !important;
+        padding: 0 !important;
+        border-left: none !important;
     }}
 
     /* Shared card language */
@@ -1215,8 +1215,8 @@ st.markdown(
         font-size: 19px !important;
         font-weight: 700 !important;
         line-height: 1.25 !important;
-        border-left: 4px solid var(--y-accent) !important;
-        padding-left: 10px !important;
+        border-left: none !important;
+        padding-left: 0 !important;
         margin: 22px 0 11px 0 !important;
     }}
 
@@ -1803,8 +1803,8 @@ st.markdown(
         font-size:19px !important;
         line-height:1.22 !important;
         font-weight:800 !important;
-        border-left:4px solid #E6761B !important;
-        padding-left:9px !important;
+        border-left: none !important;
+        padding-left: 0 !important;
         margin:18px 0 9px 0 !important;
     }}
 
@@ -2142,8 +2142,8 @@ st.markdown(
         margin:10px 0 8px 1px;
     }}
     .office-comparison-heading::before {{
-        content:""; width:22px; height:3px; border-radius:999px;
-        background:#E6761B; display:inline-block;
+        content: none;
+        display: none;
     }}
     .office-comparison-heading.is-emphasized {{
         font-size:17px;
