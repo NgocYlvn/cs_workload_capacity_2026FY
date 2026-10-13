@@ -3175,8 +3175,9 @@ def render_service_hc_offices(data: pd.DataFrame, office: str = "All Offices", o
     .service-hc-code:last-child{border-bottom:0;}
     .service-hc-code>b{flex:0 0 28px;font-size:13px;font-weight:700;}
     .service-hc-code .service-hc-line{white-space:nowrap;}
-    </style><div class="office-comparison-heading is-emphasized">Single &amp; Multi-Service Processing Time &amp; HC by Office</div>""", unsafe_allow_html=True)
-    if data is not None and not data.attrs.get("ytd_label") and not data.empty and "MonthDate" in data.columns:
+    </style>""", unsafe_allow_html=True)
+    st.markdown('<div class="office-comparison-heading is-emphasized">' + ("Processing Time &amp; HC — All Offices" if overall else "Single &amp; Multi-Service Processing Time &amp; HC by Office") + "</div>", unsafe_allow_html=True)
+    if not overall and data is not None and not data.attrs.get("ytd_label") and not data.empty and "MonthDate" in data.columns:
         period_dates = pd.to_datetime(data["MonthDate"], errors="coerce").dropna().sort_values()
         if not period_dates.empty:
             start_label = period_dates.iloc[0].strftime("%b %Y")
@@ -3204,16 +3205,22 @@ def render_service_hc_offices(data: pd.DataFrame, office: str = "All Offices", o
                 pct_text = ("&lt;0.1%" if 0 < pct < 0.0005 else f"{pct:.1%}") if pd.notna(pct) else "N/A"
                 hc_value = t["HC"] / months
                 hc_text = "&lt;0.01" if 0 < hc_value < 0.005 else f"{hc_value:,.2f}"
-                return f'<div class="service-hc-line">{t["Processing Time"]:,.1f} h · {hc_text} HC · {pct_text}</div>'
+                if overall and code in SERVICE_ORDER:
+                    return f'<span class="overall-data">{t["Processing Time"]:,.1f} h · {hc_text} HC</span><span class="overall-pct">{pct_text}</span>'
+                return f'<div class="service-hc-line">{t["Processing Time"]:,.1f} h · {hc_text} HC · {pct_text}</div>' 
             total = totals.loc["Total"]
             time_label = "Average Processing Time/Month" if months > 1 or data.attrs.get("ytd_label") else "Total Processing Time"
             hc_label = "Average HC/Month (Inc. MNG)" if months > 1 or data.attrs.get("ytd_label") else "Total HC/Month (Inc. MNG)"
             head = (f'<div class="service-hc-head"><div class="service-hc-office">{html.escape(office_name)}</div>'
                     f'<div class="service-hc-totals"><div class="service-hc-total">{total["Processing Time"]:,.1f} h</div><div class="service-hc-caption">{time_label}</div>'
                     f'<div class="service-hc-total">{total["HC"] / months:,.2f} HC</div><div class="service-hc-caption">{hc_label}</div></div></div>')
+            if overall:
+                head = (f'<div class="service-hc-head"><div class="service-hc-office">All Offices</div>'
+                        f'<div class="overall-metrics"><div><div class="service-hc-total">{total["Processing Time"]:,.1f} h</div><div class="service-hc-caption">{time_label}</div></div>'
+                        f'<div><div class="service-hc-total">{total["HC"] / months:,.2f} HC</div><div class="service-hc-caption">{hc_label}</div></div></div></div>')
             summary = ''.join(f'<div class="service-hc-box"><div class="service-hc-label">{label}</div>{lines(code)}</div>' for code, label in [("Single", "Single-Service"), ("Multi", "Multi-Service")])
             details = ''.join(f'<div class="service-hc-code"><b>{code}:</b>{lines(code)}</div>' for code in SERVICE_ORDER)
-            st.markdown(f'<div class="service-hc-card">{head}<div class="service-hc-summary">{summary}</div><div class="service-hc-details">{details}</div></div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="service-hc-card {"overall-card" if overall else ""}">{head}<div class="service-hc-summary">{summary}</div><div class="service-hc-details">{details}</div></div>', unsafe_allow_html=True)
 
 
 def prepare_single_service(df: pd.DataFrame) -> pd.DataFrame:
@@ -3277,7 +3284,7 @@ def render_service_volume_offices(data: pd.DataFrame, office: str = "All Offices
     .service-mix-card .mix-no-data {height:170px;display:flex;align-items:center;justify-content:center;font-size:13px;color:#64748B;}
     </style>"""
     # Emit CSS with the heading to avoid an empty Markdown block above cards.
-    st.markdown(card_css + '<div class="office-comparison-heading is-emphasized" style="margin-bottom:0;">Single &amp; Multi-Service Shipment Volume by Office</div>', unsafe_allow_html=True)
+    st.markdown(card_css + '<div class="office-comparison-heading is-emphasized" style="margin-bottom:0;">' + ('Shipment Volume — All Offices' if overall else 'Single &amp; Multi-Service Shipment Volume by Office') + '</div>', unsafe_allow_html=True)
     visible_offices = ["All Offices"] if overall else (STANDARD_OFFICES if office == "All Offices" else [office])
     card_columns = st.columns(1 if overall else 4, gap="small")
     for col, office_name in zip(card_columns, visible_offices):
@@ -3295,7 +3302,7 @@ def render_service_volume_offices(data: pd.DataFrame, office: str = "All Offices
                 def summary(label, value):
                     return f'<div class="mix-summary"><div class="mix-label">{label}</div><div class="mix-volume">{fmt_int(value)} Shpt · {share(value)}</div></div>'
                 lines = "".join(
-                    f'<div class="mix-service"><span class="mix-code">{service}:</span><span>{fmt_int(totals[service])} Shpt · {share(totals[service])}</span></div>'
+                    (f'<div class="mix-service"><span class="mix-code">{service}:</span><span class="overall-data">{fmt_int(totals[service])} Shpt</span><span class="overall-pct">{share(totals[service])}</span></div>' if overall else f'<div class="mix-service"><span class="mix-code">{service}:</span><span>{fmt_int(totals[service])} Shpt · {share(totals[service])}</span></div>')
                     for service in SERVICE_ORDER
                 )
                 content = (
@@ -3306,7 +3313,7 @@ def render_service_volume_offices(data: pd.DataFrame, office: str = "All Offices
                     + summary("Multi-Service", float(totals["Multi"])) + '</div>'
                     + f'<div class="mix-details">{lines}</div>'
                 )
-            st.markdown('<div class="service-mix-card">' + content + '</div>', unsafe_allow_html=True)
+            st.markdown('<div class="service-mix-card ' + ('overall-card' if overall else '') + '">' + content + '</div>', unsafe_allow_html=True)
 
 
 @st.cache_data(show_spinner=False)
@@ -7040,6 +7047,20 @@ def main():
         chart_monthly_total_shipment(monthly_shipment_source, height=264)
 
     if office == "All Offices":
+        st.markdown("""<style>
+        .overall-card{min-height:368px !important;margin-bottom:16px;}
+        .overall-card .mix-head,.overall-card .service-hc-head{height:76px !important;box-sizing:border-box;align-items:flex-start;}
+        .overall-metrics{display:flex;gap:20px;text-align:right;}
+        .overall-metrics>div+div{border-left:1px solid #D9E2EC;padding-left:20px;}
+        .overall-card .mix-summaries,.overall-card .service-hc-summary{margin:10px 0 !important;gap:8px;}
+        .overall-card .mix-summary,.overall-card .service-hc-box{height:62px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;}
+        .overall-card .mix-volume,.overall-card .service-hc-line{font-size:14px !important;font-weight:400;line-height:1.4;}
+        .overall-card .mix-service,.overall-card .service-hc-code{display:grid;grid-template-columns:42px minmax(0,1fr) 68px;gap:8px;height:29px;box-sizing:border-box;align-items:center;padding:4px 0;font-size:14px !important;line-height:1.4;}
+        .overall-card .service-hc-code>b{font-size:14px;}
+        .overall-card .overall-pct{text-align:right;font-size:14px;}
+        .overall-card .overall-data{font-size:14px;}
+        .overall-card .mix-details{margin-top:0;}
+        </style>""", unsafe_allow_html=True)
         total_volume = apply_filters(single_service, year, month, office).copy()
         if not total_volume.empty:
             total_volume = total_volume.loc[total_volume["Office"].isin(STANDARD_OFFICES)].copy()
