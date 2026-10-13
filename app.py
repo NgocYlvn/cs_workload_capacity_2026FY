@@ -3141,6 +3141,106 @@ def prepare_single_service(df: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows, columns=columns)
 
 
+def prepare_service_processing_hc(df: pd.DataFrame) -> pd.DataFrame:
+    """Read only sheet 12 summary rows 2–45; retain its monthly averages."""
+    measures = SERVICE_ORDER + ["Single", "Multi", "Total"]
+    rows = []
+    if df.empty or len(df) < 13:
+        return pd.DataFrame()
+    summary = df.iloc[:45]
+    blocks = [(2, pd.NaT)]  # C:L contains source average per month (Apr–Aug).
+    for start in range(12, df.shape[1]):
+        label = df.iloc[1, start]
+        if pd.isna(label):
+            continue
+        date = parse_month(str(label).strip()[:3])
+        if pd.notna(date) and start + 9 < df.shape[1]:
+            blocks.append((start, date))
+    for index in range(len(summary)):
+        source = summary.iloc[index]
+        office_name = normalize_office(source.iloc[0])
+        if office_name not in STANDARD_OFFICES or str(source.iloc[1]).strip() != "Volume YTD":
+            continue
+        if index + 7 >= len(summary):
+            continue
+        for start, date in blocks:
+            values = [pd.to_numeric(summary.iloc[index + offset, start:start + 10], errors="coerce")
+                      for offset in (2, 5, 6, 7)]
+            if values[2].isna().all():
+                continue
+            record = {"Office": office_name, "MonthDate": date, "IsAverage": pd.isna(date)}
+            for i, measure in enumerate(measures):
+                ex_mng, mng, hc_value, hc_share = [v.iloc[i] for v in values]
+                record[measure + " Time"] = ex_mng + mng
+                record[measure + " HC"] = hc_value
+                record[measure + " Share"] = hc_share
+            rows.append(record)
+    return pd.DataFrame(rows)
+
+
+def render_service_processing_hc(data: pd.DataFrame, year: str, month: str, office: str) -> None:
+    """Approved office cards: Time / HC · HC share on one line."""
+    css = """<style>
+    .processing-hc-card {background:#fff;border:1px solid #D9E2EC;border-top:4px solid #003B70;border-radius:14px;padding:14px;color:#06183F;margin-bottom:14px;box-sizing:border-box;}
+    .processing-hc-card .ph-head {display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid #D9E2EC;padding-bottom:12px;}
+    .processing-hc-card .ph-office {font-size:18px;font-weight:800;}
+    .processing-hc-card .ph-total {text-align:right;}
+    .processing-hc-card .ph-number {font-size:28px;font-weight:850;line-height:1.2;}
+    .processing-hc-card .ph-label {font-size:11px;color:#5B6575;margin-top:3px;}
+    .processing-hc-card .ph-hc-total {margin-top:10px;}
+    .processing-hc-card .ph-summaries {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px 0;}
+    .processing-hc-card .ph-summary {background:#EEF7FC;color:#003B70;border-radius:8px;padding:10px 4px;text-align:center;font-size:11px;}
+    .processing-hc-card .ph-summary-title {font-weight:750;margin-bottom:8px;}
+    .processing-hc-card .ph-metric {font-size:11px;white-space:nowrap;line-height:1.4;}
+    .processing-hc-card .ph-details {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:16px;row-gap:7px;}
+    .processing-hc-card .ph-code {font-weight:750;}
+    @media(max-width:600px) {.processing-hc-card .ph-details,.processing-hc-card .ph-summaries {grid-template-columns:1fr;}}
+    </style>"""
+    st.markdown(css + '<div class="office-comparison-heading is-emphasized">Single &amp; Multi-Service Processing Time &amp; HC by Office</div>', unsafe_allow_html=True)
+    selected = pd.DataFrame()
+    if not data.empty:
+        if month == "All":
+            monthly = data[~data["IsAverage"]]
+            eligible = year == "All" or (monthly["MonthDate"].dt.year.astype(str) == year).any()
+            if eligible:
+                selected = data[data["IsAverage"]].copy()
+        else:
+            selected = apply_filters(data[~data["IsAverage"]], year, month, office)
+    visible = STANDARD_OFFICES if office == "All Offices" else [office]
+    def number(value, decimals):
+        return f"{value:,.{decimals}f}" if pd.notna(value) else "N/A"
+    def metrics(record, measure):
+        share = record[measure + " Share"]
+        percentage = f"{share:.1%}" if pd.notna(share) else "N/A"
+        return (number(record[measure + " Time"], 1) + " h / "
+                + number(record[measure + " HC"], 2) + " HC · " + percentage)
+    # Two cards per row preserve the two code columns without truncation.
+    for start in range(0, len(visible), 2):
+        columns = st.columns(2, gap="small")
+        for col, office_name in zip(columns, visible[start:start + 2]):
+            with col:
+                office_data = selected[selected["Office"] == office_name] if not selected.empty else pd.DataFrame()
+                title = '<div class="ph-office">' + html.escape(office_name) + '</div>'
+                if office_data.empty:
+                    content = title + '<div class="mix-no-data">NO DATA</div>'
+                else:
+                    record = office_data.iloc[0]
+                    content = ('<div class="ph-head">' + title + '<div class="ph-total">'
+                               + '<div class="ph-number">' + number(record["Total Time"], 1) + '</div>'
+                               + '<div class="ph-label">Total Processing Time (h/month)</div>'
+                               + '<div class="ph-number ph-hc-total">' + number(record["Total HC"], 2) + '</div>'
+                               + '<div class="ph-label">Total HC / Month (Inc. MNG)</div></div></div>')
+                    content += '<div class="ph-summaries">' + ''.join(
+                        '<div class="ph-summary"><div class="ph-summary-title">' + label
+                        + '</div><div class="ph-metric">' + metrics(record, measure) + '</div></div>'
+                        for label, measure in [("Single-Service", "Single"), ("Multi-Service", "Multi")]) + '</div>'
+                    content += '<div class="ph-details">' + ''.join(
+                        '<div class="ph-metric"><span class="ph-code">' + code + ':</span> '
+                        + metrics(record, code) + '</div>' for code in SERVICE_ORDER) + '</div>'
+                st.markdown('<div class="processing-hc-card">' + content + '</div>', unsafe_allow_html=True)
+
+
+
 def render_service_volume_offices(data: pd.DataFrame, office: str = "All Offices") -> None:
     """Show service mix with the approved compact card design."""
     card_css = """<style>
@@ -6674,6 +6774,7 @@ def main():
         customer_service_volume = prepare_single_service(
             raw["customer_service_detail"].iloc[47:].reset_index(drop=True)
         )
+        service_processing_hc = prepare_service_processing_hc(raw["customer_service_detail"])
         hc = prepare_hc(raw["hc"])
         workload = prepare_workload(raw["workload"])
         fte = prepare_fte(raw["fte"])
@@ -6926,6 +7027,7 @@ def main():
         chart_monthly_total_shipment(monthly_shipment_source, height=264)
 
     render_service_volume_offices(apply_filters(single_service, year, month, office), office)
+    render_service_processing_hc(service_processing_hc, year, month, office)
 
     # Customer shipment analysis:
     # Remove Transportation Mode chart/detail from the dashboard.
