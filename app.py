@@ -3176,9 +3176,7 @@ def render_service_hc_offices(data: pd.DataFrame, office: str = "All Offices") -
     .service-hc-code>b{flex:0 0 28px;font-size:12px;}
     .service-hc-code .service-hc-line{white-space:nowrap;}
     </style><div class="office-comparison-heading is-emphasized">Single &amp; Multi-Service Processing Time &amp; HC by Office</div>""", unsafe_allow_html=True)
-    if data is not None and data.attrs.get("ytd_label"):
-        st.caption("Source: " + data.attrs["ytd_label"])
-    elif data is not None and not data.empty and "MonthDate" in data.columns:
+    if data is not None and not data.attrs.get("ytd_label") and not data.empty and "MonthDate" in data.columns:
         period_dates = pd.to_datetime(data["MonthDate"], errors="coerce").dropna().sort_values()
         if not period_dates.empty:
             start_label = period_dates.iloc[0].strftime("%b %Y")
@@ -3216,7 +3214,6 @@ def render_service_hc_offices(data: pd.DataFrame, office: str = "All Offices") -
             summary = ''.join(f'<div class="service-hc-box"><div class="service-hc-label">{label}</div>{lines(code)}</div>' for code, label in [("Single", "Single-Service"), ("Multi", "Multi-Service")])
             details = ''.join(f'<div class="service-hc-code"><b>{code}:</b>{lines(code)}</div>' for code in SERVICE_ORDER)
             st.markdown(f'<div class="service-hc-card">{head}<div class="service-hc-summary">{summary}</div><div class="service-hc-details">{details}</div></div>', unsafe_allow_html=True)
-    st.caption("Percentages represent HC share (Inc. MNG). Processing Time includes PIC + MNG. All Months uses the YTD summary directly from sheet 12; selecting a month uses its monthly columns.")
 
 
 def prepare_single_service(df: pd.DataFrame) -> pd.DataFrame:
