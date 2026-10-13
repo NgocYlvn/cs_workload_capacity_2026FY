@@ -3141,6 +3141,22 @@ def prepare_service_hc(df: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows, columns=columns)
 
 
+def prepare_service_hc_ytd(df: pd.DataFrame) -> pd.DataFrame:
+    """Read the YTD summary directly from C:L, with no monthly aggregation."""
+    if df.empty or df.shape[1] < 12:
+        return prepare_service_hc(pd.DataFrame())
+    summary = df.iloc[:, :12].copy()
+    block = df.iloc[:, 2:12].copy()
+    block.columns = range(12, 22)
+    summary.columns = range(12)
+    summary = pd.concat([summary, block], axis=1)
+    # Reuse merged Office / metric reader with one synthetic block.
+    summary.iloc[1, 12] = "Apr"
+    result = prepare_service_hc(summary)
+    result.attrs["ytd_label"] = str(df.iloc[1, 2]).strip()
+    return result
+
+
 def render_service_hc_offices(data: pd.DataFrame, office: str = "All Offices") -> None:
     st.markdown("""<style>
     .service-hc-card{background:#fff;border:1px solid #D9E2EC;border-top:4px solid #003B70;border-radius:14px;padding:12px;color:#06183F;margin-bottom:16px;min-height:300px;box-sizing:border-box;}
@@ -3160,7 +3176,9 @@ def render_service_hc_offices(data: pd.DataFrame, office: str = "All Offices") -
     .service-hc-code>b{flex:0 0 28px;font-size:12px;}
     .service-hc-code .service-hc-line{white-space:nowrap;}
     </style><div class="office-comparison-heading is-emphasized">Single &amp; Multi-Service Processing Time &amp; HC by Office</div>""", unsafe_allow_html=True)
-    if data is not None and not data.empty and "MonthDate" in data.columns:
+    if data is not None and data.attrs.get("ytd_label"):
+        st.caption("Source: " + data.attrs["ytd_label"])
+    elif data is not None and not data.empty and "MonthDate" in data.columns:
         period_dates = pd.to_datetime(data["MonthDate"], errors="coerce").dropna().sort_values()
         if not period_dates.empty:
             start_label = period_dates.iloc[0].strftime("%b %Y")
@@ -3173,9 +3191,10 @@ def render_service_hc_offices(data: pd.DataFrame, office: str = "All Offices") -
             if d.empty:
                 st.markdown(f'<div class="service-hc-card"><div class="service-hc-office">{html.escape(office_name)}</div><p>NO DATA</p></div>', unsafe_allow_html=True)
                 continue
-            # Across months: time sums; HC is the monthly average; share is HC-weighted.
+            # Across months: time and HC are monthly averages; share is HC-weighted.
             totals = d.groupby("Code")[["Processing Time", "HC"]].sum()
             months = d["MonthDate"].nunique()
+            totals["Processing Time"] = totals["Processing Time"] / months
             total_hc = totals.loc["Total", "HC"]
             def lines(code):
                 t = totals.loc[code]
@@ -3189,14 +3208,15 @@ def render_service_hc_offices(data: pd.DataFrame, office: str = "All Offices") -
                 hc_text = "&lt;0.01" if 0 < hc_value < 0.005 else f"{hc_value:,.2f}"
                 return f'<div class="service-hc-line">{t["Processing Time"]:,.1f} h · {hc_text} HC · {pct_text}</div>'
             total = totals.loc["Total"]
-            hc_label = "Average HC/Month (Inc. MNG)" if months > 1 else "Total HC/Month (Inc. MNG)"
+            time_label = "Average Processing Time/Month" if months > 1 or data.attrs.get("ytd_label") else "Total Processing Time"
+            hc_label = "Average HC/Month (Inc. MNG)" if months > 1 or data.attrs.get("ytd_label") else "Total HC/Month (Inc. MNG)"
             head = (f'<div class="service-hc-head"><div class="service-hc-office">{html.escape(office_name)}</div>'
-                    f'<div class="service-hc-totals"><div class="service-hc-total">{total["Processing Time"]:,.1f} h</div><div class="service-hc-caption">Total Processing Time</div>'
+                    f'<div class="service-hc-totals"><div class="service-hc-total">{total["Processing Time"]:,.1f} h</div><div class="service-hc-caption">{time_label}</div>'
                     f'<div class="service-hc-total">{total["HC"] / months:,.2f} HC</div><div class="service-hc-caption">{hc_label}</div></div></div>')
             summary = ''.join(f'<div class="service-hc-box"><div class="service-hc-label">{label}</div>{lines(code)}</div>' for code, label in [("Single", "Single-Service"), ("Multi", "Multi-Service")])
             details = ''.join(f'<div class="service-hc-code"><b>{code}:</b>{lines(code)}</div>' for code in SERVICE_ORDER)
             st.markdown(f'<div class="service-hc-card">{head}<div class="service-hc-summary">{summary}</div><div class="service-hc-details">{details}</div></div>', unsafe_allow_html=True)
-    st.caption("Percentages represent HC share (Inc. MNG). Processing Time includes PIC + MNG. Across months: cumulative hours and average HC/month.")
+    st.caption("Percentages represent HC share (Inc. MNG). Processing Time includes PIC + MNG. All Months uses the YTD summary directly from sheet 12; selecting a month uses its monthly columns.")
 
 
 def prepare_single_service(df: pd.DataFrame) -> pd.DataFrame:
@@ -6769,6 +6789,7 @@ def main():
             st.stop()
         single_service = prepare_single_service(raw["single_service"])
         service_hc = prepare_service_hc(raw["service_hc"])
+        service_hc_ytd = prepare_service_hc_ytd(raw["service_hc"])
         hc = prepare_hc(raw["hc"])
         workload = prepare_workload(raw["workload"])
         fte = prepare_fte(raw["fte"])
@@ -7021,7 +7042,10 @@ def main():
         chart_monthly_total_shipment(monthly_shipment_source, height=264)
 
     render_service_volume_offices(apply_filters(single_service, year, month, office), office)
-    render_service_hc_offices(apply_filters(service_hc, year, month, office), office)
+    if month == "All":
+        render_service_hc_offices(filter_office_only(service_hc_ytd, office), office)
+    else:
+        render_service_hc_offices(apply_filters(service_hc, year, month, office), office)
 
     # Customer shipment analysis:
     # Remove Transportation Mode chart/detail from the dashboard.
