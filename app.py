@@ -3207,6 +3207,9 @@ def render_service_processing_hc(data: pd.DataFrame, year: str, month: str, offi
                 selected = data[data["IsAverage"]].copy()
         else:
             selected = apply_filters(data[~data["IsAverage"]], year, month, office)
+    if selected.empty and not data.empty:
+        available = data.loc[~data["IsAverage"], "MonthDate"].dropna().drop_duplicates().sort_values()
+        st.warning("No Processing Time & HC data for the selected filters. Available months: " + ", ".join(format_month(value) for value in available))
     visible = STANDARD_OFFICES if office == "All Offices" else [office]
     def number(value, decimals):
         return f"{value:,.{decimals}f}" if pd.notna(value) else "N/A"
@@ -6759,15 +6762,16 @@ def main():
     if uploaded_source is not None:
         source_bytes = uploaded_source.getvalue()
         file_path = BytesIO(source_bytes)
-        cache_token = hashlib.sha256(source_bytes).hexdigest()
+        cache_token = "sheet12-v2:" + hashlib.sha256(source_bytes).hexdigest()
         source_name = uploaded_source.name
     else:
         source_name = DEFAULT_FILE_PATH.name
         if not DEFAULT_FILE_PATH.exists():
             st.error("Default Excel file not found. Upload the current workbook in the sidebar.")
             st.stop()
-        stat = DEFAULT_FILE_PATH.stat()
-        cache_token = f"{stat.st_mtime_ns}_{stat.st_size}"
+        source_bytes = DEFAULT_FILE_PATH.read_bytes()
+        file_path = BytesIO(source_bytes)
+        cache_token = "sheet12-v2:" + hashlib.sha256(source_bytes).hexdigest()
     st.sidebar.caption(f"Current source: {source_name}")
 
     with st.spinner("Loading and validating Excel data..."):
@@ -7039,6 +7043,17 @@ def main():
         chart_monthly_total_shipment(monthly_shipment_source, height=264)
 
     render_service_volume_offices(apply_filters(single_service, year, month, office), office)
+    with st.expander("Processing Time & HC — source check", expanded=service_processing_hc.empty):
+        st.write(f"Source workbook: {source_name}")
+        st.write(f"Sheet: {SHEET_NAMES['customer_service_detail']}")
+        st.write(f"Selected month: {month}; office: {office}")
+        source12 = raw["customer_service_detail"]
+        st.write(f"Source rows: {len(source12)}; parsed processing records: {len(service_processing_hc)}; customer records: {len(customer_service_volume)}")
+        if not service_processing_hc.empty:
+            available_months = service_processing_hc.loc[~service_processing_hc["IsAverage"], "MonthDate"].dropna().drop_duplicates().sort_values()
+            st.write("Available months: " + ", ".join(format_month(value) for value in available_months))
+        else:
+            st.error("No processing records were read from the current workbook. Upload the updated source using Excel data source in the sidebar.")
     render_service_processing_hc(service_processing_hc, year, month, office)
 
     # Customer shipment analysis:
