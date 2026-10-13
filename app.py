@@ -154,6 +154,7 @@ CORPORATE_PALETTE = [
 
 SHEET_NAMES = {
     "single_service": "10. Single service volume",
+    "service_hc": "12. Single service volume",
     "hc": " 1.  Office Cap. & Workload",
     "resolution": "9. CS Resolutions Rate",
     "workload": "4. Workload by Activity",
@@ -3083,10 +3084,10 @@ def load_data(path: str, cache_token: str = "") -> Dict[str, pd.DataFrame]:
             df = pd.read_excel(
                 xls,
                 sheet_name=sheet,
-                header=None if key == "single_service" else 1,
+                header=None if key in {"single_service", "service_hc"} else 1,
             )
             df.columns = [clean_col(c) for c in df.columns]
-            if key != "single_service":
+            if key not in {"single_service", "service_hc"}:
                 df = df.dropna(how="all")
             data[key] = df
         except Exception as exc:
@@ -3098,6 +3099,92 @@ def load_data(path: str, cache_token: str = "") -> Dict[str, pd.DataFrame]:
 
     return data
 
+
+
+def prepare_service_hc(df: pd.DataFrame) -> pd.DataFrame:
+    """Read rows 2–45, preserving merged Office and monthly column blocks."""
+    columns = ["Office", "MonthDate", "Code", "Processing Time", "HC", "HC Share"]
+    if df.empty or len(df) < 5:
+        return pd.DataFrame(columns=columns)
+    body = df.iloc[5:45].copy()
+    offices = body.iloc[:, 0].ffill().map(normalize_office)
+    labels = body.iloc[:, 1].fillna("").astype(str).map(
+        lambda value: re.sub(r"\s+", "", value).lower())
+    rows = []
+    for start in range(12, df.shape[1]):
+        month = df.iloc[1, start]
+        if pd.isna(month) or start + 9 >= df.shape[1]:
+            continue
+        date = parse_month(str(month).strip()[:3])
+        if pd.isna(date):
+            continue
+        headers = [str(df.iloc[3, start + i]).strip().upper() for i in range(7)]
+        if headers != SERVICE_ORDER:
+            continue
+        for office_name in STANDARD_OFFICES:
+            group = body.loc[offices == office_name]
+            group_labels = labels.loc[group.index]
+            def values(label):
+                selected = group.loc[group_labels == re.sub(r"\s+", "", label).lower()]
+                if selected.empty:
+                    return [float("nan")] * 10
+                return pd.to_numeric(selected.iloc[0, start:start + 10], errors="coerce").tolist()
+            ex = values("Processing time/month (hour)-ex MNG")
+            mng = values("Processing time/month (hour)- MNG")
+            hc = values("Total HC/Month (Inc. MNG)")
+            share = values("% HC (Inc. MNG)")
+            for i, code in enumerate(SERVICE_ORDER + ["Single", "Multi", "Total"]):
+                if pd.isna(ex[i]) or pd.isna(mng[i]) or pd.isna(hc[i]):
+                    continue
+                rows.append({"Office": office_name, "MonthDate": date, "Code": code,
+                             "Processing Time": ex[i] + mng[i], "HC": hc[i], "HC Share": share[i]})
+    return pd.DataFrame(rows, columns=columns)
+
+
+def render_service_hc_offices(data: pd.DataFrame, office: str = "All Offices") -> None:
+    st.markdown("""<style>
+    .service-hc-card{background:#fff;border:1px solid #D9E2EC;border-top:4px solid #003B70;border-radius:14px;padding:12px;color:#06183F;margin-bottom:16px;min-height:300px;box-sizing:border-box;}
+    .service-hc-head{display:flex;justify-content:space-between;gap:8px;border-bottom:1px solid #D9E2EC;padding-bottom:8px;}
+    .service-hc-office{font-size:18px;font-weight:800;}
+    .service-hc-totals{text-align:right;}
+    .service-hc-total{font-size:22px;font-weight:800;line-height:1.3;}
+    .service-hc-caption{font-size:11px;color:#5B6575;}
+    .service-hc-summary{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0;}
+    .service-hc-box{background:#EEF7FC;border-radius:8px;padding:8px 4px;text-align:center;color:#003B70;}
+    .service-hc-label{font-size:11px;font-weight:700;margin-bottom:4px;}
+    .service-hc-line{font-size:12px;line-height:1.6;white-space:nowrap;}
+    .service-hc-details{display:grid;grid-template-columns:1fr 1fr;column-gap:12px;row-gap:5px;}
+    .service-hc-code{font-size:11px;line-height:1.6;}
+    </style><div class="office-comparison-heading is-emphasized">Single &amp; Multi-Service Processing Time &amp; HC by Office</div>""", unsafe_allow_html=True)
+    visible = STANDARD_OFFICES if office == "All Offices" else [office]
+    for col, office_name in zip(st.columns(4, gap="small"), visible):
+        d = data.loc[data["Office"] == office_name]
+        with col:
+            if d.empty:
+                st.markdown(f'<div class="service-hc-card"><div class="service-hc-office">{html.escape(office_name)}</div><p>NO DATA</p></div>', unsafe_allow_html=True)
+                continue
+            # Across months: time sums; HC is the monthly average; share is HC-weighted.
+            totals = d.groupby("Code")[["Processing Time", "HC"]].sum()
+            months = d["MonthDate"].nunique()
+            total_hc = totals.loc["Total", "HC"]
+            def lines(code):
+                t = totals.loc[code]
+                code_rows = d.loc[d["Code"] == code].set_index("MonthDate")
+                month_weights = d.loc[d["Code"] == "Total"].set_index("MonthDate")["HC"]
+                valid = code_rows["HC Share"].notna() & month_weights.reindex(code_rows.index).notna()
+                weights = month_weights.reindex(code_rows.index).loc[valid]
+                pct = (code_rows.loc[valid, "HC Share"] * weights).sum() / weights.sum() if weights.sum() > 0 else float("nan")
+                pct_text = f"{pct:.1%}" if pd.notna(pct) else "N/A"
+                return (f'<div class="service-hc-line">{t["Processing Time"]:,.1f} h · {pct_text}</div>'
+                        f'<div class="service-hc-line">{t["HC"] / months:,.2f} HC · {pct_text}</div>')
+            total = totals.loc["Total"]
+            head = (f'<div class="service-hc-head"><div class="service-hc-office">{html.escape(office_name)}</div>'
+                    f'<div class="service-hc-totals"><div class="service-hc-total">{total["Processing Time"]:,.1f} h</div><div class="service-hc-caption">Total Processing Time</div>'
+                    f'<div class="service-hc-total">{total["HC"] / months:,.2f} HC</div><div class="service-hc-caption">Total HC/Month (Inc. MNG)</div></div></div>')
+            summary = ''.join(f'<div class="service-hc-box"><div class="service-hc-label">{label}</div>{lines(code)}</div>' for code, label in [("Single", "Single-Service"), ("Multi", "Multi-Service")])
+            details = ''.join(f'<div class="service-hc-code"><b>{code}:</b>{lines(code)}</div>' for code in SERVICE_ORDER)
+            st.markdown(f'<div class="service-hc-card">{head}<div class="service-hc-summary">{summary}</div><div class="service-hc-details">{details}</div></div>', unsafe_allow_html=True)
+    st.caption("Processing Time includes PIC + MNG. All months: cumulative hours, average HC/month, and HC-weighted share.")
 
 
 def prepare_single_service(df: pd.DataFrame) -> pd.DataFrame:
@@ -6669,6 +6756,7 @@ def main():
             st.error(str(exc))
             st.stop()
         single_service = prepare_single_service(raw["single_service"])
+        service_hc = prepare_service_hc(raw["service_hc"])
         hc = prepare_hc(raw["hc"])
         workload = prepare_workload(raw["workload"])
         fte = prepare_fte(raw["fte"])
@@ -6921,6 +7009,7 @@ def main():
         chart_monthly_total_shipment(monthly_shipment_source, height=264)
 
     render_service_volume_offices(apply_filters(single_service, year, month, office), office)
+    render_service_hc_offices(apply_filters(service_hc, year, month, office), office)
 
     # Customer shipment analysis:
     # Remove Transportation Mode chart/detail from the dashboard.
