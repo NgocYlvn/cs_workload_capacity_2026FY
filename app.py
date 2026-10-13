@@ -3176,14 +3176,14 @@ def render_service_hc_offices(data: pd.DataFrame, office: str = "All Offices", o
     .service-hc-code>b{flex:0 0 28px;font-size:13px;font-weight:700;}
     .service-hc-code .service-hc-line{white-space:nowrap;}
     </style>"""
-    st.markdown(card_css + '<div class="office-comparison-heading is-emphasized" style="margin-bottom:0;">' + ("Processing Time &amp; HC — All Offices" if overall else "Single &amp; Multi-Service Processing Time &amp; HC by Office") + "</div>", unsafe_allow_html=True)
+    st.markdown(card_css + '<div class="office-comparison-heading is-emphasized" style="margin-bottom:0;">' + ("Processing Time &amp; HC — " + html.escape(office) if overall else "Single &amp; Multi-Service Processing Time &amp; HC by Office") + "</div>", unsafe_allow_html=True)
     if not overall and data is not None and not data.attrs.get("ytd_label") and not data.empty and "MonthDate" in data.columns:
         period_dates = pd.to_datetime(data["MonthDate"], errors="coerce").dropna().sort_values()
         if not period_dates.empty:
             start_label = period_dates.iloc[0].strftime("%b %Y")
             end_label = period_dates.iloc[-1].strftime("%b %Y")
             st.caption("Period: " + (start_label if start_label == end_label else start_label + " – " + end_label))
-    visible = ["All Offices"] if overall else (STANDARD_OFFICES if office == "All Offices" else [office])
+    visible = [office] if overall else (STANDARD_OFFICES if office == "All Offices" else [office])
     for col, office_name in zip(st.columns(1 if overall else 4, gap="small"), visible):
         d = data.loc[data["Office"] == office_name] if data is not None and not data.empty and "Office" in data.columns else pd.DataFrame()
         with col:
@@ -3215,7 +3215,7 @@ def render_service_hc_offices(data: pd.DataFrame, office: str = "All Offices", o
                     f'<div class="service-hc-totals"><div class="service-hc-total">{total["Processing Time"]:,.1f} h</div><div class="service-hc-caption">{time_label}</div>'
                     f'<div class="service-hc-total">{total["HC"] / months:,.2f} HC</div><div class="service-hc-caption">{hc_label}</div></div></div>')
             if overall:
-                head = (f'<div class="service-hc-head"><div class="service-hc-office">All Offices</div>'
+                head = (f'<div class="service-hc-head"><div class="service-hc-office">{html.escape(office_name)}</div>'
                         f'<div class="overall-metrics"><div><div class="service-hc-total">{total["Processing Time"]:,.1f} h</div><div class="service-hc-caption">{time_label}</div></div>'
                         f'<div><div class="service-hc-total">{total["HC"] / months:,.2f} HC</div><div class="service-hc-caption">{hc_label}</div></div></div></div>')
             summary = ''.join(f'<div class="service-hc-box"><div class="service-hc-label">{label}</div>{lines(code)}</div>' for code, label in [("Single", "Single-Service"), ("Multi", "Multi-Service")])
@@ -3284,8 +3284,8 @@ def render_service_volume_offices(data: pd.DataFrame, office: str = "All Offices
     .service-mix-card .mix-no-data {height:170px;display:flex;align-items:center;justify-content:center;font-size:13px;color:#64748B;}
     </style>"""
     # Emit CSS with the heading to avoid an empty Markdown block above cards.
-    st.markdown(card_css + '<div class="office-comparison-heading is-emphasized" style="margin-bottom:0;">' + ('Shipment Volume — All Offices' if overall else 'Single &amp; Multi-Service Shipment Volume by Office') + '</div>', unsafe_allow_html=True)
-    visible_offices = ["All Offices"] if overall else (STANDARD_OFFICES if office == "All Offices" else [office])
+    st.markdown(card_css + '<div class="office-comparison-heading is-emphasized" style="margin-bottom:0;">' + ('Shipment Volume — ' + html.escape(office) if overall else 'Single &amp; Multi-Service Shipment Volume by Office') + '</div>', unsafe_allow_html=True)
+    visible_offices = [office] if overall else (STANDARD_OFFICES if office == "All Offices" else [office])
     card_columns = st.columns(1 if overall else 4, gap="small")
     for col, office_name in zip(card_columns, visible_offices):
         office_df = data[data["Office"] == office_name] if not data.empty else pd.DataFrame()
@@ -7046,8 +7046,7 @@ def main():
     with shipment_trend_col:
         chart_monthly_total_shipment(monthly_shipment_source, height=264)
 
-    if office == "All Offices":
-        st.markdown("""<style>
+    st.markdown("""<style>
         .overall-card{height:390px !important;min-height:390px !important;padding:12px !important;margin-bottom:16px !important;box-sizing:border-box !important;}
         .overall-card .mix-head,.overall-card .service-hc-head{height:76px !important;box-sizing:border-box;align-items:flex-start;padding-bottom:8px !important;border-bottom:1px solid #D9E2EC !important;}
         .overall-metrics{display:flex;gap:20px;text-align:right;}
@@ -7061,6 +7060,7 @@ def main():
         .overall-card .overall-data{font-size:14px;}
         .overall-card .mix-details,.overall-card .service-hc-details{margin:0 !important;gap:0 !important;}
         </style>""", unsafe_allow_html=True)
+    if office == "All Offices":
         total_volume = apply_filters(single_service, year, month, office).copy()
         if not total_volume.empty:
             total_volume = total_volume.loc[total_volume["Office"].isin(STANDARD_OFFICES)].copy()
@@ -7075,11 +7075,20 @@ def main():
         with total_hc_col:
             render_service_hc_offices(total_hc, overall=True)
 
-    render_service_volume_offices(apply_filters(single_service, year, month, office), office)
-    if month == "All":
-        render_service_hc_offices(filter_office_only(service_hc_ytd, office), office)
+    if office == "All Offices":
+        render_service_volume_offices(apply_filters(single_service, year, month, office), office)
+        if month == "All":
+            render_service_hc_offices(filter_office_only(service_hc_ytd, office), office)
+        else:
+            render_service_hc_offices(apply_filters(service_hc, year, month, office), office)
     else:
-        render_service_hc_offices(apply_filters(service_hc, year, month, office), office)
+        office_volume = apply_filters(single_service, year, month, office)
+        office_hc = filter_office_only(service_hc_ytd, office) if month == "All" else apply_filters(service_hc, year, month, office)
+        office_volume_col, office_hc_col = st.columns(2, gap="medium")
+        with office_volume_col:
+            render_service_volume_offices(office_volume, office, overall=True)
+        with office_hc_col:
+            render_service_hc_offices(office_hc, office, overall=True)
 
     # Customer shipment analysis:
     # Remove Transportation Mode chart/detail from the dashboard.
