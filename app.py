@@ -3121,7 +3121,7 @@ def prepare_service_hc(df: pd.DataFrame) -> pd.DataFrame:
         headers = [str(df.iloc[3, start + i]).strip().upper() for i in range(7)]
         if headers != SERVICE_ORDER:
             continue
-        for office_name in STANDARD_OFFICES:
+        for office_name in STANDARD_OFFICES + ["OVERALL CSD"]:
             group = body.loc[offices == office_name]
             group_labels = labels.loc[group.index]
             def values(label):
@@ -3157,7 +3157,7 @@ def prepare_service_hc_ytd(df: pd.DataFrame) -> pd.DataFrame:
     return result
 
 
-def render_service_hc_offices(data: pd.DataFrame, office: str = "All Offices") -> None:
+def render_service_hc_offices(data: pd.DataFrame, office: str = "All Offices", overall: bool = False) -> None:
     st.markdown("""<style>
     .service-hc-card{background:#fff;border:1px solid #D9E2EC;border-top:4px solid #003B70;border-radius:14px;padding:12px;color:#06183F;margin-bottom:16px;min-height:300px;box-sizing:border-box;}
     .service-hc-head{display:flex;justify-content:space-between;gap:8px;border-bottom:1px solid #D9E2EC;padding-bottom:8px;}
@@ -3167,13 +3167,13 @@ def render_service_hc_offices(data: pd.DataFrame, office: str = "All Offices") -
     .service-hc-caption{font-size:12px;color:#46566B;}
     .service-hc-summary{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0;}
     .service-hc-box{background:#EEF7FC;border-radius:8px;padding:8px 4px;text-align:center;color:#003B70;}
-    .service-hc-label{font-size:11px;font-weight:700;margin-bottom:4px;}
+    .service-hc-label{font-size:12px;font-weight:700;line-height:1.4;margin-bottom:4px;}
     .service-hc-line{font-size:13px;line-height:1.4;color:#06183F !important;}
     .service-hc-summary .service-hc-line{white-space:normal;}
     .service-hc-details{display:grid;grid-template-columns:1fr;gap:0;}
     .service-hc-code{display:flex;align-items:baseline;gap:8px;font-size:13px;line-height:1.4;padding:4px 0;border-bottom:1px solid #E5ECF3;color:#06183F !important;white-space:nowrap;}
     .service-hc-code:last-child{border-bottom:0;}
-    .service-hc-code>b{flex:0 0 28px;font-size:13px;}
+    .service-hc-code>b{flex:0 0 28px;font-size:13px;font-weight:700;}
     .service-hc-code .service-hc-line{white-space:nowrap;}
     </style><div class="office-comparison-heading is-emphasized">Single &amp; Multi-Service Processing Time &amp; HC by Office</div>""", unsafe_allow_html=True)
     if data is not None and not data.attrs.get("ytd_label") and not data.empty and "MonthDate" in data.columns:
@@ -3182,8 +3182,8 @@ def render_service_hc_offices(data: pd.DataFrame, office: str = "All Offices") -
             start_label = period_dates.iloc[0].strftime("%b %Y")
             end_label = period_dates.iloc[-1].strftime("%b %Y")
             st.caption("Period: " + (start_label if start_label == end_label else start_label + " – " + end_label))
-    visible = STANDARD_OFFICES if office == "All Offices" else [office]
-    for col, office_name in zip(st.columns(4, gap="small"), visible):
+    visible = ["All Offices"] if overall else (STANDARD_OFFICES if office == "All Offices" else [office])
+    for col, office_name in zip(st.columns(1 if overall else 4, gap="small"), visible):
         d = data.loc[data["Office"] == office_name] if data is not None and not data.empty and "Office" in data.columns else pd.DataFrame()
         with col:
             if d.empty:
@@ -3256,30 +3256,30 @@ def prepare_single_service(df: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows, columns=columns)
 
 
-def render_service_volume_offices(data: pd.DataFrame, office: str = "All Offices") -> None:
+def render_service_volume_offices(data: pd.DataFrame, office: str = "All Offices", overall: bool = False) -> None:
     """Show service mix with the approved compact card design."""
     card_css = """<style>
     .service-mix-card {min-height:330px;box-sizing:border-box;background:#fff;border:1px solid #D9E2EC;border-top:4px solid #003B70;border-radius:14px;padding:12px;box-shadow:0 2px 8px rgba(6,24,63,.04);color:#06183F;}
     .service-mix-card .mix-head {display:flex;justify-content:space-between;align-items:flex-start;gap:8px;height:56px;box-sizing:border-box;padding-bottom:8px;border-bottom:1px solid #D9E2EC;}
     .service-mix-card .mix-office {font-size:18px;font-weight:800;line-height:1.2;}
     .service-mix-card .mix-total {text-align:right;}
-    .service-mix-card .mix-total-number {font-size:26px;font-weight:850;line-height:1.1;}
+    .service-mix-card .mix-total-number {font-size:26px;font-weight:800;line-height:1.3;}
     .service-mix-card .mix-total-label {font-size:12px;color:#46566B;line-height:1.3;margin-top:3px;}
     .service-mix-card .mix-summaries {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:10px 0;}
     .service-mix-card .mix-summary {background:#EEF7FC;border-radius:8px;padding:8px 4px;text-align:center;}
-    .service-mix-card .mix-label {font-size:11px;font-weight:700;line-height:1.3;color:#003B70;}
-    .service-mix-card .mix-volume {font-size:12px;font-weight:700;line-height:1.4;margin:4px 0 0;color:#003B70;white-space:nowrap;}
+    .service-mix-card .mix-label {font-size:12px;font-weight:700;line-height:1.4;color:#003B70;}
+    .service-mix-card .mix-volume {font-size:13px;font-weight:400;line-height:1.4;margin:4px 0 0;color:#003B70;white-space:nowrap;}
     .service-mix-card .mix-share {font-size:12px;line-height:1.2;color:#003B70;}
     .service-mix-card .mix-details {display:grid;grid-template-columns:1fr;gap:0;margin-top:8px;}
     .service-mix-card .mix-service {display:flex;align-items:baseline;gap:8px;font-size:13px;line-height:1.4;padding:4px 0;border-bottom:1px solid #E5ECF3;color:#06183F !important;white-space:nowrap;}
     .service-mix-card .mix-service:last-child {border-bottom:0;}
-    .service-mix-card .mix-code {font-weight:750;flex:0 0 28px;}
+    .service-mix-card .mix-code {font-weight:700;flex:0 0 28px;}
     .service-mix-card .mix-no-data {height:170px;display:flex;align-items:center;justify-content:center;font-size:13px;color:#64748B;}
     </style>"""
     # Emit CSS with the heading to avoid an empty Markdown block above cards.
     st.markdown(card_css + '<div class="office-comparison-heading is-emphasized" style="margin-bottom:0;">Single &amp; Multi-Service Shipment Volume by Office</div>', unsafe_allow_html=True)
-    visible_offices = STANDARD_OFFICES if office == "All Offices" else [office]
-    card_columns = st.columns(4, gap="small")
+    visible_offices = ["All Offices"] if overall else (STANDARD_OFFICES if office == "All Offices" else [office])
+    card_columns = st.columns(1 if overall else 4, gap="small")
     for col, office_name in zip(card_columns, visible_offices):
         office_df = data[data["Office"] == office_name] if not data.empty else pd.DataFrame()
         with col:
@@ -7038,6 +7038,21 @@ def main():
         )
     with shipment_trend_col:
         chart_monthly_total_shipment(monthly_shipment_source, height=264)
+
+    if office == "All Offices":
+        total_volume = apply_filters(single_service, year, month, office).copy()
+        if not total_volume.empty:
+            total_volume = total_volume.loc[total_volume["Office"].isin(STANDARD_OFFICES)].copy()
+            total_volume["Office"] = "All Offices"
+        total_hc_source = service_hc_ytd if month == "All" else apply_filters(service_hc, year, month, office)
+        total_hc = total_hc_source.loc[total_hc_source["Office"] == "OVERALL CSD"].copy() if "Office" in total_hc_source.columns else prepare_service_hc(pd.DataFrame())
+        total_hc["Office"] = "All Offices"
+        total_hc.attrs.update(total_hc_source.attrs)
+        total_volume_col, total_hc_col = st.columns(2, gap="medium")
+        with total_volume_col:
+            render_service_volume_offices(total_volume, overall=True)
+        with total_hc_col:
+            render_service_hc_offices(total_hc, overall=True)
 
     render_service_volume_offices(apply_filters(single_service, year, month, office), office)
     if month == "All":
