@@ -3158,7 +3158,7 @@ def prepare_service_hc_ytd(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def render_service_hc_offices(data: pd.DataFrame, office: str = "All Offices", overall: bool = False) -> None:
-    st.markdown("""<style>
+    card_css = """<style>
     .service-hc-card{background:#fff;border:1px solid #D9E2EC;border-top:4px solid #003B70;border-radius:14px;padding:12px;color:#06183F;margin-bottom:16px;min-height:300px;box-sizing:border-box;}
     .service-hc-head{display:flex;justify-content:space-between;gap:8px;border-bottom:1px solid #D9E2EC;padding-bottom:8px;}
     .service-hc-office{font-size:18px;font-weight:800;}
@@ -3175,8 +3175,8 @@ def render_service_hc_offices(data: pd.DataFrame, office: str = "All Offices", o
     .service-hc-code:last-child{border-bottom:0;}
     .service-hc-code>b{flex:0 0 28px;font-size:13px;font-weight:700;}
     .service-hc-code .service-hc-line{white-space:nowrap;}
-    </style>""", unsafe_allow_html=True)
-    st.markdown('<div class="office-comparison-heading is-emphasized">' + ("Processing Time &amp; HC — All Offices" if overall else "Single &amp; Multi-Service Processing Time &amp; HC by Office") + "</div>", unsafe_allow_html=True)
+    </style>"""
+    st.markdown(card_css + '<div class="office-comparison-heading is-emphasized" style="margin-bottom:0;">' + ("Processing Time &amp; HC — All Offices" if overall else "Single &amp; Multi-Service Processing Time &amp; HC by Office") + "</div>", unsafe_allow_html=True)
     if not overall and data is not None and not data.attrs.get("ytd_label") and not data.empty and "MonthDate" in data.columns:
         period_dates = pd.to_datetime(data["MonthDate"], errors="coerce").dropna().sort_values()
         if not period_dates.empty:
@@ -7048,18 +7048,18 @@ def main():
 
     if office == "All Offices":
         st.markdown("""<style>
-        .overall-card{min-height:368px !important;margin-bottom:16px;}
-        .overall-card .mix-head,.overall-card .service-hc-head{height:76px !important;box-sizing:border-box;align-items:flex-start;}
+        .overall-card{height:390px !important;min-height:390px !important;padding:12px !important;margin-bottom:16px !important;box-sizing:border-box !important;}
+        .overall-card .mix-head,.overall-card .service-hc-head{height:76px !important;box-sizing:border-box;align-items:flex-start;padding-bottom:8px !important;border-bottom:1px solid #D9E2EC !important;}
         .overall-metrics{display:flex;gap:20px;text-align:right;}
         .overall-metrics>div+div{border-left:1px solid #D9E2EC;padding-left:20px;}
         .overall-card .mix-summaries,.overall-card .service-hc-summary{margin:10px 0 !important;gap:8px;}
         .overall-card .mix-summary,.overall-card .service-hc-box{height:62px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;}
         .overall-card .mix-volume,.overall-card .service-hc-line{font-size:14px !important;font-weight:400;line-height:1.4;}
-        .overall-card .mix-service,.overall-card .service-hc-code{display:grid;grid-template-columns:42px minmax(0,1fr) 68px;gap:8px;height:29px;box-sizing:border-box;align-items:center;padding:4px 0;font-size:14px !important;line-height:1.4;}
+        .overall-card .mix-service,.overall-card .service-hc-code{display:grid !important;grid-template-columns:42px minmax(0,1fr) 68px !important;gap:8px !important;height:29px !important;box-sizing:border-box;align-items:center;padding:4px 0;font-size:14px !important;line-height:1.4;}
         .overall-card .service-hc-code>b{font-size:14px;}
         .overall-card .overall-pct{text-align:right;font-size:14px;}
         .overall-card .overall-data{font-size:14px;}
-        .overall-card .mix-details{margin-top:0;}
+        .overall-card .mix-details,.overall-card .service-hc-details{margin:0 !important;gap:0 !important;}
         </style>""", unsafe_allow_html=True)
         total_volume = apply_filters(single_service, year, month, office).copy()
         if not total_volume.empty:
