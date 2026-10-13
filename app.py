@@ -3182,7 +3182,6 @@ def render_service_hc_offices(data: pd.DataFrame, office: str = "All Offices") -
             start_label = period_dates.iloc[0].strftime("%b %Y")
             end_label = period_dates.iloc[-1].strftime("%b %Y")
             st.caption("Period: " + (start_label if start_label == end_label else start_label + " – " + end_label))
-    st.markdown('<div style="font-size:12px;color:#46566B;margin:2px 0 6px;">Hours · HC · % HC</div>', unsafe_allow_html=True)
     visible = STANDARD_OFFICES if office == "All Offices" else [office]
     for col, office_name in zip(st.columns(4, gap="small"), visible):
         d = data.loc[data["Office"] == office_name] if data is not None and not data.empty and "Office" in data.columns else pd.DataFrame()
