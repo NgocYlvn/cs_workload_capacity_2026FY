@@ -14,6 +14,7 @@ import hashlib
 import hmac
 import logging
 import textwrap
+from io import BytesIO
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Tuple
 
@@ -6749,26 +6750,37 @@ def main():
     render_cover_gate()
     render_password_gate()
 
-    # Load the default workbook.
+    # An explicitly uploaded workbook takes precedence over the deployed copy.
+    uploaded_source = st.sidebar.file_uploader(
+        "Excel data source", type=["xlsm", "xlsx"], key="master_data_source_upload"
+    )
     file_path = DEFAULT_FILE_PATH
     cache_token = ""
-    if file_path.exists():
-        stat = file_path.stat()
+    if uploaded_source is not None:
+        source_bytes = uploaded_source.getvalue()
+        file_path = BytesIO(source_bytes)
+        cache_token = hashlib.sha256(source_bytes).hexdigest()
+        source_name = uploaded_source.name
+    else:
+        source_name = DEFAULT_FILE_PATH.name
+        if not DEFAULT_FILE_PATH.exists():
+            st.error("Default Excel file not found. Upload the current workbook in the sidebar.")
+            st.stop()
+        stat = DEFAULT_FILE_PATH.stat()
         cache_token = f"{stat.st_mtime_ns}_{stat.st_size}"
-
-    if not file_path.exists():
-        st.error(
-            f"Không tìm thấy file dữ liệu: {file_path}. "
-            "Vui lòng đặt file Excel cùng thư mục app.py."
-        )
-        st.stop()
+    st.sidebar.caption(f"Current source: {source_name}")
 
     with st.spinner("Loading and validating Excel data..."):
         try:
-            raw = load_data(str(file_path), cache_token)
+            raw = load_data(file_path, cache_token)
         except WorkbookLoadError as exc:
             st.error(str(exc))
             st.stop()
+        if raw["customer_service_detail"].empty:
+            st.warning(
+                "The current Excel source does not contain data in '12. Single service volume'. "
+                "Upload the updated MASTER DATA SOURCE workbook in the sidebar."
+            )
         single_service = prepare_single_service(raw["single_service"])
         # Sheet 12 DETAILS starts at Excel row 48; monthly headers at row 49.
         customer_service_volume = prepare_single_service(
