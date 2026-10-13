@@ -3152,13 +3152,23 @@ def render_service_hc_offices(data: pd.DataFrame, office: str = "All Offices") -
     .service-hc-summary{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0;}
     .service-hc-box{background:#EEF7FC;border-radius:8px;padding:8px 4px;text-align:center;color:#003B70;}
     .service-hc-label{font-size:11px;font-weight:700;margin-bottom:4px;}
-    .service-hc-line{font-size:12px;line-height:1.6;white-space:nowrap;}
-    .service-hc-details{display:grid;grid-template-columns:1fr 1fr;column-gap:12px;row-gap:5px;}
-    .service-hc-code{font-size:11px;line-height:1.6;}
+    .service-hc-line{font-size:12px;line-height:1.6;color:#06183F !important;}
+    .service-hc-summary .service-hc-line{white-space:normal;}
+    .service-hc-details{display:grid;grid-template-columns:1fr;gap:0;}
+    .service-hc-code{display:flex;align-items:baseline;gap:8px;font-size:12px;line-height:1.6;padding:7px 0;border-bottom:1px solid #E5ECF3;color:#06183F !important;white-space:nowrap;}
+    .service-hc-code:last-child{border-bottom:0;}
+    .service-hc-code>b{flex:0 0 28px;font-size:12px;}
+    .service-hc-code .service-hc-line{white-space:nowrap;}
     </style><div class="office-comparison-heading is-emphasized">Single &amp; Multi-Service Processing Time &amp; HC by Office</div>""", unsafe_allow_html=True)
+    if data is not None and not data.empty and "MonthDate" in data.columns:
+        period_dates = pd.to_datetime(data["MonthDate"], errors="coerce").dropna().sort_values()
+        if not period_dates.empty:
+            start_label = period_dates.iloc[0].strftime("%b %Y")
+            end_label = period_dates.iloc[-1].strftime("%b %Y")
+            st.caption("Period: " + (start_label if start_label == end_label else start_label + " – " + end_label))
     visible = STANDARD_OFFICES if office == "All Offices" else [office]
     for col, office_name in zip(st.columns(4, gap="small"), visible):
-        d = data.loc[data["Office"] == office_name]
+        d = data.loc[data["Office"] == office_name] if data is not None and not data.empty and "Office" in data.columns else pd.DataFrame()
         with col:
             if d.empty:
                 st.markdown(f'<div class="service-hc-card"><div class="service-hc-office">{html.escape(office_name)}</div><p>NO DATA</p></div>', unsafe_allow_html=True)
@@ -3174,17 +3184,19 @@ def render_service_hc_offices(data: pd.DataFrame, office: str = "All Offices") -
                 valid = code_rows["HC Share"].notna() & month_weights.reindex(code_rows.index).notna()
                 weights = month_weights.reindex(code_rows.index).loc[valid]
                 pct = (code_rows.loc[valid, "HC Share"] * weights).sum() / weights.sum() if weights.sum() > 0 else float("nan")
-                pct_text = f"{pct:.1%}" if pd.notna(pct) else "N/A"
-                return (f'<div class="service-hc-line">{t["Processing Time"]:,.1f} h · {pct_text}</div>'
-                        f'<div class="service-hc-line">{t["HC"] / months:,.2f} HC · {pct_text}</div>')
+                pct_text = ("&lt;0.1%" if 0 < pct < 0.0005 else f"{pct:.1%}") if pd.notna(pct) else "N/A"
+                hc_value = t["HC"] / months
+                hc_text = "&lt;0.01" if 0 < hc_value < 0.005 else f"{hc_value:,.2f}"
+                return f'<div class="service-hc-line">{t["Processing Time"]:,.1f} h · {hc_text} HC · {pct_text}</div>'
             total = totals.loc["Total"]
+            hc_label = "Average HC/Month (Inc. MNG)" if months > 1 else "Total HC/Month (Inc. MNG)"
             head = (f'<div class="service-hc-head"><div class="service-hc-office">{html.escape(office_name)}</div>'
                     f'<div class="service-hc-totals"><div class="service-hc-total">{total["Processing Time"]:,.1f} h</div><div class="service-hc-caption">Total Processing Time</div>'
-                    f'<div class="service-hc-total">{total["HC"] / months:,.2f} HC</div><div class="service-hc-caption">Total HC/Month (Inc. MNG)</div></div></div>')
+                    f'<div class="service-hc-total">{total["HC"] / months:,.2f} HC</div><div class="service-hc-caption">{hc_label}</div></div></div>')
             summary = ''.join(f'<div class="service-hc-box"><div class="service-hc-label">{label}</div>{lines(code)}</div>' for code, label in [("Single", "Single-Service"), ("Multi", "Multi-Service")])
             details = ''.join(f'<div class="service-hc-code"><b>{code}:</b>{lines(code)}</div>' for code in SERVICE_ORDER)
             st.markdown(f'<div class="service-hc-card">{head}<div class="service-hc-summary">{summary}</div><div class="service-hc-details">{details}</div></div>', unsafe_allow_html=True)
-    st.caption("Processing Time includes PIC + MNG. All months: cumulative hours, average HC/month, and HC-weighted share.")
+    st.caption("Percentages represent HC share (Inc. MNG). Processing Time includes PIC + MNG. Across months: cumulative hours and average HC/month.")
 
 
 def prepare_single_service(df: pd.DataFrame) -> pd.DataFrame:
