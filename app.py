@@ -154,6 +154,7 @@ CORPORATE_PALETTE = [
 
 SHEET_NAMES = {
     "single_service": "10. Single service volume",
+    "customer_service_detail": "12. Single service volume",
     "hc": " 1.  Office Cap. & Workload",
     "resolution": "9. CS Resolutions Rate",
     "workload": "4. Workload by Activity",
@@ -3083,10 +3084,10 @@ def load_data(path: str, cache_token: str = "") -> Dict[str, pd.DataFrame]:
             df = pd.read_excel(
                 xls,
                 sheet_name=sheet,
-                header=None if key == "single_service" else 1,
+                header=None if key in {"single_service", "customer_service_detail"} else 1,
             )
             df.columns = [clean_col(c) for c in df.columns]
-            if key != "single_service":
+            if key not in {"single_service", "customer_service_detail"}:
                 df = df.dropna(how="all")
             data[key] = df
         except Exception as exc:
@@ -6669,6 +6670,10 @@ def main():
             st.error(str(exc))
             st.stop()
         single_service = prepare_single_service(raw["single_service"])
+        # Sheet 12 DETAILS starts at Excel row 48; monthly headers at row 49.
+        customer_service_volume = prepare_single_service(
+            raw["customer_service_detail"].iloc[47:].reset_index(drop=True)
+        )
         hc = prepare_hc(raw["hc"])
         workload = prepare_workload(raw["workload"])
         fte = prepare_fte(raw["fte"])
@@ -6931,8 +6936,8 @@ def main():
         chart_top_customers(f_customer_ns)
 
     with customer_detail_col:
-        # Detail table uses sheet 10 monthly Total, independently of Top 15 source.
-        customer_service_detail = apply_filters(single_service, year, month, office)
+        # Detail table uses sheet 12 DETAILS (row 48 onward), independently of other charts.
+        customer_service_detail = apply_filters(customer_service_volume, year, month, office)
         customer_service_detail = customer_service_detail.rename(columns={"Total": "Volume"})
         customer_detail_volume_table(customer_service_detail)
 
