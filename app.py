@@ -3163,17 +3163,17 @@ def render_service_hc_offices(data: pd.DataFrame, office: str = "All Offices") -
     .service-hc-head{display:flex;justify-content:space-between;gap:8px;border-bottom:1px solid #D9E2EC;padding-bottom:8px;}
     .service-hc-office{font-size:18px;font-weight:800;}
     .service-hc-totals{text-align:right;}
-    .service-hc-total{font-size:22px;font-weight:800;line-height:1.3;}
-    .service-hc-caption{font-size:11px;color:#5B6575;}
+    .service-hc-total{font-size:26px;font-weight:800;line-height:1.3;}
+    .service-hc-caption{font-size:12px;color:#46566B;}
     .service-hc-summary{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0;}
     .service-hc-box{background:#EEF7FC;border-radius:8px;padding:8px 4px;text-align:center;color:#003B70;}
     .service-hc-label{font-size:11px;font-weight:700;margin-bottom:4px;}
-    .service-hc-line{font-size:12px;line-height:1.6;color:#06183F !important;}
+    .service-hc-line{font-size:13px;line-height:1.4;color:#06183F !important;}
     .service-hc-summary .service-hc-line{white-space:normal;}
     .service-hc-details{display:grid;grid-template-columns:1fr;gap:0;}
-    .service-hc-code{display:flex;align-items:baseline;gap:8px;font-size:12px;line-height:1.6;padding:7px 0;border-bottom:1px solid #E5ECF3;color:#06183F !important;white-space:nowrap;}
+    .service-hc-code{display:flex;align-items:baseline;gap:8px;font-size:13px;line-height:1.4;padding:4px 0;border-bottom:1px solid #E5ECF3;color:#06183F !important;white-space:nowrap;}
     .service-hc-code:last-child{border-bottom:0;}
-    .service-hc-code>b{flex:0 0 28px;font-size:12px;}
+    .service-hc-code>b{flex:0 0 28px;font-size:13px;}
     .service-hc-code .service-hc-line{white-space:nowrap;}
     </style><div class="office-comparison-heading is-emphasized">Single &amp; Multi-Service Processing Time &amp; HC by Office</div>""", unsafe_allow_html=True)
     if data is not None and not data.attrs.get("ytd_label") and not data.empty and "MonthDate" in data.columns:
@@ -3182,6 +3182,7 @@ def render_service_hc_offices(data: pd.DataFrame, office: str = "All Offices") -
             start_label = period_dates.iloc[0].strftime("%b %Y")
             end_label = period_dates.iloc[-1].strftime("%b %Y")
             st.caption("Period: " + (start_label if start_label == end_label else start_label + " – " + end_label))
+    st.markdown('<div style="font-size:12px;color:#46566B;margin:2px 0 6px;">Hours · HC · % HC</div>', unsafe_allow_html=True)
     visible = STANDARD_OFFICES if office == "All Offices" else [office]
     for col, office_name in zip(st.columns(4, gap="small"), visible):
         d = data.loc[data["Office"] == office_name] if data is not None and not data.empty and "Office" in data.columns else pd.DataFrame()
@@ -3263,15 +3264,15 @@ def render_service_volume_offices(data: pd.DataFrame, office: str = "All Offices
     .service-mix-card .mix-head {display:flex;justify-content:space-between;align-items:flex-start;gap:8px;height:56px;box-sizing:border-box;padding-bottom:8px;border-bottom:1px solid #D9E2EC;}
     .service-mix-card .mix-office {font-size:18px;font-weight:800;line-height:1.2;}
     .service-mix-card .mix-total {text-align:right;}
-    .service-mix-card .mix-total-number {font-size:28px;font-weight:850;line-height:1.1;}
-    .service-mix-card .mix-total-label {font-size:11px;color:#5B6575;line-height:1.3;margin-top:3px;}
+    .service-mix-card .mix-total-number {font-size:26px;font-weight:850;line-height:1.1;}
+    .service-mix-card .mix-total-label {font-size:12px;color:#46566B;line-height:1.3;margin-top:3px;}
     .service-mix-card .mix-summaries {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:10px 0;}
     .service-mix-card .mix-summary {background:#EEF7FC;border-radius:8px;padding:8px 4px;text-align:center;}
     .service-mix-card .mix-label {font-size:11px;font-weight:700;line-height:1.3;color:#003B70;}
     .service-mix-card .mix-volume {font-size:20px;font-weight:800;line-height:1.2;margin:4px 0 2px;color:#003B70;}
     .service-mix-card .mix-share {font-size:12px;line-height:1.2;color:#003B70;}
     .service-mix-card .mix-details {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:20px;row-gap:5px;margin-top:8px;}
-    .service-mix-card .mix-service {display:block;font-size:11px;line-height:1.3;color:#06183F !important;white-space:nowrap;}
+    .service-mix-card .mix-service {display:block;font-size:12px;line-height:1.4;color:#06183F !important;white-space:nowrap;}
     .service-mix-card .mix-code {font-weight:750;}
     .service-mix-card .mix-no-data {height:170px;display:flex;align-items:center;justify-content:center;font-size:13px;color:#64748B;}
     </style>"""
