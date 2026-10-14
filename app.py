@@ -3159,7 +3159,7 @@ def prepare_service_hc_ytd(df: pd.DataFrame) -> pd.DataFrame:
 
 
 SERVICE_CARD_LAYOUT_CSS = """<style>
-.service-layout{box-sizing:border-box;background:#fff;border:1px solid #D9E2EC;border-top:4px solid #003B70;border-radius:14px;padding:12px;color:#06183F;margin-bottom:16px;}
+.service-layout{box-sizing:border-box;background:#fff;border:1px solid #D9E2EC;border-top:4px solid #003B70;border-radius:14px;padding:8px;color:#06183F;margin-bottom:16px;}
 .service-layout .mix-head,.service-layout .service-hc-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;min-height:76px;box-sizing:border-box;padding-bottom:10px;border-bottom:1px solid #D9E2EC;}
 .service-layout .mix-office,.service-layout .service-hc-office{font-size:18px;font-weight:800;}
 .service-layout .mix-total,.service-layout .service-hc-totals{text-align:right;}
@@ -3170,9 +3170,9 @@ SERVICE_CARD_LAYOUT_CSS = """<style>
 .service-single-group{border:1px solid #C5E2F7;border-radius:8px;overflow:hidden;margin-top:10px;background:#F7FBFE;}
 .service-summary-bar{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;background:#E1F0FC;color:#003B70;font-size:13px;font-weight:700;line-height:1.4;min-height:38px;box-sizing:border-box;flex-wrap:wrap;}
 .service-summary-bar .service-values{font-size:13px;font-weight:700;}
-.service-code-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));padding:4px 10px 6px;column-gap:12px;}
+.service-code-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));padding:4px 3px 6px;column-gap:2px;}
 .service-code-column{min-width:0;overflow-x:auto;}
-.service-code-column+ .service-code-column{border-left:1px solid #D9E2EC;padding-left:10px;}
+.service-code-column+ .service-code-column{border-left:1px solid #D9E2EC;padding-left:2px;}
 .service-code-row{display:flex;align-items:baseline;justify-content:flex-start;gap:4px;border-bottom:1px solid #E5ECF3;padding:5px 0;min-height:30px;box-sizing:border-box;font-size:13px;line-height:1.4;flex-wrap:nowrap;white-space:nowrap;}
 .service-code-row:last-child{border-bottom:0;}
 .service-code-row>b{font-size:13px;font-weight:700;flex:0 0 auto;white-space:nowrap;}
@@ -3180,7 +3180,7 @@ SERVICE_CARD_LAYOUT_CSS = """<style>
 .service-values{font-size:13px;line-height:1.4;overflow-wrap:anywhere;}
 .service-multi-bar{border:1px solid #C5E2F7;border-radius:8px;margin-top:8px;}
 .service-layout .mix-no-data{min-height:200px;display:flex;align-items:center;justify-content:center;color:#64748B;}
-@media(max-width:640px){.service-code-grid{column-gap:8px;padding-left:8px;padding-right:8px;}.service-code-column+ .service-code-column{padding-left:8px;}.service-layout .overall-metrics{gap:8px;}.service-layout .overall-metrics>div+div{padding-left:8px;}}
+@media(max-width:640px){.service-code-grid{column-gap:2px;padding-left:3px;padding-right:3px;}.service-code-column+ .service-code-column{padding-left:2px;}.service-layout .overall-metrics{gap:8px;}.service-layout .overall-metrics>div+div{padding-left:8px;}}
 </style>"""
 
 
