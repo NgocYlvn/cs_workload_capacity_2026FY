@@ -3170,12 +3170,13 @@ SERVICE_CARD_LAYOUT_CSS = """<style>
 .service-single-group{border:1px solid #C5E2F7;border-radius:8px;overflow:hidden;margin-top:10px;background:#F7FBFE;}
 .service-summary-bar{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;background:#E1F0FC;color:#003B70;font-size:13px;font-weight:700;line-height:1.4;min-height:38px;box-sizing:border-box;flex-wrap:wrap;}
 .service-summary-bar .service-values{font-size:13px;font-weight:700;}
-.service-code-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));padding:4px 10px 6px;column-gap:12px;}
-.service-code-column{min-width:0;}
-.service-code-column+ .service-code-column{border-left:1px solid #D9E2EC;padding-left:10px;}
-.service-code-row{display:flex;align-items:baseline;justify-content:space-between;gap:6px;border-bottom:1px solid #E5ECF3;padding:5px 0;min-height:30px;box-sizing:border-box;font-size:13px;line-height:1.4;flex-wrap:wrap;}
+.service-code-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));padding:4px 6px 6px;column-gap:8px;overflow-x:auto;}
+.service-code-column{min-width:0;container-type:inline-size;}
+.service-code-column+ .service-code-column{border-left:1px solid #D9E2EC;padding-left:6px;}
+.service-code-row{display:flex;align-items:baseline;justify-content:space-between;gap:3px;border-bottom:1px solid #E5ECF3;padding:5px 0;min-height:30px;box-sizing:border-box;font-size:11px;font-size:clamp(8px,5.8cqi,13px);line-height:1.4;flex-wrap:nowrap;white-space:nowrap;}
 .service-code-row:last-child{border-bottom:0;}
-.service-code-row>b{font-size:13px;font-weight:700;flex:0 0 24px;}
+.service-code-row>b{font-size:inherit;font-weight:700;flex:0 0 auto;white-space:nowrap;}
+.service-code-row .service-values{font-size:inherit;white-space:nowrap;overflow-wrap:normal;word-break:normal;flex:0 0 auto;}
 .service-values{font-size:13px;line-height:1.4;overflow-wrap:anywhere;}
 .service-multi-bar{border:1px solid #C5E2F7;border-radius:8px;margin-top:8px;}
 .service-layout .mix-no-data{min-height:200px;display:flex;align-items:center;justify-content:center;color:#64748B;}
