@@ -3173,10 +3173,10 @@ SERVICE_CARD_LAYOUT_CSS = """<style>
 .service-code-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));padding:4px 3px 6px;column-gap:2px;}
 .service-code-column{min-width:0;overflow-x:auto;}
 .service-code-column+ .service-code-column{border-left:1px solid #D9E2EC;padding-left:2px;}
-.service-code-row{display:flex;align-items:baseline;justify-content:flex-start;gap:4px;border-bottom:1px solid #E5ECF3;padding:5px 0;min-height:30px;box-sizing:border-box;font-size:13px;line-height:1.4;flex-wrap:nowrap;white-space:nowrap;}
+.service-code-row{display:flex;align-items:baseline;justify-content:flex-start;gap:4px;border-bottom:1px solid #E5ECF3;padding:5px 0;min-height:30px;box-sizing:border-box;font-size:12.5px;line-height:1.4;flex-wrap:nowrap;white-space:nowrap;}
 .service-code-row:last-child{border-bottom:0;}
-.service-code-row>b{font-size:13px;font-weight:700;flex:0 0 auto;white-space:nowrap;}
-.service-code-row .service-values{font-size:13px;white-space:nowrap;overflow-wrap:normal;word-break:normal;flex:0 0 auto;}
+.service-code-row>b{font-size:12.5px;font-weight:700;flex:0 0 auto;white-space:nowrap;}
+.service-code-row .service-values{font-size:12.5px;white-space:nowrap;overflow-wrap:normal;word-break:normal;flex:0 0 auto;}
 .service-values{font-size:13px;line-height:1.4;overflow-wrap:anywhere;}
 .service-multi-bar{border:1px solid #C5E2F7;border-radius:8px;margin-top:8px;}
 .service-layout .mix-no-data{min-height:200px;display:flex;align-items:center;justify-content:center;color:#64748B;}
@@ -3184,7 +3184,7 @@ SERVICE_CARD_LAYOUT_CSS = """<style>
 /* One fixed detail type scale for every overall and office card. */
 .service-layout .service-code-row,
 .service-layout .service-code-row > b,
-.service-layout .service-code-row .service-values{font-size:13px !important;line-height:1.4 !important;font-family:inherit !important;letter-spacing:normal !important;white-space:nowrap !important;}
+.service-layout .service-code-row .service-values{font-size:12.5px !important;line-height:1.4 !important;font-family:inherit !important;letter-spacing:normal !important;white-space:nowrap !important;}
 .service-layout .service-code-row .service-values{font-weight:400 !important;}
 .service-layout .service-code-row > b{font-weight:700 !important;}
 </style>"""
