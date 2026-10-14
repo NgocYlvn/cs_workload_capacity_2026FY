@@ -3181,6 +3181,12 @@ SERVICE_CARD_LAYOUT_CSS = """<style>
 .service-multi-bar{border:1px solid #C5E2F7;border-radius:8px;margin-top:8px;}
 .service-layout .mix-no-data{min-height:200px;display:flex;align-items:center;justify-content:center;color:#64748B;}
 @media(max-width:640px){.service-code-grid{column-gap:2px;padding-left:3px;padding-right:3px;}.service-code-column+ .service-code-column{padding-left:2px;}.service-layout .overall-metrics{gap:8px;}.service-layout .overall-metrics>div+div{padding-left:8px;}}
+/* One fixed detail type scale for every overall and office card. */
+.service-layout .service-code-row,
+.service-layout .service-code-row > b,
+.service-layout .service-code-row .service-values{font-size:13px !important;line-height:1.4 !important;font-family:inherit !important;letter-spacing:normal !important;white-space:nowrap !important;}
+.service-layout .service-code-row .service-values{font-weight:400 !important;}
+.service-layout .service-code-row > b{font-weight:700 !important;}
 </style>"""
 
 
