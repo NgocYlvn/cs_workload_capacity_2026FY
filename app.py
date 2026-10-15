@@ -3222,28 +3222,29 @@ def render_service_hc_offices(data: pd.DataFrame, office: str = "All Offices", o
             months = d["MonthDate"].nunique()
             totals["Processing Time"] = totals["Processing Time"] / months
             total_hc = totals.loc["Total", "HC"]
-            def lines(code):
+            def lines(code, show_share=True):
                 t = totals.loc[code]
                 code_rows = d.loc[d["Code"] == code].set_index("MonthDate")
                 month_weights = d.loc[d["Code"] == "Total"].set_index("MonthDate")["HC"]
                 valid = code_rows["HC Share"].notna() & month_weights.reindex(code_rows.index).notna()
                 weights = month_weights.reindex(code_rows.index).loc[valid]
                 pct = (code_rows.loc[valid, "HC Share"] * weights).sum() / weights.sum() if weights.sum() > 0 else float("nan")
-                pct_text = ("&lt;0.1%" if 0 < pct < 0.0005 else f"{pct:.1%}") if pd.notna(pct) else "N/A"
+                pct_text = f"{pct:.0%}" if pd.notna(pct) else "N/A"
                 hc_value = t["HC"] / months
-                hc_text = "&lt;0.01" if 0 < hc_value < 0.005 else f"{hc_value:,.2f}"
-                return f'<span class="service-values">{t["Processing Time"]:,.1f} h ~ {hc_text} HC ~ {pct_text}</span>'
+                hc_text = f"{hc_value:,.1f}"
+                share_suffix = f" ~ {pct_text}" if show_share else ""
+                return f'<span class="service-values">{t["Processing Time"]:,.0f} h ~ {hc_text} HC{share_suffix}</span>'
             total = totals.loc["Total"]
             time_label = "Average Processing Time/Month" if months > 1 or data.attrs.get("ytd_label") else "Total Processing Time"
             hc_label = "Average HC/Month (Inc. MNG)" if months > 1 or data.attrs.get("ytd_label") else "Total HC/Month (Inc. MNG)"
             head = (f'<div class="service-hc-head"><div class="service-hc-office">{html.escape(office_name)}</div>'
-                    f'<div class="service-hc-totals"><div class="service-hc-total">{total["Processing Time"]:,.1f} h</div><div class="service-hc-caption">{time_label}</div>'
-                    f'<div class="service-hc-total">{total["HC"] / months:,.2f} HC</div><div class="service-hc-caption">{hc_label}</div></div></div>')
+                    f'<div class="service-hc-totals"><div class="service-hc-total">{total["Processing Time"]:,.0f} h</div><div class="service-hc-caption">{time_label}</div>'
+                    f'<div class="service-hc-total">{total["HC"] / months:,.1f} HC</div><div class="service-hc-caption">{hc_label}</div></div></div>')
             if overall:
                 head = (f'<div class="service-hc-head"><div class="service-hc-office">{html.escape(office_name)}</div>'
-                        f'<div class="overall-metrics"><div><div class="service-hc-total">{total["Processing Time"]:,.1f} h</div><div class="service-hc-caption">{time_label}</div></div>'
-                        f'<div><div class="service-hc-total">{total["HC"] / months:,.2f} HC</div><div class="service-hc-caption">{hc_label}</div></div></div></div>')
-            code_rows = [f'<div class="service-code-row"><b>{code}:</b>{lines(code)}</div>' for code in SERVICE_ORDER]
+                        f'<div class="overall-metrics"><div><div class="service-hc-total">{total["Processing Time"]:,.0f} h</div><div class="service-hc-caption">{time_label}</div></div>'
+                        f'<div><div class="service-hc-total">{total["HC"] / months:,.1f} HC</div><div class="service-hc-caption">{hc_label}</div></div></div></div>')
+            code_rows = [f'<div class="service-code-row"><b>{code}:</b>{lines(code, show_share=overall)}</div>' for code in SERVICE_ORDER]
             groups = service_group_markup(lines("Single"), lines("Multi"), code_rows)
             st.markdown(f'<div class="service-layout">{head}{groups}</div>', unsafe_allow_html=True)
 
@@ -3307,7 +3308,7 @@ def render_service_volume_offices(data: pd.DataFrame, office: str = "All Offices
                 total = float(totals["Total"])
                 single = float(totals[SERVICE_ORDER].sum())
                 def share(value):
-                    return f"{value / total:.1%}" if total > 0 else "N/A"
+                    return f"{value / total:.0%}" if total > 0 else "N/A"
                 def summary(value):
                     return f'<span class="service-values">{fmt_int(value)} Shpt ~ {share(value)}</span>'
                 code_rows = [
