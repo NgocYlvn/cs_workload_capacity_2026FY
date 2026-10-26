@@ -3221,39 +3221,29 @@ def render_service_hc_offices(data: pd.DataFrame, office: str = "All Offices", o
             totals = d.groupby("Code")[["Processing Time", "HC"]].sum()
             months = d["MonthDate"].nunique()
             totals["Processing Time"] = totals["Processing Time"] / months
-            if overall:
-                # Keep displayed-hour reconciliation; HC uses unrounded
-                # source Single + Multi and is rounded only for display.
-                for group_code in ("Single", "Multi"):
-                    totals.loc[group_code, "Processing Time"] = float(
-                        f'{totals.loc[group_code, "Processing Time"]:.0f}')
-                totals.loc["Total"] = totals.loc[["Single", "Multi"]].sum()
             total_hc = totals.loc["Total", "HC"]
-            def lines(code, show_share=True):
+            def lines(code):
                 t = totals.loc[code]
                 code_rows = d.loc[d["Code"] == code].set_index("MonthDate")
                 month_weights = d.loc[d["Code"] == "Total"].set_index("MonthDate")["HC"]
                 valid = code_rows["HC Share"].notna() & month_weights.reindex(code_rows.index).notna()
                 weights = month_weights.reindex(code_rows.index).loc[valid]
                 pct = (code_rows.loc[valid, "HC Share"] * weights).sum() / weights.sum() if weights.sum() > 0 else float("nan")
-                if overall:
-                    pct = t["HC"] / total_hc if total_hc > 0 else float("nan")
-                pct_text = f"{pct:.0%}" if pd.notna(pct) else "N/A"
+                pct_text = ("&lt;0.1%" if 0 < pct < 0.0005 else f"{pct:.1%}") if pd.notna(pct) else "N/A"
                 hc_value = t["HC"] / months
-                hc_text = f"{hc_value:,.1f}"
-                share_suffix = f" ~ {pct_text}" if show_share else ""
-                return f'<span class="service-values">{t["Processing Time"]:,.0f} h ~ {hc_text} HC{share_suffix}</span>'
+                hc_text = "&lt;0.01" if 0 < hc_value < 0.005 else f"{hc_value:,.2f}"
+                return f'<span class="service-values">{t["Processing Time"]:,.1f} h ~ {hc_text} HC ~ {pct_text}</span>'
             total = totals.loc["Total"]
             time_label = "Average Processing Time/Month" if months > 1 or data.attrs.get("ytd_label") else "Total Processing Time"
             hc_label = "Average HC/Month (Inc. MNG)" if months > 1 or data.attrs.get("ytd_label") else "Total HC/Month (Inc. MNG)"
             head = (f'<div class="service-hc-head"><div class="service-hc-office">{html.escape(office_name)}</div>'
-                    f'<div class="service-hc-totals"><div class="service-hc-total">{total["Processing Time"]:,.0f} h</div><div class="service-hc-caption">{time_label}</div>'
-                    f'<div class="service-hc-total">{total["HC"] / months:,.1f} HC</div><div class="service-hc-caption">{hc_label}</div></div></div>')
+                    f'<div class="service-hc-totals"><div class="service-hc-total">{total["Processing Time"]:,.1f} h</div><div class="service-hc-caption">{time_label}</div>'
+                    f'<div class="service-hc-total">{total["HC"] / months:,.2f} HC</div><div class="service-hc-caption">{hc_label}</div></div></div>')
             if overall:
                 head = (f'<div class="service-hc-head"><div class="service-hc-office">{html.escape(office_name)}</div>'
-                        f'<div class="overall-metrics"><div><div class="service-hc-total">{total["Processing Time"]:,.0f} h</div><div class="service-hc-caption">{time_label}</div></div>'
-                        f'<div><div class="service-hc-total">{total["HC"] / months:,.1f} HC</div><div class="service-hc-caption">{hc_label}</div></div></div></div>')
-            code_rows = [f'<div class="service-code-row"><b>{code}:</b>{lines(code, show_share=overall)}</div>' for code in SERVICE_ORDER]
+                        f'<div class="overall-metrics"><div><div class="service-hc-total">{total["Processing Time"]:,.1f} h</div><div class="service-hc-caption">{time_label}</div></div>'
+                        f'<div><div class="service-hc-total">{total["HC"] / months:,.2f} HC</div><div class="service-hc-caption">{hc_label}</div></div></div></div>')
+            code_rows = [f'<div class="service-code-row"><b>{code}:</b>{lines(code)}</div>' for code in SERVICE_ORDER]
             groups = service_group_markup(lines("Single"), lines("Multi"), code_rows)
             st.markdown(f'<div class="service-layout">{head}{groups}</div>', unsafe_allow_html=True)
 
@@ -3299,42 +3289,6 @@ def prepare_single_service(df: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows, columns=columns)
 
 
-def prepare_service_volume_summary(df: pd.DataFrame, ytd: bool = False) -> pd.DataFrame:
-    """Read office Volume YTD rows from sheet 12, not customer detail rows.
-
-    Monthly blocks: seven services, Single subtotal, Multi, Grand Total.
-    All uses the dedicated YTD C:L block without summing monthly blocks.
-    """
-    measures = SERVICE_ORDER + ["Multi", "Total"]
-    columns = ["Office", "MonthDate"] + measures
-    if df.empty or df.shape[1] < 12:
-        return pd.DataFrame(columns=columns)
-    body = df.iloc[5:45]
-    offices = body.iloc[:, 0].ffill().map(normalize_office)
-    labels = body.iloc[:, 1].fillna("").astype(str).str.replace(r"\s+", "", regex=True).str.lower()
-    blocks = [(2, pd.NaT)] if ytd else [
-        (start, parse_month(str(df.iloc[1, start]).strip()[:3]))
-        for start in range(12, df.shape[1], 10)
-        if start + 9 < df.shape[1]
-    ]
-    rows = []
-    for start, date in blocks:
-        if not ytd and pd.isna(date):
-            continue
-        for index in body.index[labels == "volumeytd"]:
-            office = offices.loc[index]
-            if office not in STANDARD_OFFICES + ["OVERALL CSD"]:
-                continue
-            values = pd.to_numeric(df.loc[index].iloc[start:start + 10], errors="coerce")
-            if values.isna().all():
-                continue
-            values = values.fillna(0).tolist()
-            row = {"Office": office, "MonthDate": date}
-            row.update(dict(zip(measures, values[:7] + values[8:10])))
-            rows.append(row)
-    return pd.DataFrame(rows, columns=columns)
-
-
 def render_service_volume_offices(data: pd.DataFrame, office: str = "All Offices", overall: bool = False) -> None:
     """Show service mix with the approved compact card design."""
     card_css = SERVICE_CARD_LAYOUT_CSS
@@ -3352,10 +3306,8 @@ def render_service_volume_offices(data: pd.DataFrame, office: str = "All Offices
                 totals = office_df[SERVICE_ORDER + ["Multi", "Total"]].sum()
                 total = float(totals["Total"])
                 single = float(totals[SERVICE_ORDER].sum())
-                if overall:
-                    total = single + float(totals["Multi"])
                 def share(value):
-                    return f"{value / total:.0%}" if total > 0 else "N/A"
+                    return f"{value / total:.1%}" if total > 0 else "N/A"
                 def summary(value):
                     return f'<span class="service-values">{fmt_int(value)} Shpt ~ {share(value)}</span>'
                 code_rows = [
@@ -4987,28 +4939,35 @@ def filter_office_only(df: pd.DataFrame, office: str) -> pd.DataFrame:
 
 
 
-def calculate_active_customers(customer_df: pd.DataFrame) -> float:
-    """Count distinct active customer names per month from sheet 11.
-
-    All months retains the average monthly count; zero/blank volume is inactive.
-    A customer shared by offices is counted once in the All Offices view.
+def calculate_active_customers(shipment_df: pd.DataFrame) -> float:
     """
-    required = {"Office", "Customer", "MonthDate", "Volume"}
-    if customer_df is None or customer_df.empty or not required.issubset(customer_df.columns):
+    Active Customers source: Shipment volume.
+    For a single selected month, this returns the sum across selected offices.
+    For multi-month / All selection, it returns the average monthly active-customer total
+    because the source sheet contains monthly counts rather than customer-level IDs.
+    """
+    if shipment_df is None or shipment_df.empty or "Active Customers" not in shipment_df.columns:
         return 0.0
-    d = customer_df.copy()
-    d["Customer"] = d["Customer"].fillna("").astype(str).str.strip().str.replace(r"\s+", " ", regex=True).str.upper()
-    d["Volume"] = pd.to_numeric(d["Volume"], errors="coerce").fillna(0)
-    d = d.loc[
-        d["Office"].isin(STANDARD_OFFICES)
-        & d["MonthDate"].notna()
-        & (d["Volume"] > 0)
-        & ~d["Customer"].isin(["", "NAN", "NONE", "TOTAL", "GRAND TOTAL", "SUBTOTAL"])
-    ]
+
+    d = shipment_df[["MonthDate", "Active Customers"]].copy()
+    d["Active Customers"] = pd.to_numeric(d["Active Customers"], errors="coerce")
+    d = d.dropna(subset=["MonthDate", "Active Customers"])
+
     if d.empty:
         return 0.0
-    monthly = d.groupby("MonthDate")["Customer"].nunique()
-    return float(monthly.mean())
+
+    monthly = (
+        d.groupby("MonthDate", as_index=False)["Active Customers"]
+        .sum(min_count=1)
+        .dropna(subset=["Active Customers"])
+    )
+    if monthly.empty:
+        return 0.0
+
+    if len(monthly) == 1:
+        return float(monthly["Active Customers"].iloc[0])
+
+    return float(monthly["Active Customers"].mean())
 
 
 def calculate_kpis(hc, workload, fte, shipment) -> Dict[str, float]:
@@ -6841,8 +6800,6 @@ def main():
             st.error(str(exc))
             st.stop()
         single_service = prepare_single_service(raw["single_service"])
-        service_volume = prepare_service_volume_summary(raw["service_hc"])
-        service_volume_ytd = prepare_service_volume_summary(raw["service_hc"], ytd=True)
         service_hc = prepare_service_hc(raw["service_hc"])
         service_hc_ytd = prepare_service_hc_ytd(raw["service_hc"])
         hc = prepare_hc(raw["hc"])
@@ -7069,7 +7026,7 @@ def main():
         if not f_shipment.empty and "Total Shipment" in f_shipment.columns
         else 0.0
     )
-    active_customers = calculate_active_customers(f_customer_ns)
+    active_customers = calculate_active_customers(f_shipment)
 
     # Approved layout: stacked KPIs (25%) beside monthly trend (75%).
     # Fixed card heights + gap match the chart height exactly.
@@ -7097,9 +7054,9 @@ def main():
         chart_monthly_total_shipment(monthly_shipment_source, height=264)
 
     if office == "All Offices":
-        volume_source = service_volume_ytd if month == "All" else apply_filters(service_volume, year, month, office)
-        total_volume = volume_source.loc[volume_source["Office"] == "OVERALL CSD"].copy()
+        total_volume = apply_filters(single_service, year, month, office).copy()
         if not total_volume.empty:
+            total_volume = total_volume.loc[total_volume["Office"].isin(STANDARD_OFFICES)].copy()
             total_volume["Office"] = "All Offices"
         total_hc_source = service_hc_ytd if month == "All" else apply_filters(service_hc, year, month, office)
         total_hc = total_hc_source.loc[total_hc_source["Office"] == "OVERALL CSD"].copy() if "Office" in total_hc_source.columns else prepare_service_hc(pd.DataFrame())
@@ -7112,14 +7069,13 @@ def main():
             render_service_hc_offices(total_hc, overall=True)
 
     if office == "All Offices":
-        volume_source = service_volume_ytd if month == "All" else apply_filters(service_volume, year, month, office)
-        render_service_volume_offices(volume_source, office)
+        render_service_volume_offices(apply_filters(single_service, year, month, office), office)
         if month == "All":
             render_service_hc_offices(filter_office_only(service_hc_ytd, office), office)
         else:
             render_service_hc_offices(apply_filters(service_hc, year, month, office), office)
     else:
-        office_volume = filter_office_only(service_volume_ytd, office) if month == "All" else apply_filters(service_volume, year, month, office)
+        office_volume = apply_filters(single_service, year, month, office)
         office_hc = filter_office_only(service_hc_ytd, office) if month == "All" else apply_filters(service_hc, year, month, office)
         office_volume_col, office_hc_col = st.columns(2, gap="medium")
         with office_volume_col:
