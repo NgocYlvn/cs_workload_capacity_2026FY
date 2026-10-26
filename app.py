@@ -3147,7 +3147,9 @@ def prepare_service_hc(df: pd.DataFrame) -> pd.DataFrame:
                 return pd.to_numeric(selected.iloc[0, start:start + 10], errors="coerce").tolist()
             ex = values("Processing time/month (hour)-ex MNG")
             mng = values("Processing time/month (hour)- MNG")
-            hc = values("Total HC/Month (Inc. MNG)")
+            pic_hc = values("PIC HC/month")
+            mng_hc = values("MNG HC/Month")
+            hc = [pic + manager for pic, manager in zip(pic_hc, mng_hc)]
             share = values("% HC (Inc. MNG)")
             for i, code in enumerate(SERVICE_ORDER + ["Single", "Multi", "Total"]):
                 if pd.isna(ex[i]) or pd.isna(mng[i]) or pd.isna(hc[i]):
@@ -3237,7 +3239,7 @@ def render_service_hc_offices(data: pd.DataFrame, office: str = "All Offices", o
             totals = d.groupby("Code")[["Processing Time", "HC"]].sum()
             months = d["MonthDate"].nunique()
             totals["Processing Time"] = totals["Processing Time"] / months
-            if overall:
+            if overall and office_name == "All Offices":
                 totals.loc["Total"] = totals.loc[["Single", "Multi"]].sum()
             total_hc = totals.loc["Total", "HC"]
             def lines(code):
@@ -3486,6 +3488,40 @@ def prepare_hc(df: pd.DataFrame) -> pd.DataFrame:
 
 @st.cache_data(show_spinner=False)
 def prepare_workload(df: pd.DataFrame) -> pd.DataFrame:
+    # Wide monthly service blocks from the current sheet 4 (hours in source).
+    if not df.empty and "Month" not in df.columns and "Segment" in df.columns:
+        rows = []
+        offices = df.iloc[:, 0].ffill().map(normalize_office)
+        labels = df["Segment"].fillna("").astype(str).str.replace(r"\s+", " ", regex=True).str.strip().str.lower()
+        for start, column in enumerate(df.columns):
+            date = parse_month(column)
+            if pd.isna(date) or start + 6 >= len(df.columns):
+                continue
+            for office_name in STANDARD_OFFICES:
+                group = df.loc[offices == office_name]
+                group_labels = labels.loc[group.index]
+                for offset, service in enumerate(SERVICE_ORDER):
+                    row = {"Office": office_name, "MonthDate": date, "Segment": service}
+                    def metric(label):
+                        matched = group.loc[group_labels == label]
+                        return pd.to_numeric(matched.iloc[0, start + offset], errors="coerce") if not matched.empty else float("nan")
+                    any_data = False
+                    for code, category in [("c", "Core"), ("a", "Ancillary"), ("s", "Supporting"), ("e", "Exception")]:
+                        volume = metric(code + " volume")
+                        hours = metric(code + " total time (hour)")
+                        any_data = any_data or pd.notna(volume) or pd.notna(hours)
+                        row[category + " Volume"] = float(volume) if pd.notna(volume) else 0.0
+                        row[category + " Workload (min)"] = float(hours) * 60 if pd.notna(hours) else 0.0
+                        row[category + " Hours"] = row[category + " Workload (min)"] / 60
+                    if not any_data:
+                        continue
+                    row["Total Workload (min)"] = sum(row[c + " Workload (min)"] for c in ["Core", "Ancillary", "Supporting", "Exception"])
+                    row["Workload Hours"] = row["Total Workload (min)"] / 60
+                    row["Workload Share"] = metric("workload share (%)")
+                    row["Office HC Allocation Ratio"] = metric("fte allocation (include mng)")
+                    row["Service Label"] = SERVICE_LABELS.get(service, service)
+                    rows.append(row)
+        return pd.DataFrame(rows)
     if df.empty:
         return pd.DataFrame(columns=["Office", "MonthDate", "Segment"])
 
