@@ -3301,6 +3301,42 @@ def prepare_single_service(df: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows, columns=columns)
 
 
+def prepare_service_volume_summary(df: pd.DataFrame, ytd: bool = False) -> pd.DataFrame:
+    """Read office Volume YTD rows from sheet 12, not customer detail rows.
+
+    Monthly blocks: seven services, Single subtotal, Multi, Grand Total.
+    All uses the dedicated YTD C:L block without summing monthly blocks.
+    """
+    measures = SERVICE_ORDER + ["Multi", "Total"]
+    columns = ["Office", "MonthDate"] + measures
+    if df.empty or df.shape[1] < 12:
+        return pd.DataFrame(columns=columns)
+    body = df.iloc[5:45]
+    offices = body.iloc[:, 0].ffill().map(normalize_office)
+    labels = body.iloc[:, 1].fillna("").astype(str).str.replace(r"\s+", "", regex=True).str.lower()
+    blocks = [(2, pd.NaT)] if ytd else [
+        (start, parse_month(str(df.iloc[1, start]).strip()[:3]))
+        for start in range(12, df.shape[1], 10)
+        if start + 9 < df.shape[1]
+    ]
+    rows = []
+    for start, date in blocks:
+        if not ytd and pd.isna(date):
+            continue
+        for index in body.index[labels == "volumeytd"]:
+            office = offices.loc[index]
+            if office not in STANDARD_OFFICES + ["OVERALL CSD"]:
+                continue
+            values = pd.to_numeric(df.loc[index].iloc[start:start + 10], errors="coerce")
+            if values.isna().all():
+                continue
+            values = values.fillna(0).tolist()
+            row = {"Office": office, "MonthDate": date}
+            row.update(dict(zip(measures, values[:7] + values[8:10])))
+            rows.append(row)
+    return pd.DataFrame(rows, columns=columns)
+
+
 def render_service_volume_offices(data: pd.DataFrame, office: str = "All Offices", overall: bool = False) -> None:
     """Show service mix with the approved compact card design."""
     card_css = SERVICE_CARD_LAYOUT_CSS
@@ -6814,6 +6850,8 @@ def main():
             st.error(str(exc))
             st.stop()
         single_service = prepare_single_service(raw["single_service"])
+        service_volume = prepare_service_volume_summary(raw["service_hc"])
+        service_volume_ytd = prepare_service_volume_summary(raw["service_hc"], ytd=True)
         service_hc = prepare_service_hc(raw["service_hc"])
         service_hc_ytd = prepare_service_hc_ytd(raw["service_hc"])
         hc = prepare_hc(raw["hc"])
@@ -7068,9 +7106,9 @@ def main():
         chart_monthly_total_shipment(monthly_shipment_source, height=264)
 
     if office == "All Offices":
-        total_volume = apply_filters(single_service, year, month, office).copy()
+        volume_source = service_volume_ytd if month == "All" else apply_filters(service_volume, year, month, office)
+        total_volume = volume_source.loc[volume_source["Office"] == "OVERALL CSD"].copy()
         if not total_volume.empty:
-            total_volume = total_volume.loc[total_volume["Office"].isin(STANDARD_OFFICES)].copy()
             total_volume["Office"] = "All Offices"
         total_hc_source = service_hc_ytd if month == "All" else apply_filters(service_hc, year, month, office)
         total_hc = total_hc_source.loc[total_hc_source["Office"] == "OVERALL CSD"].copy() if "Office" in total_hc_source.columns else prepare_service_hc(pd.DataFrame())
@@ -7083,13 +7121,14 @@ def main():
             render_service_hc_offices(total_hc, overall=True)
 
     if office == "All Offices":
-        render_service_volume_offices(apply_filters(single_service, year, month, office), office)
+        volume_source = service_volume_ytd if month == "All" else apply_filters(service_volume, year, month, office)
+        render_service_volume_offices(volume_source, office)
         if month == "All":
             render_service_hc_offices(filter_office_only(service_hc_ytd, office), office)
         else:
             render_service_hc_offices(apply_filters(service_hc, year, month, office), office)
     else:
-        office_volume = apply_filters(single_service, year, month, office)
+        office_volume = filter_office_only(service_volume_ytd, office) if month == "All" else apply_filters(service_volume, year, month, office)
         office_hc = filter_office_only(service_hc_ytd, office) if month == "All" else apply_filters(service_hc, year, month, office)
         office_volume_col, office_hc_col = st.columns(2, gap="medium")
         with office_volume_col:
