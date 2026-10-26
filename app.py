@@ -4987,35 +4987,28 @@ def filter_office_only(df: pd.DataFrame, office: str) -> pd.DataFrame:
 
 
 
-def calculate_active_customers(shipment_df: pd.DataFrame) -> float:
+def calculate_active_customers(customer_df: pd.DataFrame) -> float:
+    """Count distinct active customer names per month from sheet 11.
+
+    All months retains the average monthly count; zero/blank volume is inactive.
+    A customer shared by offices is counted once in the All Offices view.
     """
-    Active Customers source: Shipment volume.
-    For a single selected month, this returns the sum across selected offices.
-    For multi-month / All selection, it returns the average monthly active-customer total
-    because the source sheet contains monthly counts rather than customer-level IDs.
-    """
-    if shipment_df is None or shipment_df.empty or "Active Customers" not in shipment_df.columns:
+    required = {"Office", "Customer", "MonthDate", "Volume"}
+    if customer_df is None or customer_df.empty or not required.issubset(customer_df.columns):
         return 0.0
-
-    d = shipment_df[["MonthDate", "Active Customers"]].copy()
-    d["Active Customers"] = pd.to_numeric(d["Active Customers"], errors="coerce")
-    d = d.dropna(subset=["MonthDate", "Active Customers"])
-
+    d = customer_df.copy()
+    d["Customer"] = d["Customer"].fillna("").astype(str).str.strip().str.replace(r"\s+", " ", regex=True).str.upper()
+    d["Volume"] = pd.to_numeric(d["Volume"], errors="coerce").fillna(0)
+    d = d.loc[
+        d["Office"].isin(STANDARD_OFFICES)
+        & d["MonthDate"].notna()
+        & (d["Volume"] > 0)
+        & ~d["Customer"].isin(["", "NAN", "NONE", "TOTAL", "GRAND TOTAL", "SUBTOTAL"])
+    ]
     if d.empty:
         return 0.0
-
-    monthly = (
-        d.groupby("MonthDate", as_index=False)["Active Customers"]
-        .sum(min_count=1)
-        .dropna(subset=["Active Customers"])
-    )
-    if monthly.empty:
-        return 0.0
-
-    if len(monthly) == 1:
-        return float(monthly["Active Customers"].iloc[0])
-
-    return float(monthly["Active Customers"].mean())
+    monthly = d.groupby("MonthDate")["Customer"].nunique()
+    return float(monthly.mean())
 
 
 def calculate_kpis(hc, workload, fte, shipment) -> Dict[str, float]:
@@ -7076,7 +7069,7 @@ def main():
         if not f_shipment.empty and "Total Shipment" in f_shipment.columns
         else 0.0
     )
-    active_customers = calculate_active_customers(f_shipment)
+    active_customers = calculate_active_customers(f_customer_ns)
 
     # Approved layout: stacked KPIs (25%) beside monthly trend (75%).
     # Fixed card heights + gap match the chart height exactly.
