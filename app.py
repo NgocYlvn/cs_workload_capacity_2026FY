@@ -3222,13 +3222,11 @@ def render_service_hc_offices(data: pd.DataFrame, office: str = "All Offices", o
             months = d["MonthDate"].nunique()
             totals["Processing Time"] = totals["Processing Time"] / months
             if overall:
-                # Sum the displayed monthly Single and Multi values so the
-                # headline reconciles exactly, including rounding.
+                # Keep displayed-hour reconciliation; HC uses unrounded
+                # source Single + Multi and is rounded only for display.
                 for group_code in ("Single", "Multi"):
                     totals.loc[group_code, "Processing Time"] = float(
                         f'{totals.loc[group_code, "Processing Time"]:.0f}')
-                    totals.loc[group_code, "HC"] = float(
-                        f'{totals.loc[group_code, "HC"] / months:.1f}') * months
                 totals.loc["Total"] = totals.loc[["Single", "Multi"]].sum()
             total_hc = totals.loc["Total", "HC"]
             def lines(code, show_share=True):
