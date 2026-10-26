@@ -3221,6 +3221,9 @@ def render_service_hc_offices(data: pd.DataFrame, office: str = "All Offices", o
             totals = d.groupby("Code")[["Processing Time", "HC"]].sum()
             months = d["MonthDate"].nunique()
             totals["Processing Time"] = totals["Processing Time"] / months
+            if overall:
+                # Overall totals and HC shares use the same Single + Multi basis.
+                totals.loc["Total"] = totals.loc[["Single", "Multi"]].sum()
             total_hc = totals.loc["Total", "HC"]
             def lines(code, show_share=True):
                 t = totals.loc[code]
@@ -3229,6 +3232,8 @@ def render_service_hc_offices(data: pd.DataFrame, office: str = "All Offices", o
                 valid = code_rows["HC Share"].notna() & month_weights.reindex(code_rows.index).notna()
                 weights = month_weights.reindex(code_rows.index).loc[valid]
                 pct = (code_rows.loc[valid, "HC Share"] * weights).sum() / weights.sum() if weights.sum() > 0 else float("nan")
+                if overall:
+                    pct = t["HC"] / total_hc if total_hc > 0 else float("nan")
                 pct_text = f"{pct:.0%}" if pd.notna(pct) else "N/A"
                 hc_value = t["HC"] / months
                 hc_text = f"{hc_value:,.1f}"
@@ -3307,6 +3312,8 @@ def render_service_volume_offices(data: pd.DataFrame, office: str = "All Offices
                 totals = office_df[SERVICE_ORDER + ["Multi", "Total"]].sum()
                 total = float(totals["Total"])
                 single = float(totals[SERVICE_ORDER].sum())
+                if overall:
+                    total = single + float(totals["Multi"])
                 def share(value):
                     return f"{value / total:.0%}" if total > 0 else "N/A"
                 def summary(value):
